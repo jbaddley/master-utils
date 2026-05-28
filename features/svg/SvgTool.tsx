@@ -19,7 +19,14 @@ import {
   imageToImageData,
 } from "@/lib/tracer";
 import type { TraceResponse } from "./trace.worker";
-import { type RGBA, extractPalette, hexToRgba, rgbaToHex } from "@/lib/palette";
+import {
+  type RGBA,
+  extractPalette,
+  hasTransparency,
+  hexToRgba,
+  rgbaToHex,
+} from "@/lib/palette";
+import { imageDataToBlob, isOpaqueFormat } from "@/lib/image";
 import { floodEraseAt, removeBackground } from "@/lib/background";
 import { cropImageData, cropToContent } from "@/lib/crop";
 import { flipImage } from "@/lib/transform";
@@ -29,6 +36,14 @@ import { saveAs } from "@/lib/download";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   LuPipette,
   LuEraser,
@@ -39,16 +54,20 @@ import {
   LuFlipHorizontal2,
   LuFlipVertical2,
   LuUndo2,
-  LuZoomIn,
-  LuImageDown,
   LuImagePlus,
   LuSparkles,
-  LuWandSparkles,
   LuDownload,
   LuPlus,
 } from "react-icons/lu";
 
 type Swatch = { color: RGBA; on: boolean; custom?: boolean };
+
+const RASTER_FORMATS = [
+  { mime: "image/png", label: "PNG", ext: ".png" },
+  { mime: "image/webp", label: "WebP", ext: ".webp" },
+  { mime: "image/jpeg", label: "JPEG", ext: ".jpg" },
+] as const;
+type RasterFmt = (typeof RASTER_FORMATS)[number]["mime"];
 
 type Loaded = {
   url: string;
@@ -515,26 +534,38 @@ export default function SvgTool() {
     });
   }, [svg, loaded, baseName]);
 
-  const onDownloadPng = useCallback(() => {
-    if (!sourceData || !loaded) return;
-    void saveAs({
-      suggestedName: `${baseName()}-edited.png`,
-      description: "PNG image",
-      mime: "image/png",
-      ext: ".png",
-      getBlob: () =>
-        new Promise<Blob>((resolve, reject) => {
-          const c = document.createElement("canvas");
-          c.width = sourceData.width;
-          c.height = sourceData.height;
-          c.getContext("2d")?.putImageData(sourceData, 0, 0);
-          c.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error("Could not encode PNG"))),
-            "image/png",
-          );
-        }),
-    });
-  }, [sourceData, loaded, baseName]);
+  const imageHasTransparency = useMemo(
+    () => (sourceData ? hasTransparency(sourceData) : false),
+    [sourceData],
+  );
+
+  const [downloadSelectKey, setDownloadSelectKey] = useState(0);
+
+  const downloadRaster = useCallback(
+    async (fmt: RasterFmt) => {
+      if (!sourceData || !loaded) return;
+      const meta = RASTER_FORMATS.find((f) => f.mime === fmt);
+      if (!meta) return;
+      if (imageHasTransparency && isOpaqueFormat(fmt)) {
+        if (
+          !window.confirm(
+            `This image has transparent areas. ${meta.label} does not support transparency — they will be flattened onto a white background. Download anyway?`,
+          )
+        ) {
+          return;
+        }
+      }
+      const quality = fmt === "image/png" ? undefined : 0.92;
+      void saveAs({
+        suggestedName: `${baseName()}-edited${meta.ext}`,
+        description: `${meta.label} image`,
+        mime: fmt,
+        ext: meta.ext,
+        getBlob: () => imageDataToBlob(sourceData, fmt, quality),
+      });
+    },
+    [sourceData, loaded, baseName, imageHasTransparency],
+  );
 
   const svgBytes = useMemo(() => (svg ? new Blob([svg]).size : 0), [svg]);
   const pathCount = useMemo(() => (svg ? countPaths(svg) : 0), [svg]);
@@ -602,15 +633,17 @@ export default function SvgTool() {
 
           <div className="field">
             <span className="field-label">Output</span>
-            <Button
-              variant={cleanup ? "default" : "outline"}
-              className="justify-start"
-              onClick={() => setCleanup((v) => !v)}
+            <label
+              className="toggle"
               title="Run SVGO to merge paths, simplify curves and shrink the file"
             >
-              <LuWandSparkles />
-              {cleanup ? "Clean up: on" : "Clean up: off"}
-            </Button>
+              <Switch
+                size="sm"
+                checked={cleanup}
+                onCheckedChange={(c) => setCleanup(c === true)}
+              />
+              Clean up
+            </label>
           </div>
         </section>
       )}
@@ -628,7 +661,7 @@ export default function SvgTool() {
             <label className="count">
               Colors: {colorCount}
               <Slider
-                className="w-[150px]"
+                className="palette-slider"
                 min={2}
                 max={24}
                 value={[colorCount]}
@@ -768,28 +801,48 @@ export default function SvgTool() {
                     <LuUndo2 />
                     Undo
                   </Button>
-                  <Button
-                    variant={magnifier ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => setMagnifier((m) => !m)}
+                  <label
+                    className="editbar-toggle"
                     title="Zoom in on individual pixels while hovering"
                   >
-                    <LuZoomIn />
+                    <Switch
+                      size="sm"
+                      checked={magnifier}
+                      onCheckedChange={(c) => setMagnifier(c === true)}
+                    />
                     Magnifier
-                  </Button>
+                  </label>
                 </div>
 
                 <div className="tool-group" role="group" aria-label="Export">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onDownloadPng}
+                  <Select
+                    key={downloadSelectKey}
                     disabled={!sourceData}
-                    title="Download the edited image as a PNG"
+                    onValueChange={(fmt) => {
+                      if (!fmt) return;
+                      void downloadRaster(fmt as RasterFmt);
+                      setDownloadSelectKey((k) => k + 1);
+                    }}
                   >
-                    <LuImageDown />
-                    PNG
-                  </Button>
+                    <SelectTrigger
+                      size="sm"
+                      className="edit-download-select"
+                      title="Download the edited image"
+                    >
+                      <LuDownload />
+                      <SelectValue placeholder="Download" />
+                    </SelectTrigger>
+                    <SelectContent align="end">
+                      {RASTER_FORMATS.map((f) => (
+                        <SelectItem key={f.mime} value={f.mime}>
+                          {f.label}
+                          {imageHasTransparency && isOpaqueFormat(f.mime)
+                            ? " — flattens transparency"
+                            : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -797,14 +850,28 @@ export default function SvgTool() {
                 {canvasTool === "erase" && (
                   <label className="opt" title="How close in color a pixel must be to get erased">
                     Tolerance
-                    <Slider className="w-[130px]" min={0} max={128} step={4} value={[eraseTolerance]} onValueChange={(v) => setEraseTolerance(Array.isArray(v) ? v[0] : v)} />
+                    <Slider
+                      className="editopt-slider"
+                      min={0}
+                      max={128}
+                      step={4}
+                      value={[eraseTolerance]}
+                      onValueChange={(v) => setEraseTolerance(Array.isArray(v) ? v[0] : v)}
+                    />
                     <b>{eraseTolerance}</b>
                   </label>
                 )}
                 {canvasTool === "brush" && (
                   <label className="opt" title="Eraser size">
                     Eraser size
-                    <Slider className="w-[130px]" min={2} max={100} step={2} value={[brushSize]} onValueChange={(v) => setBrushSize(Array.isArray(v) ? v[0] : v)} />
+                    <Slider
+                      className="editopt-slider"
+                      min={2}
+                      max={100}
+                      step={2}
+                      value={[brushSize]}
+                      onValueChange={(v) => setBrushSize(Array.isArray(v) ? v[0] : v)}
+                    />
                     <b>{brushSize}px</b>
                   </label>
                 )}

@@ -41,3 +41,22 @@ export function drawToCanvas(
 export function isOpaqueFormat(mime: string): boolean {
   return mime === "image/jpeg" || mime === "image/bmp";
 }
+
+/** Encode raw pixels to a Blob, flattening onto white for opaque formats. */
+export function imageDataToBlob(
+  data: ImageData,
+  mime: string,
+  quality?: number,
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = data.width;
+  canvas.height = data.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get a 2D canvas context.");
+  if (isOpaqueFormat(mime)) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  ctx.putImageData(data, 0, 0);
+  return canvasToBlob(canvas, mime, quality);
+}

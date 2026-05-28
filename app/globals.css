@@ -453,8 +453,15 @@
     @apply flex flex-wrap items-center gap-4 mb-3;
   }
   .palette-controls .toggle,
-  .palette-controls .count {
+  .palette-controls .count,
+  .settings .toggle {
     @apply flex items-center gap-2 text-[13px] text-[#c7ccd6];
+  }
+  .palette-slider {
+    @apply w-[220px] min-w-[220px] max-w-[220px] shrink-0 flex-none;
+  }
+  .palette-slider [data-slot="slider-track"] {
+    @apply h-1.5;
   }
   .palette-hint {
     @apply text-xs text-muted-foreground;
@@ -486,11 +493,26 @@
     @apply flex gap-1.5 items-center rounded-[9px] p-1;
     background: rgba(255, 255, 255, 0.04);
   }
+  .edit-download-select {
+    @apply h-7 gap-1.5 border-0 bg-secondary text-secondary-foreground shadow-none hover:bg-secondary/80;
+  }
+  .edit-download-select [data-slot="select-value"] {
+    @apply text-xs font-medium;
+  }
+  .editbar-toggle {
+    @apply flex items-center gap-2 h-7 px-2 text-xs text-foreground cursor-pointer select-none rounded-md;
+  }
   .editopts {
     @apply flex items-center flex-wrap gap-3.5 px-3.5 py-2.5 min-h-10;
   }
   .opt {
     @apply flex items-center gap-2 text-xs text-foreground;
+  }
+  .editopt-slider {
+    @apply w-[130px] min-w-[130px] max-w-[130px] shrink-0 flex-none;
+  }
+  .editopt-slider [data-slot="slider-track"] {
+    @apply h-1.5;
   }
   .opt b {
     @apply tabular-nums text-muted-foreground min-w-9;
