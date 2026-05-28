@@ -1,66 +1,62 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
+import { TOOLS, CONVERSIONS, parseConversion } from "@/lib/tools";
+import { JsonLd } from "@/components/JsonLd";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="page">
+      <div className="hero">
+        <h1>Free Online Image Tools</h1>
+        <p className="lede">
+          Fast, private image utilities that run entirely in your browser — no
+          uploads, no sign-up, no watermarks. Convert, compress, resize, crop,
+          vectorize and more.
+        </p>
+      </div>
+
+      <div className="tool-grid">
+        {TOOLS.map((t) => {
+          const Icon = t.icon;
+          return (
+            <Link key={t.slug} href={`/${t.slug}`} className="tool-card">
+              <Icon className="tc-icon" />
+              <h3>{t.title}</h3>
+              <p>{t.tagline}</p>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="prose">
+        <h2>Popular conversions</h2>
+        <div className="related">
+          {CONVERSIONS.map((c) => {
+            const info = parseConversion(c);
+            return (
+              <Link key={c} href={`/${c}`}>
+                {info ? `${info.fromLabel} to ${info.toLabel}` : c}
+              </Link>
+            );
+          })}
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <h2>Why these tools?</h2>
+        <p>
+          Every utility here is 100% client-side: your images are processed
+          locally and never sent to a server. That means instant results,
+          complete privacy, and no file-size limits beyond your own device.
+        </p>
+      </div>
+
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: SITE_NAME,
+          url: SITE_URL,
+        }}
+      />
+    </main>
   );
 }
