@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
+import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
 
 export const metadata: Metadata = buildMetadata({
   title: "Pricing — Free & Pro plans",
@@ -185,6 +186,8 @@ export default function PricingPage() {
           </Link>
         </div>
       </div>
+
+      <ManageSubscriptionButton />
 
       <div className="prose">
         <h2>Frequently asked questions</h2>

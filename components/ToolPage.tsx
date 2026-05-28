@@ -25,6 +25,7 @@ export function ToolPage(props: {
   related?: RelatedLink[];
   showAds?: boolean;
 }) {
+  const ads = props.showAds !== false;
   const url = canonical(props.slug);
   return (
     <main className="page">
@@ -45,7 +46,7 @@ export function ToolPage(props: {
 
         {props.body}
 
-        {props.showAds && <AdSlot variant="rectangle" />}
+        {ads && <AdSlot variant="rectangle" />}
 
         <p className="privacy">
           Private by design — all processing happens in your browser. Your
@@ -73,7 +74,7 @@ export function ToolPage(props: {
           </div>
         ))}
 
-        {props.showAds && <AdSlot variant="leaderboard" />}
+        {ads && <AdSlot variant="leaderboard" />}
 
         <AffiliateCards toolSlug={props.slug} />
       </div>

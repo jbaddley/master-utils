@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { TOOLS } from "@/lib/tools";
 import { SITE_URL } from "@/lib/seo";
 
@@ -8,9 +9,11 @@ const TOOL_OPTIONS = TOOLS.map((t) => ({ value: t.slug, label: t.title }));
 
 export default function EmbedConfigPage() {
   const [selected, setSelected] = useState(TOOL_OPTIONS[0].value);
+  const [hideBranding, setHideBranding] = useState(false);
 
   const label = TOOL_OPTIONS.find((t) => t.value === selected)?.label ?? "Image Tool";
-  const src = `${SITE_URL}/embed/${selected}/`;
+  const baseSrc = `${SITE_URL}/embed/${selected}/`;
+  const src = hideBranding ? `${baseSrc}?attribution=0` : baseSrc;
   const snippet =
     `<iframe\n  src="${src}"\n  width="100%"\n  height="600"\n  style="border:none;border-radius:12px"\n  title="${label}"\n></iframe>`;
 
@@ -32,6 +35,18 @@ export default function EmbedConfigPage() {
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
+        </label>
+
+        <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
+          <input
+            type="checkbox"
+            checked={hideBranding}
+            onChange={(e) => setHideBranding(e.target.checked)}
+          />
+          <span className="field-label" style={{ margin: 0 }}>
+            Hide &ldquo;Powered by&rdquo; branding{" "}
+            <Link href="/pricing" style={{ fontSize: "0.75rem", opacity: 0.6 }}>(Business plan)</Link>
+          </span>
         </label>
 
         <div className="field" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.5rem" }}>

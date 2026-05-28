@@ -9,6 +9,8 @@ import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
 import { saveAs } from "@/lib/download";
+import { useAuth } from "@/context/AuthContext";
+import { fileSizeError } from "@/lib/limits";
 
 type Fmt = "image/jpeg" | "image/webp" | "image/png";
 const FMT_EXT: Record<Fmt, string> = {
@@ -23,6 +25,7 @@ const FMT_LABEL: Record<Fmt, string> = {
 };
 
 export default function CompressTool() {
+  const { isPro } = useAuth();
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [fmt, setFmt] = useState<Fmt>("image/webp");
   const [quality, setQuality] = useState(0.7);
@@ -32,6 +35,8 @@ export default function CompressTool() {
 
   const onFile = async (file: File) => {
     setError(null);
+    const sizeErr = fileSizeError(file.size, isPro);
+    if (sizeErr) { setError(sizeErr); return; }
     try {
       const img = await loadImageFile(file);
       setLoaded((prev) => {
