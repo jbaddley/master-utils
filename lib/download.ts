@@ -9,6 +9,14 @@ type SaveFilePicker = (opts: {
   types?: { description?: string; accept: Record<string, string[]> }[];
 }) => Promise<FileHandleLike>;
 
+function logExport(toolName: string, fileName: string, fileSize: number) {
+  fetch("/api/history", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ toolName, fileName, fileSize }),
+  }).catch(() => { /* best-effort, never throw */ });
+}
+
 /**
  * Save a file via the native "Save As" dialog (File System Access API) so the
  * user can choose name/location. Falls back to a normal download where the API
@@ -21,6 +29,7 @@ export async function saveAs(opts: {
   mime: string;
   ext: string;
   getBlob: () => Blob | Promise<Blob>;
+  toolName?: string;
 }): Promise<void> {
   const fallback = async () => {
     const blob = await opts.getBlob();
@@ -30,6 +39,7 @@ export async function saveAs(opts: {
     a.download = opts.suggestedName;
     a.click();
     URL.revokeObjectURL(url);
+    if (opts.toolName) logExport(opts.toolName, opts.suggestedName, blob.size);
   };
 
   const picker = (window as unknown as { showSaveFilePicker?: SaveFilePicker })
@@ -51,4 +61,5 @@ export async function saveAs(opts: {
   const writable = await handle.createWritable();
   await writable.write(blob);
   await writable.close();
+  if (opts.toolName) logExport(opts.toolName, opts.suggestedName, blob.size);
 }

@@ -1,13 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LuImagePlus, LuDownload, LuTrash2, LuPlus } from "react-icons/lu";
+import Link from "next/link";
+import { LuImagePlus, LuDownload, LuTrash2, LuPlus, LuLock } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ACCEPT_ATTR, isSupportedImage, loadImageFile, baseName } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
+import { useAuth } from "@/context/AuthContext";
 import JSZip from "jszip";
+
+const FREE_FILE_LIMIT = 1;
 
 type Fmt = "image/webp" | "image/jpeg" | "image/png";
 
@@ -24,6 +28,7 @@ type BatchFile = {
 };
 
 export default function BatchCompressTool() {
+  const { isPro } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [files, setFiles] = useState<BatchFile[]>([]);
@@ -31,9 +36,20 @@ export default function BatchCompressTool() {
   const [quality, setQuality] = useState(0.7);
   const [processing, setProcessing] = useState(false);
 
+  const canAddMore = isPro || files.length < FREE_FILE_LIMIT;
+
   const handleFiles = (incoming: File[]) => {
     const supported = incoming.filter(isSupportedImage);
     if (!supported.length) return;
+    if (!isPro) {
+      // Free users: only the first file(s) up to the limit
+      const slots = Math.max(0, FREE_FILE_LIMIT - files.length);
+      setFiles((prev) => [
+        ...prev,
+        ...supported.slice(0, slots).map((f) => ({ file: f, status: "pending" as const })),
+      ]);
+      return;
+    }
     setFiles((prev) => [
       ...prev,
       ...supported.map((f) => ({ file: f, status: "pending" as const })),
@@ -132,7 +148,7 @@ export default function BatchCompressTool() {
               variant="outline"
               size="sm"
               onClick={() => inputRef.current?.click()}
-              disabled={processing}
+              disabled={processing || !canAddMore}
             >
               <LuPlus />
               Add more
@@ -181,6 +197,17 @@ export default function BatchCompressTool() {
               </div>
             )}
           </section>
+
+          {!isPro && (
+            <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--muted)", marginTop: "0.75rem" }}>
+              <LuLock style={{ flexShrink: 0, color: "var(--muted-foreground)" }} />
+              <span className="text-sm text-muted-foreground">
+                Free plan: 1 file at a time.{" "}
+                <Link href="/pricing" className="underline underline-offset-2">Upgrade to Pro</Link>
+                {" "}to batch-compress up to 50 files.
+              </span>
+            </div>
+          )}
 
           <div className="batch-file-list">
             {files.map((bf, i) => (
