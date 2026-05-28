@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
-// TODO: set the real production domain before deploy.
-export const SITE_URL = "https://imagetools.example";
-export const SITE_NAME = "Image Tools";
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://localhost:3000";
+export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? "Image Tools";
 
 export function canonical(path: string): string {
   const clean = path.replace(/^\/+|\/+$/g, "");
