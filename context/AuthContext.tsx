@@ -3,17 +3,26 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
   useCallback,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import {
+  useSession,
+  signIn as nextAuthSignIn,
+  signOut as nextAuthSignOut,
+} from "next-auth/react";
+
+interface AuthUser {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  image?: string | null;
+  plan?: string;
+}
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   isPro: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -27,71 +36,55 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchIsPro(userId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from("user_profiles")
-    .select("plan")
-    .eq("id", userId)
-    .single();
-  if (!data) return false;
-  return data.plan === "pro";
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isPro, setIsPro] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const pro = await fetchIsPro(session.user.id);
-        setIsPro(pro);
+  const user: AuthUser | null = session?.user
+    ? {
+        id: (session.user as AuthUser).id,
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image,
+        plan: (session.user as AuthUser).plan ?? "free",
       }
-      setLoading(false);
-    });
+    : null;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const pro = await fetchIsPro(session.user.id);
-        setIsPro(pro);
-      } else {
-        setIsPro(false);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const isPro = user?.plan === "pro";
+  const loading = status === "loading";
 
   const signIn = useCallback(async (email: string, password: string) => {
-    await supabase.auth.signInWithPassword({ email, password });
+    const res = await nextAuthSignIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+    if (res?.error) throw new Error("Invalid email or password");
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    await supabase.auth.signUp({ email, password });
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Sign up failed");
+    // Sign in immediately after registering
+    const signInRes = await nextAuthSignIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+    if (signInRes?.error) throw new Error("Account created but sign-in failed");
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo:
-          typeof window !== "undefined" ? window.location.origin : undefined,
-      },
-    });
+    await nextAuthSignIn("google", { redirect: false });
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await nextAuthSignOut({ redirect: false });
   }, []);
 
   const openAuthModal = useCallback(() => setAuthModalOpen(true), []);
@@ -101,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        session,
         isPro,
         loading,
         signIn,

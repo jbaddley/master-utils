@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: masterutils
+      POSTGRES_PASSWORD: masterutils_dev
+      POSTGRES_DB: masterutils
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { SessionProvider } from "next-auth/react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -23,12 +24,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
-        <AuthProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <AuthModal />
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+            <AuthModal />
+          </AuthProvider>
+        </SessionProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
             <Script
