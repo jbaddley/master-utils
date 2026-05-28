@@ -5,16 +5,17 @@ export type ApiAuthResult =
   | { ok: true; userId: string }
   | { ok: false; response: NextResponse };
 
+function todayString(): string {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
 export async function validateApiKey(req: NextRequest): Promise<ApiAuthResult> {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) {
     return {
       ok: false,
       response: NextResponse.json(
-        {
-          error:
-            "Missing or malformed Authorization header. Use: Bearer <api_key>",
-        },
+        { error: "Missing or malformed Authorization header. Use: Bearer <api_key>" },
         { status: 401 },
       ),
     };
@@ -29,26 +30,21 @@ export async function validateApiKey(req: NextRequest): Promise<ApiAuthResult> {
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { key },
-    select: {
-      id: true,
-      userId: true,
-      requestsToday: true,
-      dailyLimit: true,
-      active: true,
-    },
+    select: { id: true, userId: true, requestsToday: true, dailyLimit: true, active: true, resetDate: true },
   });
 
   if (!apiKey || !apiKey.active) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "Invalid API key" },
-        { status: 401 },
-      ),
+      response: NextResponse.json({ error: "Invalid API key" }, { status: 401 }),
     };
   }
 
-  if (apiKey.requestsToday >= apiKey.dailyLimit) {
+  const today = todayString();
+  const isNewDay = apiKey.resetDate !== today;
+  const currentCount = isNewDay ? 0 : apiKey.requestsToday;
+
+  if (currentCount >= apiKey.dailyLimit) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -58,11 +54,10 @@ export async function validateApiKey(req: NextRequest): Promise<ApiAuthResult> {
     };
   }
 
-  // Fire-and-forget usage increment
   prisma.apiKey
     .update({
       where: { id: apiKey.id },
-      data: { requestsToday: { increment: 1 } },
+      data: { requestsToday: currentCount + 1, resetDate: today },
     })
     .catch(() => {});
 

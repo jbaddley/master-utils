@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -23,9 +24,9 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2.5">
-      <span className="text-[13px] text-muted-foreground hidden sm:block">
+      <Link href="/account" className="text-[13px] text-muted-foreground hidden sm:block hover:text-foreground transition-colors">
         {displayEmail}
-      </span>
+      </Link>
       <Button variant="outline" size="sm" onClick={signOut}>
         Sign out
       </Button>
