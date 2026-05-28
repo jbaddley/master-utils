@@ -3,6 +3,7 @@ import Link from "next/link";
 import { JsonLd } from "./JsonLd";
 import { canonical } from "@/lib/seo";
 import { AdSlot } from "@/components/AdSlot";
+import { AffiliateCards } from "@/components/AffiliateCards";
 
 export type QA = { q: string; a: string };
 export type RelatedLink = { href: string; label: string };
@@ -73,6 +74,8 @@ export function ToolPage(props: {
         ))}
 
         {props.showAds && <AdSlot variant="leaderboard" />}
+
+        <AffiliateCards toolSlug={props.slug} />
       </div>
 
       <JsonLd

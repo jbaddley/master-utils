@@ -24,6 +24,15 @@ const PRO_FEATURES = [
   "Priority processing",
 ];
 
+const BUSINESS_FEATURES = [
+  "Everything in Pro",
+  "Embeddable widget on your domain",
+  "White-label (remove our branding)",
+  "Usage analytics dashboard",
+  "Developer API access",
+  "Priority email support",
+];
+
 function CheckIcon() {
   return (
     <svg
@@ -146,6 +155,34 @@ export default function PricingPage() {
               </button>
             )}
           </div>
+        </div>
+        {/* Business tier */}
+        <div className="pricing-card">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              Business
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="pricing-price">$49</span>
+              <span className="pricing-period">/ mo · per domain</span>
+            </div>
+          </div>
+
+          <ul className="pricing-features" role="list">
+            {BUSINESS_FEATURES.map((f) => (
+              <li key={f} className="pricing-feature">
+                <CheckIcon />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/embed"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted hover:text-foreground h-9 px-4 text-sm font-medium transition-colors w-full text-center"
+          >
+            Get embed code →
+          </Link>
         </div>
       </div>
 

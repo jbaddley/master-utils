@@ -573,6 +573,30 @@
   .batch-empty {
     @apply text-center text-muted-foreground py-8 text-sm;
   }
+
+  /* Affiliate cards */
+  .affiliate-section {
+    @apply mt-8 pt-6 border-t border-border;
+  }
+  .affiliate-heading {
+    @apply text-base font-semibold mb-3;
+  }
+  .affiliate-grid {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .affiliate-card {
+    @apply block no-underline bg-card border border-border rounded-xl p-4 transition-colors hover:border-[#39414f];
+  }
+  .affiliate-label {
+    @apply text-sm font-semibold mb-1;
+  }
+  .affiliate-desc {
+    @apply text-xs text-muted-foreground leading-snug mb-2;
+  }
+  .affiliate-cta {
+    @apply text-xs text-[#6ea8fe];
+  }
 }
 
 .pick-feedback .chip {
