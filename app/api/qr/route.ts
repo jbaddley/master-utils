@@ -22,13 +22,20 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (user.plan !== "pro") return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
 
-  const body = await req.json() as { destination?: string; label?: string };
+  const body = await req.json() as { destination?: string; label?: string; darkColor?: string; lightColor?: string };
   if (!body.destination) return NextResponse.json({ error: "destination required" }, { status: 400 });
 
   // Generate short code without nanoid
   const code = Math.random().toString(36).slice(2, 8);
   const qr = await prisma.qRCode.create({
-    data: { userId: user.id, code, destination: body.destination, label: body.label ?? "" },
+    data: {
+      userId: user.id,
+      code,
+      destination: body.destination,
+      label: body.label ?? "",
+      darkColor: body.darkColor ?? "#000000",
+      lightColor: body.lightColor ?? "#ffffff",
+    },
   });
   return NextResponse.json({ code: qr }, { status: 201 });
 }

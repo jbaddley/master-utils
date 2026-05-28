@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "voice-recorder", "online-voice-recorder",
     // Image tools
     "upscale-image",
+    "ai-image-upscaler", "ai-background-remover", "ai-photo-enhancer",
     // QR tools
     "qr-code-generator", "wifi-qr-code-generator", "qr-code-for-url", "restaurant-menu-qr-code", "vcard-qr-code", "dynamic-qr-code",
     // Video tools

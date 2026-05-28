@@ -13,12 +13,16 @@ type QRCodeRecord = {
   destination: string;
   active: boolean;
   createdAt: string;
+  darkColor: string;
+  lightColor: string;
   _count: { scans: number };
 };
 
 type FormState = {
   label: string;
   destination: string;
+  darkColor: string;
+  lightColor: string;
 };
 
 export default function DynamicQRCodePage() {
@@ -26,7 +30,7 @@ export default function DynamicQRCodePage() {
   const [qrCodes, setQrCodes] = useState<QRCodeRecord[]>([]);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>({ label: "", destination: "" });
+  const [form, setForm] = useState<FormState>({ label: "", destination: "", darkColor: "#000000", lightColor: "#ffffff" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,13 +60,13 @@ export default function DynamicQRCodePage() {
       const res = await fetch("/api/qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination: form.destination, label: form.label }),
+        body: JSON.stringify({ destination: form.destination, label: form.label, darkColor: form.darkColor, lightColor: form.lightColor }),
       });
       const data = await res.json() as { code?: QRCodeRecord; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to create");
       if (data.code) {
         setQrCodes((prev) => [{ ...data.code!, _count: { scans: 0 } }, ...prev]);
-        setForm({ label: "", destination: "" });
+        setForm({ label: "", destination: "", darkColor: "#000000", lightColor: "#ffffff" });
       }
     } catch (e: unknown) {
       setCreateError(e instanceof Error ? e.message : "Failed to create QR code");
@@ -160,6 +164,24 @@ export default function DynamicQRCodePage() {
                   required
                   style={{ flex: "2 1 280px", padding: "0.5rem 0.75rem", border: "1px solid var(--border)", borderRadius: "0.375rem", background: "var(--background)", color: "var(--foreground)" }}
                 />
+                <label style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }}>
+                  QR color
+                  <input
+                    type="color"
+                    value={form.darkColor}
+                    onChange={(e) => setForm((f) => ({ ...f, darkColor: e.target.value }))}
+                    style={{ width: "2.25rem", height: "2.25rem", cursor: "pointer", borderRadius: "0.375rem", border: "1px solid var(--border)", padding: "0.125rem" }}
+                  />
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }}>
+                  Background
+                  <input
+                    type="color"
+                    value={form.lightColor}
+                    onChange={(e) => setForm((f) => ({ ...f, lightColor: e.target.value }))}
+                    style={{ width: "2.25rem", height: "2.25rem", cursor: "pointer", borderRadius: "0.375rem", border: "1px solid var(--border)", padding: "0.125rem" }}
+                  />
+                </label>
                 <Button type="submit" disabled={creating || !form.destination}>
                   {creating ? "Creating…" : "Create QR Code"}
                 </Button>
@@ -179,7 +201,9 @@ export default function DynamicQRCodePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {qrCodes.map((qr) => {
                 const shortUrl = `${SITE_URL}/qr/${qr.code}`;
-                const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shortUrl)}`;
+                const dark = (qr.darkColor ?? "#000000").slice(1);
+                const light = (qr.lightColor ?? "#ffffff").slice(1);
+                const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shortUrl)}&color=${dark}&bgcolor=${light}`;
                 const isEditing = editingId === qr.id;
                 return (
                   <div

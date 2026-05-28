@@ -13,12 +13,14 @@ export default function QRCodeTool() {
   const [text, setText] = useState("https://example.com");
   const [size, setSize] = useState<Size>(256);
   const [ecLevel, setEcLevel] = useState<ECLevel>("M");
+  const [darkColor, setDarkColor] = useState("#000000");
+  const [lightColor, setLightColor] = useState("#ffffff");
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const renderQR = useCallback(
-    (value: string, width: Size, level: ECLevel) => {
+    (value: string, width: Size, level: ECLevel, dark: string, light: string) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       if (!value.trim()) {
@@ -33,7 +35,7 @@ export default function QRCodeTool() {
         width,
         errorCorrectionLevel: level as QRCodeErrorCorrectionLevel,
         margin: 2,
-        color: { dark: "#ffffff", light: "#000000" },
+        color: { dark, light },
       })
         .then(() => setError(null))
         .catch((err: unknown) => {
@@ -46,12 +48,12 @@ export default function QRCodeTool() {
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      renderQR(text, size, ecLevel);
+      renderQR(text, size, ecLevel, darkColor, lightColor);
     }, 300);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [text, size, ecLevel, renderQR]);
+  }, [text, size, ecLevel, darkColor, lightColor, renderQR]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -102,6 +104,26 @@ export default function QRCodeTool() {
             <option value="Q">Q — Quartile (25%)</option>
             <option value="H">H — High (30%)</option>
           </select>
+        </label>
+
+        <label className="field">
+          <span className="field-label">QR color</span>
+          <input
+            type="color"
+            value={darkColor}
+            onChange={(e) => setDarkColor(e.target.value)}
+            style={{ width: "2.5rem", height: "2.25rem", cursor: "pointer", borderRadius: "0.375rem", border: "1px solid var(--border)", padding: "0.125rem" }}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">Background color</span>
+          <input
+            type="color"
+            value={lightColor}
+            onChange={(e) => setLightColor(e.target.value)}
+            style={{ width: "2.5rem", height: "2.25rem", cursor: "pointer", borderRadius: "0.375rem", border: "1px solid var(--border)", padding: "0.125rem" }}
+          />
         </label>
       </section>
 
