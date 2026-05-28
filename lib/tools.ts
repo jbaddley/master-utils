@@ -7,6 +7,9 @@ import {
   LuCrop,
   LuStar,
   LuScissors,
+  LuMusic,
+  LuQrCode,
+  LuWorkflow,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -81,6 +84,27 @@ export const TOOLS: Tool[] = [
     nav: "Batch Resize",
     tagline: "Resize multiple images to the same dimensions in one go.",
     icon: LuScaling,
+  },
+  {
+    slug: "audio-converter",
+    title: "Audio Converter",
+    nav: "Audio",
+    tagline: "Convert MP3, WAV, OGG, M4A, FLAC and more — all in your browser.",
+    icon: LuMusic,
+  },
+  {
+    slug: "qr-code-generator",
+    title: "QR Code Generator",
+    nav: "QR Code",
+    tagline: "Generate QR codes for URLs, WiFi, vCards and more — free.",
+    icon: LuQrCode,
+  },
+  {
+    slug: "workflow",
+    title: "Workflow Templates",
+    nav: "Workflows",
+    tagline: "Multi-step image processing: optimize, crop, resize, and convert in one click.",
+    icon: LuWorkflow,
   },
 ];
 
