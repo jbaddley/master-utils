@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "upscale-image",
     "ai-image-upscaler", "ai-background-remover", "ai-photo-enhancer",
     // QR tools
-    "qr-code-generator", "wifi-qr-code-generator", "qr-code-for-url", "restaurant-menu-qr-code", "vcard-qr-code", "dynamic-qr-code",
+    "qr-code-generator", "wifi-qr-code-generator", "qr-code-for-url", "restaurant-menu-qr-code", "vcard-qr-code", "dynamic-qr-code", "ai-artistic-qr-code-generator",
     // Video tools
     "video-converter", "trim-video", "mute-video", "remove-audio-from-video",
     "video-thumbnail-generator", "video-to-mp3", "video-to-gif",
