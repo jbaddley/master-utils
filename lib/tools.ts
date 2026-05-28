@@ -93,6 +93,13 @@ export const TOOLS: Tool[] = [
     icon: LuMusic,
   },
   {
+    slug: "upscale-image",
+    title: "Upscale Image",
+    nav: "Upscale",
+    tagline: "Enlarge images 2×, 3×, or 4× — smooth for photos, crisp for pixel art.",
+    icon: LuScaling,
+  },
+  {
     slug: "qr-code-generator",
     title: "QR Code Generator",
     nav: "QR Code",

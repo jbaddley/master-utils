@@ -9,7 +9,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const EXTRA_PAGES = [
     "pricing", "history", "api-docs", "embed", "workflow",
     // Audio tools
-    "audio-converter", "mp4-to-mp3", "wav-to-mp3", "ogg-to-mp3", "m4a-to-mp3", "mp3-to-wav", "trim-audio",
+    "audio-converter", "mp4-to-mp3", "wav-to-mp3", "ogg-to-mp3", "m4a-to-mp3", "mp3-to-wav", "trim-audio", "normalize-audio", "remove-silence-from-audio",
+    // Image tools (phase 4+)
+    "upscale-image",
     // QR tools
     "qr-code-generator", "wifi-qr-code-generator", "qr-code-for-url", "restaurant-menu-qr-code", "vcard-qr-code",
   ];
