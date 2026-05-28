@@ -20,6 +20,7 @@ model User {
   sessions      Session[]
   apiKeys       ApiKey[]
   exports       ExportHistory[]
+  qrCodes       QRCode[]
 }
 
 model Account {
@@ -75,4 +76,24 @@ model ExportHistory {
   fileSize  Int
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QRCode {
+  id          String    @id @default(cuid())
+  userId      String
+  code        String    @unique
+  label       String    @default("")
+  destination String
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scans       QRScan[]
+}
+
+model QRScan {
+  id        String   @id @default(cuid())
+  qrCodeId  String
+  scannedAt DateTime @default(now())
+  qrCode    QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
 }
