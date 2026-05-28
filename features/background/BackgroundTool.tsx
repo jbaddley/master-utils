@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { LuDownload } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { imageToImageData, canvasToBlob } from "@/lib/image";
 import { removeBackground } from "@/lib/background";
@@ -76,24 +78,24 @@ export default function BackgroundTool() {
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
             <div className="toolbar-spacer" />
-            <button className="btn btn-primary" disabled={!result} onClick={onDownload}>
+            <Button disabled={!result} onClick={onDownload}>
               <LuDownload />
               Download PNG
-            </button>
+            </Button>
           </div>
 
           <section className="card settings">
-            <label className="field" style={{ flex: "1 1 280px" }}>
+            <div className="field" style={{ flex: "1 1 280px" }}>
               <span className="field-label">Tolerance: {tolerance}</span>
-              <input
-                type="range"
+              <Slider
+                className="mt-2"
                 min={0}
                 max={128}
                 step={4}
-                value={tolerance}
-                onChange={(e) => setTolerance(Number(e.target.value))}
+                value={[tolerance]}
+                onValueChange={(v) => setTolerance(Array.isArray(v) ? v[0] : v)}
               />
-            </label>
+            </div>
             <p className="palette-hint" style={{ alignSelf: "center", flex: "1 1 240px" }}>
               Works on solid / near-solid backgrounds. Raise the tolerance to
               remove soft edges; lower it to protect detail.

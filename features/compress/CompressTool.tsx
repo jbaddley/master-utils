@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { LuDownload } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
@@ -96,10 +98,10 @@ export default function CompressTool() {
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
             <div className="toolbar-spacer" />
-            <button className="btn btn-primary" disabled={!result} onClick={onDownload}>
+            <Button disabled={!result} onClick={onDownload}>
               <LuDownload />
               Download
-            </button>
+            </Button>
           </div>
 
           <section className="card settings">
@@ -112,17 +114,17 @@ export default function CompressTool() {
               </select>
             </label>
             {fmt !== "image/png" && (
-              <label className="field">
+              <div className="field">
                 <span className="field-label">Quality: {Math.round(quality * 100)}%</span>
-                <input
-                  type="range"
+                <Slider
+                  className="mt-2"
                   min={0.1}
                   max={1}
                   step={0.05}
-                  value={quality}
-                  onChange={(e) => setQuality(Number(e.target.value))}
+                  value={[quality]}
+                  onValueChange={(v) => setQuality(Array.isArray(v) ? v[0] : v)}
                 />
-              </label>
+              </div>
             )}
           </section>
 

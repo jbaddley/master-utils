@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { LuDownload, LuFileArchive } from "react-icons/lu";
 import JSZip from "jszip";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
 import { loadImageFile, type LoadedImage } from "@/lib/files";
 import { saveAs } from "@/lib/download";
 import {
@@ -107,14 +108,14 @@ export default function FaviconTool() {
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
             <div className="toolbar-spacer" />
-            <button className="btn" onClick={downloadIco}>
+            <Button variant="outline" onClick={downloadIco}>
               <LuDownload />
               favicon.ico
-            </button>
-            <button className="btn btn-primary" onClick={downloadZip}>
+            </Button>
+            <Button onClick={downloadZip}>
               <LuFileArchive />
               Download icon pack (.zip)
-            </button>
+            </Button>
           </div>
 
           <div className="pane">

@@ -3,6 +3,7 @@
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { LuDownload, LuCheck, LuRotateCcw } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
 import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { imageToImageData, canvasToBlob } from "@/lib/image";
 import { cropImageData } from "@/lib/crop";
@@ -190,19 +191,19 @@ export default function CropTool() {
         <>
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
-            <button className="btn" onClick={reset} title="Reset to the original">
+            <Button variant="outline" onClick={reset} title="Reset to the original">
               <LuRotateCcw />
               Reset
-            </button>
+            </Button>
             <div className="toolbar-spacer" />
-            <button className="btn" onClick={applyCrop}>
+            <Button variant="outline" onClick={applyCrop}>
               <LuCheck />
               Apply crop
-            </button>
-            <button className="btn btn-primary" onClick={onDownload}>
+            </Button>
+            <Button onClick={onDownload}>
               <LuDownload />
               Download
-            </button>
+            </Button>
           </div>
 
           <section className="card settings">
@@ -210,9 +211,9 @@ export default function CropTool() {
               <span className="field-label">Aspect ratio</span>
               <div className="row">
                 {ASPECTS.map((a) => (
-                  <button key={a.label} className="btn sm" onClick={() => applyAspect(a.ratio)}>
+                  <Button key={a.label} variant="outline" size="sm" onClick={() => applyAspect(a.ratio)}>
                     {a.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

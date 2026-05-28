@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { LuDownload, LuLink, LuLink2Off } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
@@ -105,16 +107,16 @@ export default function ResizeTool() {
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
             <div className="toolbar-spacer" />
-            <button className="btn btn-primary" disabled={!result} onClick={onDownload}>
+            <Button disabled={!result} onClick={onDownload}>
               <LuDownload />
               Download
-            </button>
+            </Button>
           </div>
 
           <section className="card settings">
             <label className="field">
               <span className="field-label">Width (px)</span>
-              <input
+              <Input
                 type="number"
                 min={1}
                 value={w}
@@ -123,7 +125,7 @@ export default function ResizeTool() {
             </label>
             <label className="field">
               <span className="field-label">Height (px)</span>
-              <input
+              <Input
                 type="number"
                 min={1}
                 value={h}
@@ -132,14 +134,14 @@ export default function ResizeTool() {
             </label>
             <div className="field">
               <span className="field-label">Aspect</span>
-              <button
-                className={`btn ${lock ? "toggle on" : "toggle"}`}
+              <Button
+                variant={lock ? "default" : "outline"}
                 onClick={() => setLock((v) => !v)}
                 title="Lock the width-to-height ratio"
               >
                 {lock ? <LuLink /> : <LuLink2Off />}
                 {lock ? "Locked" : "Free"}
-              </button>
+              </Button>
             </div>
             <label className="field">
               <span className="field-label">Format</span>
@@ -153,9 +155,9 @@ export default function ResizeTool() {
               <span className="field-label">Scale</span>
               <div className="row">
                 {[25, 50, 75].map((p) => (
-                  <button key={p} className="btn sm" onClick={() => scale(p)}>
+                  <Button key={p} variant="outline" size="sm" onClick={() => scale(p)}>
                     {p}%
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

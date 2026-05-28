@@ -26,6 +26,9 @@ import { flipImage } from "@/lib/transform";
 import { formatBytes } from "@/lib/format";
 import { ACCEPT_ATTR, isSupportedImage, UNSUPPORTED_MESSAGE } from "@/lib/files";
 import { saveAs } from "@/lib/download";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   LuPipette,
   LuEraser,
@@ -554,24 +557,20 @@ export default function SvgTool() {
             e.target.value = "";
           }}
         />
-        <button className="btn" onClick={() => inputRef.current?.click()}>
+        <Button variant="outline" onClick={() => inputRef.current?.click()}>
           <LuImagePlus />
           {loaded ? "Change image…" : "Select image…"}
-        </button>
+        </Button>
         <div className="actionbar-spacer" />
         <div className="ab-actions">
-          <button
-            className="btn btn-primary"
-            disabled={!sourceData || converting}
-            onClick={onConvert}
-          >
+          <Button disabled={!sourceData || converting} onClick={onConvert}>
             <LuSparkles />
             {converting ? "Converting…" : "Convert to SVG"}
-          </button>
-          <button className="btn" disabled={!svg} onClick={onDownload}>
+          </Button>
+          <Button variant="outline" disabled={!svg} onClick={onDownload}>
             <LuDownload />
             Download
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -603,14 +602,15 @@ export default function SvgTool() {
 
           <div className="field">
             <span className="field-label">Output</span>
-            <button
-              className={`btn toggle ${cleanup ? "on" : ""}`}
+            <Button
+              variant={cleanup ? "default" : "outline"}
+              className="justify-start"
               onClick={() => setCleanup((v) => !v)}
               title="Run SVGO to merge paths, simplify curves and shrink the file"
             >
               <LuWandSparkles />
               {cleanup ? "Clean up: on" : "Clean up: off"}
-            </button>
+            </Button>
           </div>
         </section>
       )}
@@ -619,22 +619,21 @@ export default function SvgTool() {
         <section className="card palette">
           <div className="palette-controls">
             <label className="toggle">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={usePalette}
-                onChange={(e) => setUsePalette(e.target.checked)}
+                onCheckedChange={(c) => setUsePalette(c === true)}
               />
               Trace with image palette
             </label>
             <label className="count">
               Colors: {colorCount}
-              <input
-                type="range"
+              <Slider
+                className="w-[150px]"
                 min={2}
                 max={24}
-                value={colorCount}
+                value={[colorCount]}
                 disabled={!usePalette}
-                onChange={(e) => setColorCount(Number(e.target.value))}
+                onValueChange={(v) => setColorCount(Array.isArray(v) ? v[0] : v)}
               />
             </label>
             <span className="palette-hint">
@@ -732,62 +731,65 @@ export default function SvgTool() {
                       ["crop", LuCrop, "Crop", "Adjustable crop box"],
                     ] as const
                   ).map(([key, Icon, label, tip]) => (
-                    <button
+                    <Button
                       key={key}
-                      className={`tool ${canvasTool === key ? "on" : ""}`}
+                      variant={canvasTool === key ? "default" : "secondary"}
+                      size="sm"
                       onClick={() => setCanvasTool(key)}
                       title={tip}
                     >
                       <Icon />
                       {label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
 
                 <div className="tool-group" role="group" aria-label="Adjust">
-                  <button className="tool" disabled={!sourceData} onClick={removeBg} title="Flood-fill the outer background to transparent">
+                  <Button variant="secondary" size="sm" disabled={!sourceData} onClick={removeBg} title="Flood-fill the outer background to transparent">
                     <LuScissors />
                     Remove BG
-                  </button>
-                  <button className="tool" disabled={!sourceData} onClick={trimToContent} title="Trim transparent margins so the SVG is tightly framed">
+                  </Button>
+                  <Button variant="secondary" size="sm" disabled={!sourceData} onClick={trimToContent} title="Trim transparent margins so the SVG is tightly framed">
                     <LuMinimize2 />
                     Trim
-                  </button>
-                  <button className="tool" disabled={!sourceData} onClick={() => flip("h")} title="Flip horizontally">
+                  </Button>
+                  <Button variant="secondary" size="sm" disabled={!sourceData} onClick={() => flip("h")} title="Flip horizontally">
                     <LuFlipHorizontal2 />
                     Flip
-                  </button>
-                  <button className="tool" disabled={!sourceData} onClick={() => flip("v")} title="Flip vertically">
+                  </Button>
+                  <Button variant="secondary" size="sm" disabled={!sourceData} onClick={() => flip("v")} title="Flip vertically">
                     <LuFlipVertical2 />
                     Flip
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="tool-group" role="group" aria-label="View">
-                  <button className="tool" onClick={undoEdit} disabled={historyLen === 0} title="Undo last edit">
+                  <Button variant="secondary" size="sm" onClick={undoEdit} disabled={historyLen === 0} title="Undo last edit">
                     <LuUndo2 />
                     Undo
-                  </button>
-                  <button
-                    className={`tool ${magnifier ? "on" : ""}`}
+                  </Button>
+                  <Button
+                    variant={magnifier ? "default" : "secondary"}
+                    size="sm"
                     onClick={() => setMagnifier((m) => !m)}
                     title="Zoom in on individual pixels while hovering"
                   >
                     <LuZoomIn />
                     Magnifier
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="tool-group" role="group" aria-label="Export">
-                  <button
-                    className="tool"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={onDownloadPng}
                     disabled={!sourceData}
                     title="Download the edited image as a PNG"
                   >
                     <LuImageDown />
                     PNG
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -795,21 +797,21 @@ export default function SvgTool() {
                 {canvasTool === "erase" && (
                   <label className="opt" title="How close in color a pixel must be to get erased">
                     Tolerance
-                    <input type="range" min={0} max={128} step={4} value={eraseTolerance} onChange={(e) => setEraseTolerance(Number(e.target.value))} />
+                    <Slider className="w-[130px]" min={0} max={128} step={4} value={[eraseTolerance]} onValueChange={(v) => setEraseTolerance(Array.isArray(v) ? v[0] : v)} />
                     <b>{eraseTolerance}</b>
                   </label>
                 )}
                 {canvasTool === "brush" && (
                   <label className="opt" title="Eraser size">
                     Eraser size
-                    <input type="range" min={2} max={100} step={2} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} />
+                    <Slider className="w-[130px]" min={2} max={100} step={2} value={[brushSize]} onValueChange={(v) => setBrushSize(Array.isArray(v) ? v[0] : v)} />
                     <b>{brushSize}px</b>
                   </label>
                 )}
                 {canvasTool === "crop" && (
                   <div className="opt-buttons">
-                    <button className="btn sm btn-primary" onClick={commitCrop}>Apply crop</button>
-                    <button className="btn sm" onClick={resetCropBox}>Reset box</button>
+                    <Button size="sm" onClick={commitCrop}>Apply crop</Button>
+                    <Button variant="outline" size="sm" onClick={resetCropBox}>Reset box</Button>
                   </div>
                 )}
                 {canvasTool === "pick" && pickInfo && (
@@ -879,18 +881,14 @@ export default function SvgTool() {
               </span>
             </div>
             <div className="panel-controls panel-actions">
-              <button
-                className="btn btn-primary"
-                disabled={!sourceData || converting}
-                onClick={onConvert}
-              >
+              <Button disabled={!sourceData || converting} onClick={onConvert}>
                 <LuSparkles />
                 {converting ? "Converting…" : "Convert to SVG"}
-              </button>
-              <button className="btn" disabled={!svg} onClick={onDownload}>
+              </Button>
+              <Button variant="outline" disabled={!svg} onClick={onDownload}>
                 <LuDownload />
                 Download
-              </button>
+              </Button>
             </div>
             <div className="canvas checker">
               {svg ? (

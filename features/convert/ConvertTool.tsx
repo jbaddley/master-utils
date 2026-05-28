@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LuDownload } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
+import { Button } from "@/components/ui/button";
 import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
@@ -87,10 +88,10 @@ export default function ConvertTool({
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
             <div className="toolbar-spacer" />
-            <button className="btn btn-primary" disabled={!result} onClick={onDownload}>
+            <Button disabled={!result} onClick={onDownload}>
               <LuDownload />
               Download {toLabel}
-            </button>
+            </Button>
           </div>
 
           <div className="duo">

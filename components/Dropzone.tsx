@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { LuImagePlus } from "react-icons/lu";
 import { ACCEPT_ATTR, isSupportedImage, UNSUPPORTED_MESSAGE } from "@/lib/files";
+import { Button } from "@/components/ui/button";
 
 export function Dropzone({
   onFile,
@@ -75,10 +76,10 @@ export function ChangeImageButton({ onFile }: { onFile: (file: File) => void }) 
           e.target.value = "";
         }}
       />
-      <button className="btn" onClick={() => inputRef.current?.click()}>
+      <Button variant="outline" onClick={() => inputRef.current?.click()}>
         <LuImagePlus />
         Change image…
-      </button>
+      </Button>
     </>
   );
 }
