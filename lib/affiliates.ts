@@ -172,6 +172,82 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Start free on Buzzsprout →",
     },
   ],
+  "video-converter": [
+    {
+      label: "DaVinci Resolve",
+      description: "Professional free video editor for color grading, editing, and effects.",
+      href: "https://www.blackmagicdesign.com/products/davinciresolve",
+      cta: "Download free →",
+    },
+  ],
+  "compress-video": [
+    {
+      label: "Vimeo",
+      description: "Host and share your compressed video with Vimeo's professional player.",
+      href: "https://vimeo.com/",
+      cta: "Try Vimeo free →",
+    },
+  ],
+  "compress-video-for-web": [
+    {
+      label: "Cloudflare Stream",
+      description: "Stream optimized video at scale with Cloudflare's video delivery network.",
+      href: "https://www.cloudflare.com/products/cloudflare-stream/",
+      cta: "Explore Cloudflare Stream →",
+    },
+  ],
+  "video-to-gif": [
+    {
+      label: "Canva",
+      description: "Animate your GIF further or embed it in a social media design.",
+      href: "https://www.canva.com/",
+      cta: "Try Canva free →",
+    },
+  ],
+  "video-to-mp3": [
+    {
+      label: "Descript",
+      description: "Edit your extracted audio like a text document with AI transcription.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+    {
+      label: "Buzzsprout",
+      description: "Publish your extracted audio as a podcast episode on Buzzsprout.",
+      href: "https://www.buzzsprout.com/",
+      cta: "Start free on Buzzsprout →",
+    },
+  ],
+  "trim-video": [
+    {
+      label: "DaVinci Resolve",
+      description: "Take your trimmed clip further with professional editing in DaVinci Resolve.",
+      href: "https://www.blackmagicdesign.com/products/davinciresolve",
+      cta: "Download free →",
+    },
+  ],
+  "voice-recorder": [
+    {
+      label: "Descript",
+      description: "Edit your recording with AI-powered text-based audio editing.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+    {
+      label: "Buzzsprout",
+      description: "Publish your recording as a podcast with Buzzsprout's easy hosting.",
+      href: "https://www.buzzsprout.com/",
+      cta: "Start free on Buzzsprout →",
+    },
+  ],
+  "merge-audio": [
+    {
+      label: "Descript",
+      description: "Edit and publish your merged audio with AI-powered tools.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+  ],
   "workflow": [
     {
       label: "Shopify",

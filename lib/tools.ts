@@ -10,6 +10,9 @@ import {
   LuMusic,
   LuQrCode,
   LuWorkflow,
+  LuVideo,
+  LuClapperboard,
+  LuMic,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -98,6 +101,27 @@ export const TOOLS: Tool[] = [
     nav: "Upscale",
     tagline: "Enlarge images 2×, 3×, or 4× — smooth for photos, crisp for pixel art.",
     icon: LuScaling,
+  },
+  {
+    slug: "video-converter",
+    title: "Video Converter",
+    nav: "Video",
+    tagline: "Convert MP4, WebM, and MOV — trim, mute, compress, and extract audio.",
+    icon: LuVideo,
+  },
+  {
+    slug: "video-to-gif",
+    title: "Video to GIF",
+    nav: "Video to GIF",
+    tagline: "Convert a video clip to a smooth animated GIF with palette optimization.",
+    icon: LuClapperboard,
+  },
+  {
+    slug: "voice-recorder",
+    title: "Voice Recorder",
+    nav: "Record",
+    tagline: "Record audio directly in your browser — no software needed.",
+    icon: LuMic,
   },
   {
     slug: "qr-code-generator",
