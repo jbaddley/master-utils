@@ -3,6 +3,8 @@ import Script from "next/script";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { AuthProvider } from "@/context/AuthContext";
+import { AuthModal } from "@/components/AuthModal";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,9 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <AuthProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+          <AuthModal />
+        </AuthProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
             <Script

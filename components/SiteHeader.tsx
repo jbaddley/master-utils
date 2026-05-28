@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TOOLS } from "@/lib/tools";
+import { UserMenu } from "@/components/UserMenu";
 
 export function SiteHeader() {
   return (
@@ -14,6 +15,7 @@ export function SiteHeader() {
           </Link>
         ))}
       </nav>
+      <UserMenu />
     </header>
   );
 }

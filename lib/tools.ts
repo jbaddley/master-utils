@@ -68,6 +68,20 @@ export const TOOLS: Tool[] = [
     tagline: "Erase a solid background to transparent in one click.",
     icon: LuScissors,
   },
+  {
+    slug: "batch-compress",
+    title: "Batch Compress",
+    nav: "Batch Compress",
+    tagline: "Compress multiple images at once and download as a ZIP.",
+    icon: LuArchive,
+  },
+  {
+    slug: "batch-resize",
+    title: "Batch Resize",
+    nav: "Batch Resize",
+    tagline: "Resize multiple images to the same dimensions in one go.",
+    icon: LuScaling,
+  },
 ];
 
 /** Format-conversion pairs that each get their own SEO landing page. */

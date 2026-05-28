@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { JsonLd } from "./JsonLd";
 import { canonical } from "@/lib/seo";
+import { AdSlot } from "@/components/AdSlot";
 
 export type QA = { q: string; a: string };
 export type RelatedLink = { href: string; label: string };
@@ -21,6 +22,7 @@ export function ToolPage(props: {
   children: ReactNode;
   body?: ReactNode;
   related?: RelatedLink[];
+  showAds?: boolean;
 }) {
   const url = canonical(props.slug);
   return (
@@ -41,6 +43,8 @@ export function ToolPage(props: {
         </ol>
 
         {props.body}
+
+        {props.showAds && <AdSlot variant="rectangle" />}
 
         <p className="privacy">
           Private by design — all processing happens in your browser. Your
@@ -67,6 +71,8 @@ export function ToolPage(props: {
             <p>{f.a}</p>
           </div>
         ))}
+
+        {props.showAds && <AdSlot variant="leaderboard" />}
       </div>
 
       <JsonLd
