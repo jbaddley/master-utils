@@ -74,6 +74,22 @@ const ENDPOINTS = [
   -F "file=@logo.png" \\
   --output favicons.zip`,
   },
+  {
+    method: "POST",
+    path: "/api/v1/qr-code",
+    description: "Generate a QR code PNG for any text or URL.",
+    params: [
+      { name: "text", type: "string", required: true, desc: "The text or URL to encode" },
+      { name: "size", type: "integer", required: false, desc: "Output size in px (64–2048) — default: 256" },
+      { name: "error_correction", type: "string", required: false, desc: '"L" | "M" | "Q" | "H" — default: M' },
+      { name: "margin", type: "integer", required: false, desc: "Quiet zone modules (1–10) — default: 2" },
+    ],
+    curl: `curl -X POST ${BASE}/qr-code \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -F "text=https://example.com" \\
+  -F "size=512" \\
+  --output qrcode.png`,
+  },
 ];
 
 export default function ApiDocsPage() {

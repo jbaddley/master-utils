@@ -142,6 +142,36 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Design with Canva →",
     },
   ],
+  "upscale-image": [
+    {
+      label: "Adobe Lightroom",
+      description: "Enhance, retouch, and export your upscaled photos with Lightroom.",
+      href: "https://www.adobe.com/products/photoshop-lightroom.html",
+      cta: "Try Lightroom free →",
+    },
+  ],
+  "normalize-audio": [
+    {
+      label: "Buzzsprout",
+      description: "Host and distribute your normalized podcast with Buzzsprout.",
+      href: "https://www.buzzsprout.com/",
+      cta: "Start free on Buzzsprout →",
+    },
+  ],
+  "remove-silence-from-audio": [
+    {
+      label: "Descript",
+      description: "Remove silence and edit audio visually — like editing a text document.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+    {
+      label: "Buzzsprout",
+      description: "Publish your cleaned-up podcast episode on Buzzsprout.",
+      href: "https://www.buzzsprout.com/",
+      cta: "Start free on Buzzsprout →",
+    },
+  ],
   "workflow": [
     {
       label: "Shopify",
