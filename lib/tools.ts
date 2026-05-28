@@ -68,6 +68,20 @@ export const TOOLS: Tool[] = [
     tagline: "Erase a solid background to transparent in one click.",
     icon: LuScissors,
   },
+  {
+    slug: "batch-compress",
+    title: "Batch Compress",
+    nav: "Batch Compress",
+    tagline: "Compress multiple images at once and download as a ZIP.",
+    icon: LuArchive,
+  },
+  {
+    slug: "batch-resize",
+    title: "Batch Resize",
+    nav: "Batch Resize",
+    tagline: "Resize multiple images to the same dimensions in one go.",
+    icon: LuScaling,
+  },
 ];
 
 /** Format-conversion pairs that each get their own SEO landing page. */
@@ -80,6 +94,19 @@ export const CONVERSIONS = [
   "webp-to-jpg",
   "gif-to-png",
   "bmp-to-png",
+  "gif-to-jpg",
+  "gif-to-webp",
+  "bmp-to-jpg",
+  "bmp-to-webp",
+  "avif-to-jpg",
+  "avif-to-png",
+  "avif-to-webp",
+  "png-to-avif",
+  "jpg-to-avif",
+  "webp-to-avif",
+  "svg-to-png",
+  "svg-to-jpg",
+  "svg-to-webp",
 ] as const;
 
 export type Conversion = (typeof CONVERSIONS)[number];
@@ -91,6 +118,8 @@ const MIME: Record<string, string> = {
   webp: "image/webp",
   gif: "image/gif",
   bmp: "image/bmp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
 };
 const LABEL: Record<string, string> = {
   png: "PNG",
@@ -99,6 +128,8 @@ const LABEL: Record<string, string> = {
   webp: "WebP",
   gif: "GIF",
   bmp: "BMP",
+  avif: "AVIF",
+  svg: "SVG",
 };
 const EXT: Record<string, string> = {
   png: ".png",
@@ -107,6 +138,8 @@ const EXT: Record<string, string> = {
   webp: ".webp",
   gif: ".gif",
   bmp: ".bmp",
+  avif: ".avif",
+  svg: ".svg",
 };
 
 export type ConversionInfo = {
@@ -118,12 +151,14 @@ export type ConversionInfo = {
   toExt: string;
 };
 
+const UNSUPPORTED_OUTPUT = new Set(["svg", "gif", "bmp"]);
+
 /** Parse a slug like "png-to-jpg" into source/target format info. */
 export function parseConversion(slug: string): ConversionInfo | null {
   const m = slug.match(/^([a-z]+)-to-([a-z]+)$/);
   if (!m) return null;
   const [, from, to] = m;
-  if (!LABEL[from] || !LABEL[to] || !MIME[to]) return null;
+  if (!LABEL[from] || !LABEL[to] || !MIME[to] || UNSUPPORTED_OUTPUT.has(to)) return null;
   return {
     fromKey: from,
     toKey: to,

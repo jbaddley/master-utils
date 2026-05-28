@@ -17,7 +17,20 @@ const EXT: Record<Fmt, string> = {
   "image/webp": ".webp",
 };
 
-export default function ResizeTool() {
+const SOCIAL_PRESETS = [
+  { id: "ig-post",     label: "Instagram Post",      w: 1080, h: 1080 },
+  { id: "ig-story",    label: "Instagram Story/Reel", w: 1080, h: 1920 },
+  { id: "yt-thumb",    label: "YouTube Thumbnail",    w: 1280, h: 720  },
+  { id: "yt-banner",   label: "YouTube Channel Art",  w: 2560, h: 1440 },
+  { id: "li-banner",   label: "LinkedIn Banner",      w: 1584, h: 396  },
+  { id: "li-post",     label: "LinkedIn Post",        w: 1200, h: 627  },
+  { id: "tt-video",    label: "TikTok/Reel",          w: 1080, h: 1920 },
+  { id: "fb-cover",    label: "Facebook Cover",       w: 820,  h: 312  },
+  { id: "tw-header",   label: "X (Twitter) Header",   w: 1500, h: 500  },
+  { id: "og-image",    label: "Open Graph / Meta",    w: 1200, h: 630  },
+] as const;
+
+export default function ResizeTool({ defaultPresetId }: { defaultPresetId?: string }) {
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [w, setW] = useState(0);
   const [h, setH] = useState(0);
@@ -35,8 +48,17 @@ export default function ResizeTool() {
         if (prev) URL.revokeObjectURL(prev.url);
         return img;
       });
-      setW(img.width);
-      setH(img.height);
+      const preset = defaultPresetId
+        ? SOCIAL_PRESETS.find((p) => p.id === defaultPresetId)
+        : undefined;
+      if (preset) {
+        setW(preset.w);
+        setH(preset.h);
+        setLock(false);
+      } else {
+        setW(img.width);
+        setH(img.height);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not read that image.");
     }
@@ -157,6 +179,25 @@ export default function ResizeTool() {
                 {[25, 50, 75].map((p) => (
                   <Button key={p} variant="outline" size="sm" onClick={() => scale(p)}>
                     {p}%
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <span className="field-label">Social media presets</span>
+              <div className="row" style={{ flexWrap: "wrap", gap: "0.375rem" }}>
+                {SOCIAL_PRESETS.map((preset) => (
+                  <Button
+                    key={preset.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setW(preset.w);
+                      setH(preset.h);
+                      setLock(false);
+                    }}
+                  >
+                    {preset.label}
                   </Button>
                 ))}
               </div>

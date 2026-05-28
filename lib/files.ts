@@ -1,6 +1,6 @@
 // Raster formats the browser can reliably decode to a canvas.
 export const ACCEPT_ATTR =
-  "image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif";
+  "image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml";
 
 const ALLOWED_MIME = new Set([
   "image/png",
@@ -9,8 +9,9 @@ const ALLOWED_MIME = new Set([
   "image/gif",
   "image/bmp",
   "image/avif",
+  "image/svg+xml",
 ]);
-const ALLOWED_EXT = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
+const ALLOWED_EXT = /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i;
 
 export function isSupportedImage(file: File): boolean {
   // Trust a known MIME type; fall back to extension when the OS supplies none.
@@ -18,7 +19,7 @@ export function isSupportedImage(file: File): boolean {
 }
 
 export const UNSUPPORTED_MESSAGE =
-  "Unsupported file. Choose a PNG, JPG, WebP, GIF, BMP, or AVIF image.";
+  "Unsupported file. Choose a PNG, JPG, WebP, GIF, BMP, AVIF, or SVG image.";
 
 export type LoadedImage = {
   img: HTMLImageElement;
