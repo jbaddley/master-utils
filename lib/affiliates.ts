@@ -88,6 +88,74 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Remove background →",
     },
   ],
+  "audio-converter": [
+    {
+      label: "Descript",
+      description: "Edit your audio and video like a document with AI-powered transcription.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+    {
+      label: "Adobe Audition",
+      description: "Professional audio editing, noise reduction, and mastering.",
+      href: "https://www.adobe.com/products/audition.html",
+      cta: "Try Adobe Audition →",
+    },
+  ],
+  "mp4-to-mp3": [
+    {
+      label: "Descript",
+      description: "Transcribe and edit your audio or podcast recording with AI.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+  ],
+  "trim-audio": [
+    {
+      label: "Descript",
+      description: "Cut, trim, and edit audio using a text-based interface.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+  ],
+  "qr-code-generator": [
+    {
+      label: "Canva",
+      description: "Design QR code marketing materials with your brand colors.",
+      href: "https://www.canva.com/",
+      cta: "Try Canva free →",
+    },
+  ],
+  "wifi-qr-code-generator": [
+    {
+      label: "Canva",
+      description: "Place your WiFi QR code on a branded sign or poster.",
+      href: "https://www.canva.com/",
+      cta: "Design a poster →",
+    },
+  ],
+  "restaurant-menu-qr-code": [
+    {
+      label: "Canva",
+      description: "Design a beautiful menu or table card featuring your QR code.",
+      href: "https://www.canva.com/",
+      cta: "Design with Canva →",
+    },
+  ],
+  "workflow": [
+    {
+      label: "Shopify",
+      description: "Launch your online store with Shopify and use optimized product images.",
+      href: "https://www.shopify.com/",
+      cta: "Start free trial →",
+    },
+    {
+      label: "Later",
+      description: "Schedule your perfectly-processed social media images with Later.",
+      href: "https://later.com/",
+      cta: "Try Later free →",
+    },
+  ],
 };
 
 export function getAffiliates(toolSlug: string): AffiliateLink[] {
