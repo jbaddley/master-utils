@@ -49,6 +49,13 @@ export const TOOLS: Tool[] = [
     icon: LuShapes,
   },
   {
+    slug: "svg-to-image",
+    title: "SVG to Image",
+    nav: "SVG to Image",
+    tagline: "Export any SVG as PNG, JPG, WebP or AVIF at any size.",
+    icon: LuArrowRightLeft,
+  },
+  {
     slug: "compress-image",
     title: "Compress Image",
     nav: "Compress",

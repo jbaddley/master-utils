@@ -142,6 +142,7 @@ const CATEGORY_BY_TOOL_SLUG: Record<string, ToolCategory> = {
   "batch-compress": "image",
   "batch-resize": "image",
   "upscale-image": "image",
+  "svg-to-image": "image",
   "convert-audio": "audio",
   "voice-recorder": "audio",
   "convert-video": "video",

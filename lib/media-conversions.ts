@@ -54,9 +54,13 @@ export const IMAGE_OUTPUT_BY_INPUT: Record<string, string[]> = {
 
 export const IMAGE_INPUT_FORMATS = ["png", "jpg", "webp", "gif", "bmp", "avif", "svg"] as const;
 
+// SVG→* conversions are handled by the dedicated /svg-to-image/ page
+const SKIP_FROM_FORMATS = new Set(["svg"]);
+
 function buildImageConversions(): MediaConversionInfo[] {
   const slugs: MediaConversionInfo[] = [];
   for (const [from, outputs] of Object.entries(IMAGE_OUTPUT_BY_INPUT)) {
+    if (SKIP_FROM_FORMATS.has(from)) continue;
     for (const to of outputs) {
       if (from === to) continue;
       if (!IMAGE_MIME[to]) continue;
@@ -203,7 +207,7 @@ export function getHubSlug(media: MediaKind): string {
 
 /** Shown in nav menus alongside converter hubs (SEO pages stay in sitemap/search). */
 export const POPULAR_CONVERSION_SLUGS: Record<MediaKind, readonly string[]> = {
-  image: ["png-to-jpg", "jpg-to-png", "webp-to-png", "png-to-webp", "jpg-to-webp", "png-to-avif", "svg-to-png"],
+  image: ["png-to-jpg", "jpg-to-png", "webp-to-png", "png-to-webp", "jpg-to-webp", "png-to-avif"],
   audio: ["mp4-to-mp3", "wav-to-mp3", "video-to-mp3", "mp3-to-wav", "m4a-to-mp3"],
   video: ["mp4-to-webm", "mov-to-mp4", "webm-to-mp4"],
 };
