@@ -25,10 +25,23 @@ export default function ImageToPdfTool() {
   const [result, setResult] = useState<Uint8Array | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
+  /** Returns true for any image file we can handle, including HEIC/HEIF and SVG. */
+  const isImageFile = (f: File): boolean => {
+    if (f.type.startsWith("image/")) return true;
+    const name = f.name.toLowerCase();
+    return (
+      name.endsWith(".heic") ||
+      name.endsWith(".heif") ||
+      name.endsWith(".svg") ||
+      name.endsWith(".avif") ||
+      name.endsWith(".webp")
+    );
+  };
+
   const addFiles = (incoming: File[]) => {
-    const images = incoming.filter((f) => f.type.startsWith("image/"));
+    const images = incoming.filter(isImageFile);
     if (images.length === 0) {
-      setError("Please add image files (JPG, PNG, WebP, etc.).");
+      setError("Please add image files (JPG, PNG, WebP, SVG, HEIC, etc.).");
       return;
     }
     setError(null);
@@ -115,7 +128,7 @@ export default function ImageToPdfTool() {
 
       <FileDropzone
         label="Drop images to pack into a PDF"
-        accept="image/*"
+        accept="image/*,.heic,.heif,.svg"
         multiple
         onFiles={addFiles}
         onError={setError}
@@ -174,7 +187,7 @@ export default function ImageToPdfTool() {
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.svg"
               multiple
               hidden
               onChange={(e) => {

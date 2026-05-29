@@ -23,13 +23,20 @@ export function FileDropzone({
     if (!list?.length) return;
     const files = Array.from(list);
     if (accept) {
-      const exts = accept.split(",").map((a) => a.trim().toLowerCase());
-      const bad = files.find((f) => {
-        const mimeOk = exts.some((e) => e.includes("/") && f.type && e === f.type);
-        const extOk = exts.some((e) => e.startsWith(".") && f.name.toLowerCase().endsWith(e));
-        return !mimeOk && !extOk && !exts.includes(f.type);
-      });
-      if (bad && !files.every((f) => exts.some((e) => (e.startsWith(".") && f.name.toLowerCase().endsWith(e)) || f.type === e || (e.includes("/") && f.type === e)))) {
+      const tokens = accept.split(",").map((a) => a.trim().toLowerCase());
+      /** Returns true when the file matches any accept token. */
+      const isAccepted = (f: File): boolean =>
+        tokens.some((t) => {
+          // Wildcard MIME — "image/*" matches "image/png", "video/*" matches "video/mp4" …
+          if (t.endsWith("/*")) return f.type.startsWith(t.slice(0, -1));
+          // Exact MIME — "image/jpeg"
+          if (t.includes("/")) return f.type === t;
+          // Extension — ".heic", ".svg"
+          if (t.startsWith(".")) return f.name.toLowerCase().endsWith(t);
+          return false;
+        });
+      const bad = files.find((f) => !isAccepted(f));
+      if (bad) {
         onError?.(`Unsupported file type: ${bad.name}`);
         return;
       }
