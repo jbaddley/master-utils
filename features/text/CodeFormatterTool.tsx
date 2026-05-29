@@ -102,6 +102,18 @@ export default function CodeFormatterTool() {
           </select>
         </div>
 
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setInput("");
+            setOutput("");
+            setError(null);
+          }}
+          disabled={!input && !output}
+        >
+          Clear
+        </Button>
         <Button type="button" onClick={() => void format()} disabled={loading || !input.trim()}>
           {loading ? "Formatting…" : "Format"}
         </Button>

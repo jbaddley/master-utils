@@ -70,7 +70,7 @@ export default function HistoryPage() {
       ) : fetching ? (
         <div className="batch-empty">Loading history…</div>
       ) : error ? (
-        <div className="batch-empty" style={{ color: "var(--destructive)" }}>{error}</div>
+        <div className="error">{error}</div>
       ) : exports.length === 0 ? (
         <div className="batch-empty">
           Your export history will appear here once you start downloading files.

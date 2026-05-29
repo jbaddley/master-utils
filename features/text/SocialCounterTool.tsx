@@ -112,7 +112,7 @@ export default function SocialCounterTool() {
         aria-label="Post text"
       />
 
-      <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
+      <p className="mt-2 text-left text-base font-semibold tabular-nums">
         {count.toLocaleString()} character{count !== 1 ? "s" : ""}
       </p>
 

@@ -207,7 +207,7 @@ export default function BackgroundTool() {
                     <select
                       value={gradientDir}
                       onChange={(e) => setGradientDir(e.target.value as GradientDir)}
-                      style={{ padding: "0.25rem 0.5rem", borderRadius: "0.375rem", border: "1px solid #e2e8f0", fontSize: "0.875rem" }}
+                      style={{ padding: "0.25rem 0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", fontSize: "0.875rem" }}
                     >
                       <option value="horizontal">Horizontal</option>
                       <option value="vertical">Vertical</option>

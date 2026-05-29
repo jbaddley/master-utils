@@ -44,6 +44,7 @@ export default function PdfReorderTool() {
   const [error, setError] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [renderProgress, setRenderProgress] = useState<{ current: number; total: number } | null>(null);
 
   const loadFile = useCallback(async (files: File[]) => {
     const file = files[0];
@@ -61,13 +62,17 @@ export default function PdfReorderTool() {
       await doc.destroy();
 
       const thumbs: PageThumb[] = [];
+      setRenderProgress({ current: 0, total: count });
       for (let i = 1; i <= count; i++) {
+        setRenderProgress({ current: i, total: count });
         const dataUrl = await renderThumbnail(pdfJs, bytes, i);
         thumbs.push({ originalIndex: i, dataUrl });
       }
+      setRenderProgress(null);
       setPages(thumbs);
       setStatus("ready");
     } catch (e) {
+      setRenderProgress(null);
       setStatus("error");
       setError(e instanceof Error ? e.message : "Could not load PDF.");
     }
@@ -148,7 +153,11 @@ export default function PdfReorderTool() {
       ) : null}
 
       {status === "loading" && (
-        <div className="placeholder">Rendering page thumbnails…</div>
+        <div className="placeholder">
+          {renderProgress
+            ? `Rendering page ${renderProgress.current} of ${renderProgress.total}…`
+            : "Rendering page thumbnails…"}
+        </div>
       )}
 
       {(status === "ready" || status === "saving") && pages.length > 0 && (
@@ -245,8 +254,9 @@ export default function PdfReorderTool() {
                       position: "absolute",
                       top: "4px",
                       right: "4px",
-                      width: "22px",
-                      height: "22px",
+                      width: "36px",
+                      height: "36px",
+                      minWidth: "36px",
                       borderRadius: "50%",
                       background: "rgba(229,72,77,0.85)",
                       border: "none",
@@ -258,7 +268,7 @@ export default function PdfReorderTool() {
                       fontSize: "12px",
                     }}
                   >
-                    <LuX size={11} />
+                    <LuX size={14} />
                   </button>
                 </div>
               );

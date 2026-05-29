@@ -14,6 +14,7 @@ export default function PdfSplitTool() {
   const [file, setFile] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [ranges, setRanges] = useState("1");
+  const [rangeError, setRangeError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Uint8Array | null>(null);
@@ -83,7 +84,34 @@ export default function PdfSplitTool() {
           </p>
           <div className="field">
             <Label htmlFor="ranges">Pages to extract (e.g. 1-3, 5)</Label>
-            <Input id="ranges" value={ranges} onChange={(e) => setRanges(e.target.value)} />
+            <Input
+              id="ranges"
+              value={ranges}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRanges(val);
+                // Inline validation: parse page numbers and check bounds
+                if (pageCount > 0 && val.trim()) {
+                  try {
+                    const nums = parsePageRanges(val, pageCount);
+                    if (nums.some((n) => n < 1 || n > pageCount)) {
+                      setRangeError(`Page numbers must be between 1 and ${pageCount}.`);
+                    } else {
+                      setRangeError(null);
+                    }
+                  } catch {
+                    setRangeError(`Invalid range — use numbers between 1 and ${pageCount}, e.g. "1-3, 5".`);
+                  }
+                } else {
+                  setRangeError(null);
+                }
+              }}
+            />
+            {rangeError && (
+              <p style={{ color: "var(--destructive)", fontSize: "13px", marginTop: "0.25rem" }}>
+                {rangeError}
+              </p>
+            )}
           </div>
           <div className="actionbar">
             <Button type="button" variant="outline" onClick={() => { setFile(null); setResult(null); }}>

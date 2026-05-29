@@ -119,14 +119,22 @@ export default function PasswordGeneratorTool() {
       </div>
 
       {passwords.length > 0 && (
-        <ul className="password-list">
-          {passwords.map((p, i) => (
-            <li key={`${i}-${p.slice(0, 4)}`}>
-              <code>{p}</code>
-              <CopyButton getText={() => p} label="Copy" />
-            </li>
-          ))}
-        </ul>
+        <>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+            <span className="field-label">Generated password{passwords.length > 1 ? "s" : ""}</span>
+            <Button type="button" variant="outline" size="sm" onClick={generate}>
+              Regenerate
+            </Button>
+          </div>
+          <ul className="password-list">
+            {passwords.map((p, i) => (
+              <li key={`${i}-${p.slice(0, 4)}`}>
+                <code>{p}</code>
+                <CopyButton getText={() => p} label="Copy" />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

@@ -180,18 +180,20 @@ export default function PatternGeneratorTool() {
           </div>
         </div>
 
-        {/* Rotation slider */}
-        <div className="field">
-          <span className="field-label">Rotation — {rotation}°</span>
-          <div className="palette-slider">
-            <Slider
-              min={0}
-              max={180}
-              value={[rotation]}
-              onValueChange={(v) => setRotation(Array.isArray(v) ? v[0] : v)}
-            />
+        {/* Rotation slider — only for patterns where rotation is meaningful */}
+        {(patternKey === "stripes" || patternKey === "herringbone") && (
+          <div className="field">
+            <span className="field-label">Rotation — {rotation}°</span>
+            <div className="palette-slider">
+              <Slider
+                min={0}
+                max={180}
+                value={[rotation]}
+                onValueChange={(v) => setRotation(Array.isArray(v) ? v[0] : v)}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Live preview */}

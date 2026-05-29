@@ -20,6 +20,7 @@ export default function PdfToImageTool() {
   const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [blobs, setBlobs] = useState<Blob[]>([]);
+  const [convertProgress, setConvertProgress] = useState<{ current: number; total: number } | null>(null);
 
   const loadFile = async (f: File) => {
     setError(null);
@@ -46,7 +47,9 @@ export default function PdfToImageTool() {
       const data = new Uint8Array(await file.arrayBuffer());
       const doc = await pdfjs.getDocument({ data }).promise;
       const out: Blob[] = [];
+      setConvertProgress({ current: 0, total: doc.numPages });
       for (let i = 1; i <= doc.numPages; i++) {
+        setConvertProgress({ current: i, total: doc.numPages });
         const page = await doc.getPage(i);
         const viewport = page.getViewport({ scale: 2 });
         const canvas = document.createElement("canvas");
@@ -66,9 +69,11 @@ export default function PdfToImageTool() {
         page.cleanup();
       }
       await doc.destroy();
+      setConvertProgress(null);
       setBlobs(out);
       setStatus("done");
     } catch (e) {
+      setConvertProgress(null);
       setStatus("error");
       setError(e instanceof Error ? e.message : "Conversion failed.");
     }
@@ -140,7 +145,11 @@ export default function PdfToImageTool() {
               Change file
             </Button>
             <Button type="button" onClick={() => void convert()} disabled={status === "working"}>
-              {status === "working" ? "Converting…" : "Convert to images"}
+              {status === "working"
+                ? convertProgress
+                  ? `Converting page ${convertProgress.current} of ${convertProgress.total}…`
+                  : "Converting…"
+                : "Convert to images"}
             </Button>
             {blobs.length > 0 && (
               <Button type="button" onClick={() => void download()}>

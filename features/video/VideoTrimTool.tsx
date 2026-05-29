@@ -6,6 +6,7 @@ import { fetchFile } from "@ffmpeg/util";
 import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuScissors, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { saveAs } from "@/lib/download";
 
 const ACCEPTED_EXTS = ["mp4", "webm", "mov", "avi", "mkv", "ogg"];
@@ -66,15 +67,19 @@ export default function VideoTrimTool() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const handleFile = (f: File) => {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     const url = URL.createObjectURL(f);
     setFile(f);
     setObjectUrl(url);
     setResultBlob(null);
     setError(null);
+    setMetadataError(null);
     setStatus("idle");
     setProgress(0);
     setDuration(0);
@@ -153,7 +158,10 @@ export default function VideoTrimTool() {
       try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
       try { await ffmpeg.deleteFile(outputName); } catch { /* ignore */ }
 
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      const newResultUrl = URL.createObjectURL(blob);
       setResultBlob(blob);
+      setResultUrl(newResultUrl);
       setProgress(100);
       setStatus("done");
     } catch (e) {
@@ -180,10 +188,12 @@ export default function VideoTrimTool() {
 
   const reset = () => {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setFile(null);
     setObjectUrl(null);
     setResultBlob(null);
     setError(null);
+    setMetadataError(null);
     setStatus("idle");
     setProgress(0);
     setDuration(0);
@@ -230,9 +240,15 @@ export default function VideoTrimTool() {
             src={objectUrl ?? undefined}
             style={{ display: "none" }}
             onLoadedMetadata={onVideoMetadataLoaded}
+            onError={() => setMetadataError("Could not read video duration — enter end time manually.")}
             preload="metadata"
             muted
           />
+          {metadataError && (
+            <div className="card" style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>
+              {metadataError}
+            </div>
+          )}
 
           <div className="toolbar">
             <Button variant="outline" onClick={reset} disabled={isWorking}>
@@ -265,7 +281,7 @@ export default function VideoTrimTool() {
           <section className="card settings">
             <label className="field">
               <span className="field-label">Start time</span>
-              <input
+              <Input
                 type="text"
                 value={startTime}
                 placeholder="0:00 or seconds"
@@ -279,7 +295,7 @@ export default function VideoTrimTool() {
             </label>
             <label className="field">
               <span className="field-label">End time (leave blank for end of file)</span>
-              <input
+              <Input
                 type="text"
                 value={endTime}
                 placeholder="MM:SS or seconds"
@@ -319,12 +335,11 @@ export default function VideoTrimTool() {
             </div>
           )}
 
-          {status === "done" && (
-            <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <LuScissors style={{ flexShrink: 0, color: "var(--muted-foreground)" }} />
-              <span className="text-sm text-muted-foreground">
-                Ready — click <strong>Download trimmed</strong> above to save.
-              </span>
+          {status === "done" && resultUrl && (
+            <div className="card">
+              <div className="field-label mb-2">Trimmed preview</div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video controls src={resultUrl} style={{ maxWidth: "100%" }} />
             </div>
           )}
         </>

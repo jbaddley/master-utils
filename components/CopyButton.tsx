@@ -9,10 +9,12 @@ export function CopyButton({
   getText,
   label = "Copy",
   size = "sm" as const,
+  disabled = false,
 }: {
   getText: () => string;
   label?: string;
   size?: "sm" | "default";
+  disabled?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -27,7 +29,7 @@ export function CopyButton({
   };
 
   return (
-    <Button type="button" variant="outline" size={size} onClick={() => void onCopy()}>
+    <Button type="button" variant="outline" size={size} onClick={() => void onCopy()} disabled={disabled}>
       {copied ? <LuCheck /> : <LuCopy />}
       {copied ? "Copied" : label}
     </Button>

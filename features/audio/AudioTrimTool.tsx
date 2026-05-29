@@ -6,6 +6,7 @@ import { fetchFile } from "@ffmpeg/util";
 import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuScissors, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { saveAs } from "@/lib/download";
 
 const ACCEPTED_INPUTS = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4"];
@@ -49,6 +50,7 @@ export default function AudioTrimTool() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [startTime, setStartTime] = useState("0:00");
   const [endTime, setEndTime] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "converting" | "done" | "error">(
@@ -57,10 +59,15 @@ export default function AudioTrimTool() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const handleFile = (f: File) => {
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
+    const url = URL.createObjectURL(f);
     setFile(f);
+    setFileUrl(url);
     setResultBlob(null);
     setError(null);
     setStatus("idle");
@@ -131,7 +138,10 @@ export default function AudioTrimTool() {
       try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
       try { await ffmpeg.deleteFile(outputName); } catch { /* ignore */ }
 
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      const newResultUrl = URL.createObjectURL(blob);
       setResultBlob(blob);
+      setResultUrl(newResultUrl);
       setProgress(100);
       setStatus("done");
     } catch (e) {
@@ -157,6 +167,8 @@ export default function AudioTrimTool() {
   };
 
   const reset = () => {
+    if (fileUrl) { URL.revokeObjectURL(fileUrl); setFileUrl(null); }
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setFile(null);
     setResultBlob(null);
     setError(null);
@@ -222,10 +234,18 @@ export default function AudioTrimTool() {
             )}
           </div>
 
+          {fileUrl && (
+            <div className="card">
+              <div className="field-label mb-2">Source audio</div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio controls src={fileUrl} style={{ width: "100%" }} />
+            </div>
+          )}
+
           <section className="card settings">
             <label className="field">
               <span className="field-label">Start time</span>
-              <input
+              <Input
                 type="text"
                 value={startTime}
                 placeholder="0:00 or seconds"
@@ -239,7 +259,7 @@ export default function AudioTrimTool() {
             </label>
             <label className="field">
               <span className="field-label">End time (leave blank for end of file)</span>
-              <input
+              <Input
                 type="text"
                 value={endTime}
                 placeholder="MM:SS or seconds"
@@ -279,12 +299,11 @@ export default function AudioTrimTool() {
             </div>
           )}
 
-          {status === "done" && (
-            <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <LuScissors style={{ flexShrink: 0, color: "var(--muted-foreground)" }} />
-              <span className="text-sm text-muted-foreground">
-                Ready — click <strong>Download trimmed</strong> above to save.
-              </span>
+          {status === "done" && resultUrl && (
+            <div className="card">
+              <div className="field-label mb-2">Trimmed preview</div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio controls src={resultUrl} style={{ width: "100%" }} />
             </div>
           )}
         </>

@@ -11,11 +11,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Free Online Image Tools — convert, compress, resize & more",
+    default: "BitMixer — Free Online Media & Utility Tools",
     template: `%s · ${SITE_NAME}`,
   },
   description:
-    "A free suite of fast, private image utilities that run entirely in your browser: convert, compress, resize, crop, vectorize to SVG, generate favicons and remove backgrounds.",
+    "A free suite of fast, private media utilities that run entirely in your browser: convert, compress, resize images; process audio and video; work with PDFs; extract text (OCR); generate QR codes, passwords, and more.",
 };
 
 export default function RootLayout({

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { diffLines } from "diff";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/CopyButton";
 
 type DiffLine = {
   text: string;
@@ -34,8 +35,31 @@ export default function DiffTool() {
   const additions = lines?.filter((l) => l.type === "added").length ?? 0;
   const deletions = lines?.filter((l) => l.type === "removed").length ?? 0;
 
+  const getDiffText = () => {
+    if (!lines) return "";
+    return lines
+      .map((l) => (l.type === "added" ? "+" : l.type === "removed" ? "-" : " ") + l.text)
+      .join("\n");
+  };
+
   return (
     <div className="tool-ui">
+      <div className="actionbar">
+        <Button type="button" onClick={compare} disabled={!original && !modified}>
+          Compare
+        </Button>
+        {lines !== null && (
+          <>
+            <span className="text-sm text-muted-foreground">
+              <span className="text-[#8ef0b5] font-medium">{additions} addition{additions !== 1 ? "s" : ""}</span>
+              {", "}
+              <span className="text-[#ffb3bb] font-medium">{deletions} deletion{deletions !== 1 ? "s" : ""}</span>
+            </span>
+            <CopyButton getText={getDiffText} label="Copy diff" />
+          </>
+        )}
+      </div>
+
       <div
         className="grid gap-4"
         style={{ gridTemplateColumns: "1fr 1fr" }}
@@ -70,19 +94,6 @@ export default function DiffTool() {
             aria-label="Modified text"
           />
         </div>
-      </div>
-
-      <div className="actionbar">
-        <Button type="button" onClick={compare} disabled={!original && !modified}>
-          Compare
-        </Button>
-        {lines !== null && (
-          <span className="text-sm text-muted-foreground">
-            <span className="text-[#8ef0b5] font-medium">{additions} addition{additions !== 1 ? "s" : ""}</span>
-            {", "}
-            <span className="text-[#ffb3bb] font-medium">{deletions} deletion{deletions !== 1 ? "s" : ""}</span>
-          </span>
-        )}
       </div>
 
       {lines !== null && (

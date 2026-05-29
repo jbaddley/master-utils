@@ -788,11 +788,11 @@ export default function SvgTool() {
                   </Button>
                   <Button variant="secondary" size="sm" disabled={!sourceData} onClick={() => flip("h")} title="Flip horizontally">
                     <LuFlipHorizontal2 />
-                    Flip
+                    Flip H
                   </Button>
                   <Button variant="secondary" size="sm" disabled={!sourceData} onClick={() => flip("v")} title="Flip vertically">
                     <LuFlipVertical2 />
-                    Flip
+                    Flip V
                   </Button>
                 </div>
 

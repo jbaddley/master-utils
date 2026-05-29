@@ -86,7 +86,7 @@ export default function CaseConverterTool() {
                   <span className="text-muted-foreground/60">Type or paste text above…</span>
                 )}
               </code>
-              <CopyButton getText={() => result} size="sm" />
+              <CopyButton getText={() => result} size="sm" disabled={!input.trim()} />
             </div>
           );
         })}

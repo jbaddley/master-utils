@@ -56,6 +56,7 @@ export default function CsvJsonTool({ mode }: { mode: Mode }) {
         onChange={(e) => setInput(e.target.value)}
         rows={10}
         spellCheck={false}
+        placeholder={mode === "csv-to-json" ? "name,age\nAlice,30\nBob,25" : '[{"name":"Alice","age":30}]'}
       />
       <div className="actionbar">
         <Button type="button" onClick={convert}>

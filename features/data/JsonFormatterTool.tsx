@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuDownload } from "react-icons/lu";
 import { CopyButton } from "@/components/CopyButton";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,12 @@ export default function JsonFormatterTool() {
       setError(formatJsonError(e, input));
     }
   };
+
+  // Auto-format the pre-filled sample on mount
+  useEffect(() => {
+    format();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const output = useMemo(() => formatted || (parsed ? JSON.stringify(parsed, null, 2) : ""), [formatted, parsed]);
 

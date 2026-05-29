@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { LuDownload } from "react-icons/lu";
 import { Dropzone } from "@/components/Dropzone";
 import { FileDropzone } from "@/components/FileDropzone";
@@ -46,10 +47,12 @@ export default function OcrTool() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [multiPageWarning, setMultiPageWarning] = useState(false);
   const fileRef = useRef<File | null>(null);
 
   const runOcr = async (file: File) => {
     setError(null);
+    setMultiPageWarning(false);
     setText("");
     setStatus("working");
     setProgress(0);
@@ -61,7 +64,7 @@ export default function OcrTool() {
         const data = new Uint8Array(await file.arrayBuffer());
         const doc = await pdfjs.getDocument({ data }).promise;
         if (doc.numPages > 1) {
-          throw new Error("Multi-page PDFs are not supported yet — use the first page only or split the PDF.");
+          setMultiPageWarning(true);
         }
         const page = await doc.getPage(1);
         const viewport = page.getViewport({ scale: 2 });
@@ -107,6 +110,16 @@ export default function OcrTool() {
   return (
     <div className="tool-ui">
       {error && <div className="error">{error}</div>}
+
+      {multiPageWarning && (
+        <div style={{ padding: "0.75rem 1rem", borderRadius: "var(--radius)", background: "color-mix(in srgb, var(--warning, #f59e0b) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--warning, #f59e0b) 40%, transparent)", fontSize: "13px", marginBottom: "0.75rem" }}>
+          Multi-page PDF detected — only the first page will be processed.{" "}
+          <Link href="/split-pdf" className="underline underline-offset-2">
+            Split your PDF first
+          </Link>{" "}
+          for full extraction.
+        </div>
+      )}
 
       <div className="field" style={{ marginBottom: "1rem" }}>
         <Label htmlFor="ocr-lang">Language</Label>

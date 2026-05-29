@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { CopyButton } from "@/components/CopyButton";
+import { Button } from "@/components/ui/button";
 
 // ─── Color conversion helpers ────────────────────────────────────────────────
 
@@ -339,6 +340,17 @@ function ContrastChecker() {
         <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "22px", fontWeight: 700 }}>
           {ratioStr}
         </span>
+        {ratio !== null && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigator.clipboard.writeText(ratio.toFixed(2) + ":1")}
+            style={{ marginLeft: "auto" }}
+          >
+            Copy ratio
+          </Button>
+        )}
       </div>
 
       {/* WCAG grid */}

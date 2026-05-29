@@ -88,24 +88,43 @@ export default function Base64Tool() {
 
       {tab === "encode" ? (
         <>
-          <textarea
-            className="code-area"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={6}
-            placeholder="Text to encode…"
-            spellCheck={false}
-          />
-          <div className="actionbar">
-            <Button type="button" onClick={encodeText}>
-              Encode text
-            </Button>
-          </div>
-          <p className="field-label" style={{ marginTop: "1rem" }}>
-            Or encode a file
-          </p>
+          {!fileName ? (
+            <>
+              <textarea
+                className="code-area"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={6}
+                placeholder="Text to encode…"
+                spellCheck={false}
+              />
+              <div className="actionbar">
+                <Button type="button" onClick={encodeText}>
+                  Encode text
+                </Button>
+              </div>
+              <p className="field-label" style={{ marginTop: "1rem" }}>
+                Or encode a file
+              </p>
+            </>
+          ) : (
+            <p className="field-label" style={{ marginTop: "1rem" }}>
+              File selected:
+            </p>
+          )}
           <FileDropzone label="Drop any file" onFiles={(fs) => void encodeFile(fs)} onError={setError} />
-          {fileName && <p className="field-label">File: {fileName}</p>}
+          {fileName && (
+            <p className="field-label">
+              File: {fileName}{" "}
+              <button
+                type="button"
+                className="text-muted-foreground underline text-xs ml-2"
+                onClick={() => { setFileName(null); setB64(""); }}
+              >
+                Clear
+              </button>
+            </p>
+          )}
         </>
       ) : (
         <>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { LuDownload } from "react-icons/lu";
+import { LuDownload, LuCopy } from "react-icons/lu";
 import QRCode from "qrcode";
 import type { QRCodeErrorCorrectionLevel } from "qrcode";
 import { Button } from "@/components/ui/button";
+import { saveAs } from "@/lib/download";
 
 type Size = 128 | 256 | 512;
 type ECLevel = "L" | "M" | "Q" | "H";
@@ -16,6 +17,7 @@ export default function QRCodeTool() {
   const [darkColor, setDarkColor] = useState("#000000");
   const [lightColor, setLightColor] = useState("#ffffff");
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,11 +60,41 @@ export default function QRCodeTool() {
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = "qrcode.png";
-    a.click();
+    void saveAs({
+      suggestedName: "qrcode.png",
+      description: "PNG image",
+      mime: "image/png",
+      ext: ".png",
+      getBlob: () =>
+        new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Failed to export canvas"));
+          }, "image/png");
+        }),
+    });
+  };
+
+  const handleCopyImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCopyStatus("error");
+        setTimeout(() => setCopyStatus("idle"), 2000);
+        return;
+      }
+      navigator.clipboard
+        .write([new ClipboardItem({ "image/png": blob })])
+        .then(() => {
+          setCopyStatus("copied");
+          setTimeout(() => setCopyStatus("idle"), 2000);
+        })
+        .catch(() => {
+          setCopyStatus("error");
+          setTimeout(() => setCopyStatus("idle"), 2000);
+        });
+    }, "image/png");
   };
 
   return (
@@ -136,10 +168,16 @@ export default function QRCodeTool() {
           style={{ maxWidth: "100%", height: "auto" }}
         />
 
-        <Button onClick={handleDownload} disabled={!text.trim()}>
-          <LuDownload />
-          Download PNG
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="outline" onClick={handleCopyImage} disabled={!text.trim()}>
+            <LuCopy />
+            {copyStatus === "copied" ? "Copied!" : copyStatus === "error" ? "Failed" : "Copy image"}
+          </Button>
+          <Button onClick={handleDownload} disabled={!text.trim()}>
+            <LuDownload />
+            Download PNG
+          </Button>
+        </div>
       </div>
     </div>
   );

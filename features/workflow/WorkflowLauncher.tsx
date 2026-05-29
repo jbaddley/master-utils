@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { LuArrowRight, LuUpload, LuDownload, LuLoader } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
 import { loadImageFile, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { saveAs } from "@/lib/download";
@@ -196,21 +197,22 @@ export default function WorkflowLauncher({ workflowId }: { workflowId?: string }
       {/* Workflow selector */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
         {WORKFLOWS.map((w) => (
-          <button
+          <Button
             key={w.id}
+            type="button"
+            variant={w.id === selectedId ? "default" : "outline"}
             onClick={() => { setSelectedId(w.id); setResult(null); setStatus(""); }}
             style={{
               padding: "1rem",
-              borderRadius: "var(--radius)",
-              border: `2px solid ${w.id === selectedId ? "var(--primary)" : "var(--border)"}`,
-              background: w.id === selectedId ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--card)",
-              cursor: "pointer",
+              height: "auto",
               textAlign: "left",
+              flexDirection: "column",
+              alignItems: "flex-start",
             }}
           >
-            <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "0.25rem", color: "var(--foreground)" }}>{w.title}</div>
-            <div style={{ fontSize: "12px", color: "var(--muted-foreground)", lineHeight: 1.4 }}>{w.description}</div>
-          </button>
+            <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "0.25rem" }}>{w.title}</div>
+            <div style={{ fontSize: "12px", opacity: 0.75, lineHeight: 1.4, whiteSpace: "normal" }}>{w.description}</div>
+          </Button>
         ))}
       </div>
 
@@ -249,47 +251,24 @@ export default function WorkflowLauncher({ workflowId }: { workflowId?: string }
 
       {/* Actions */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-        <button
-          onClick={runWorkflow}
+        <Button
+          type="button"
+          onClick={() => void runWorkflow()}
           disabled={!file || running}
-          style={{
-            padding: "0.6rem 1.5rem",
-            borderRadius: "var(--radius)",
-            background: file && !running ? "var(--primary)" : "var(--muted)",
-            color: file && !running ? "var(--primary-foreground)" : "var(--muted-foreground)",
-            border: "none",
-            cursor: file && !running ? "pointer" : "not-allowed",
-            fontWeight: 600,
-            fontSize: "14px",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-          }}
         >
-          {running && <LuLoader size={14} style={{ animation: "spin 1s linear infinite" }} />}
+          {running && <LuLoader size={14} className="animate-spin" style={{ animation: "spin 1s linear infinite" }} />}
           {running ? status || "Processing…" : `Run: ${selected.title}`}
-        </button>
+        </Button>
 
         {result && (
-          <button
-            onClick={download}
-            style={{
-              padding: "0.6rem 1.5rem",
-              borderRadius: "var(--radius)",
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              color: "var(--foreground)",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void download()}
           >
             <LuDownload size={14} />
             Download {result.name}
-          </button>
+          </Button>
         )}
       </div>
 

@@ -81,7 +81,10 @@ export default function ExifScrubberTool() {
       {error && <div className="error">{error}</div>}
 
       {!loaded ? (
-        <Dropzone label="Drop an image to inspect EXIF metadata" onFile={(f) => void onFile(f)} onError={setError} />
+        <>
+          <Dropzone label="Drop an image to inspect EXIF metadata" onFile={(f) => void onFile(f)} onError={setError} />
+          {status === "reading" && <p className="muted-text" style={{ textAlign: "center", marginTop: "0.75rem" }}>Reading metadata…</p>}
+        </>
       ) : (
         <div className="duo">
           <section className="card settings">
@@ -160,7 +163,6 @@ export default function ExifScrubberTool() {
         </div>
       )}
 
-      {status === "reading" && <p className="muted-text">Reading metadata…</p>}
     </div>
   );
 }

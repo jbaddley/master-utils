@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
-import { LuMusic, LuDownload, LuRefreshCw } from "react-icons/lu";
+import { LuMusic, LuDownload, LuRefreshCw, LuLoader } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "@/lib/download";
 import {
@@ -110,6 +110,7 @@ export default function AudioConverterTool({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function AudioConverterTool({
     const outs = (AUDIO_OUTPUT_BY_INPUT[key] ?? []).filter((k): k is OutputFmt => k in FMT_MIME);
     if (outs.length && !outs.includes(outputFmt)) setOutputFmt(outs[0]!);
     setFile(f);
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setResultBlob(null);
     setError(null);
     setStatus("idle");
@@ -183,7 +185,10 @@ export default function AudioConverterTool({
       try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
       try { await ffmpeg.deleteFile(outputName); } catch { /* ignore */ }
 
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      const url = URL.createObjectURL(blob);
       setResultBlob(blob);
+      setResultUrl(url);
       setProgress(100);
       setStatus("done");
     } catch (e) {
@@ -205,6 +210,7 @@ export default function AudioConverterTool({
   };
 
   const reset = () => {
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setFile(null);
     setResultBlob(null);
     setError(null);
@@ -317,20 +323,37 @@ export default function AudioConverterTool({
 
           {isWorking && (
             <div className="card">
-              <div className="field-label mb-2">
-                {status === "loading" ? "Loading ffmpeg.wasm…" : `Converting… ${progress}%`}
+              <div className="field-label mb-2" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {status === "loading" ? (
+                  <>
+                    <LuLoader className="animate-spin" style={{ width: 14, height: 14, flexShrink: 0 }} />
+                    Loading ffmpeg.wasm…
+                  </>
+                ) : (
+                  `Converting… ${progress}%`
+                )}
               </div>
-              <div style={{ height: 6, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${status === "loading" ? 15 : progress}%`,
-                    background: "var(--primary)",
-                    borderRadius: 3,
-                    transition: "width 0.2s",
-                  }}
-                />
-              </div>
+              {status === "converting" && (
+                <div style={{ height: 6, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${progress}%`,
+                      background: "var(--primary)",
+                      borderRadius: 3,
+                      transition: "width 0.2s",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {status === "done" && resultUrl && (
+            <div className="card">
+              <div className="field-label mb-2">Preview</div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio controls src={resultUrl} style={{ width: "100%" }} />
             </div>
           )}
         </>

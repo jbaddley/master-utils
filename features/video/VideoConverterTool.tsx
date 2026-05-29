@@ -75,6 +75,7 @@ export default function VideoConverterTool({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
@@ -96,6 +97,7 @@ export default function VideoConverterTool({
       if (!outs.includes(outputFmt)) setOutputFmt(outs[0] ?? "mp4");
     }
     setFile(f);
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setResultBlob(null);
     setError(null);
     setStatus("idle");
@@ -148,7 +150,10 @@ export default function VideoConverterTool({
       try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
       try { await ffmpeg.deleteFile(outputName); } catch { /* ignore */ }
 
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      const url = URL.createObjectURL(blob);
       setResultBlob(blob);
+      setResultUrl(url);
       setProgress(100);
       setStatus("done");
     } catch (e) {
@@ -170,6 +175,7 @@ export default function VideoConverterTool({
   };
 
   const reset = () => {
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
     setFile(null);
     setResultBlob(null);
     setError(null);
@@ -297,6 +303,14 @@ export default function VideoConverterTool({
                   }}
                 />
               </div>
+            </div>
+          )}
+
+          {status === "done" && resultUrl && (
+            <div className="card">
+              <div className="field-label mb-2">Preview</div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video controls src={resultUrl} style={{ maxWidth: "100%" }} />
             </div>
           )}
         </>

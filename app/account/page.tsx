@@ -63,6 +63,7 @@ export default function AccountPage() {
   };
 
   const revokeKey = async (id: string) => {
+    if (!window.confirm("Revoke this API key? This cannot be undone.")) return;
     await fetch("/api/keys", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     setKeys((prev) => prev.filter((k) => k.id !== id));
   };

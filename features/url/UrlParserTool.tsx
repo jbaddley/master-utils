@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ export default function UrlParserTool() {
     { key: "foo", value: "bar" },
   ]);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseInput = (value: string) => {
     setError(null);
@@ -79,8 +80,18 @@ export default function UrlParserTool() {
         <Input
           id="url-in"
           value={raw}
-          onChange={(e) => setRaw(e.target.value)}
-          onBlur={() => parseInput(raw)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setRaw(val);
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => {
+              parseInput(val);
+            }, 250);
+          }}
+          onBlur={() => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            parseInput(raw);
+          }}
         />
       </div>
 

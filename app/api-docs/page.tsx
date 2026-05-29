@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo";
 import { SITE_URL } from "@/lib/seo";
+import { PreWithCopy } from "@/components/PreWithCopy";
 
 export const metadata: Metadata = buildMetadata({
   title: "Developer API — image processing REST API",
@@ -109,18 +110,20 @@ export default function ApiDocsPage() {
         <p>
           Every request must include your API key in the <code>Authorization</code> header:
         </p>
-        <pre style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto" }}>
-          <code>Authorization: Bearer YOUR_API_KEY</code>
-        </pre>
+        <PreWithCopy
+          code="Authorization: Bearer YOUR_API_KEY"
+          style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto", margin: 0 }}
+        />
         <p>
           API keys are available on the <a href="/pricing">Pro and Business plans</a>. Generate
           your key from the account dashboard after subscribing.
         </p>
 
         <h2>Base URL</h2>
-        <pre style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto" }}>
-          <code>{BASE}</code>
-        </pre>
+        <PreWithCopy
+          code={BASE}
+          style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto", margin: 0 }}
+        />
 
         <h2>Rate limits</h2>
         <p>
@@ -160,17 +163,19 @@ export default function ApiDocsPage() {
               </tbody>
             </table>
 
-            <pre style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "12px", overflowX: "auto", margin: 0 }}>
-              <code>{ep.curl}</code>
-            </pre>
+            <PreWithCopy
+              code={ep.curl}
+              style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "12px", overflowX: "auto", margin: 0 }}
+            />
           </div>
         ))}
 
         <h2>Error responses</h2>
         <p>All errors return JSON with an <code>error</code> field:</p>
-        <pre style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto" }}>
-          <code>{`{ "error": "Invalid API key" }          // 401\n{ "error": "Daily rate limit exceeded" } // 429\n{ "error": "Failed to process image" }   // 422`}</code>
-        </pre>
+        <PreWithCopy
+          code={`{ "error": "Invalid API key" }          // 401\n{ "error": "Daily rate limit exceeded" } // 429\n{ "error": "Failed to process image" }   // 422`}
+          style={{ background: "var(--muted)", padding: "1rem", borderRadius: "var(--radius)", fontSize: "13px", overflowX: "auto", margin: 0 }}
+        />
       </div>
     </main>
   );

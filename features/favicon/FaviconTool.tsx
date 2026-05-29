@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LuDownload, LuFileArchive } from "react-icons/lu";
+import { LuDownload, LuFileArchive, LuCopy } from "react-icons/lu";
 import JSZip from "jszip";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,13 @@ import {
   WEBMANIFEST,
 } from "@/lib/favicon";
 
-const PREVIEW_SIZES = [16, 32, 48, 64];
+const PREVIEW_SIZES = [16, 32, 48, 64, 180, 192];
 
 export default function FaviconTool() {
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [previews, setPreviews] = useState<{ size: number; url: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const urlsRef = useRef<string[]>([]);
 
   const onFile = async (file: File) => {
@@ -121,7 +122,7 @@ export default function FaviconTool() {
           <div className="pane">
             <div className="panel-head">
               <span className="tag">Preview</span>
-              <span className="meta">16 · 32 · 48 · 64 px</span>
+              <span className="meta">16 · 32 · 48 · 64 · 180 · 192 px</span>
             </div>
             <div className="canvas checker" style={{ gap: 24 }}>
               {previews.map((p) => (
@@ -132,7 +133,7 @@ export default function FaviconTool() {
                     alt={`${p.size}px icon`}
                     width={p.size}
                     height={p.size}
-                    style={{ imageRendering: "pixelated" }}
+                    style={{ imageRendering: p.size <= 64 ? "pixelated" : "auto" }}
                   />
                   <div className="meta" style={{ marginTop: 6 }}>
                     {p.size}px
@@ -149,13 +150,26 @@ export default function FaviconTool() {
                 margin: "8px 0 0",
                 overflowX: "auto",
                 fontSize: 12,
-                color: "var(--muted)",
+                color: "var(--muted-foreground)",
                 fontFamily: "ui-monospace, monospace",
                 whiteSpace: "pre",
               }}
             >
               {HTML_SNIPPET}
             </pre>
+            <Button
+              variant="outline"
+              style={{ marginTop: 10 }}
+              onClick={() => {
+                void navigator.clipboard.writeText(HTML_SNIPPET).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+            >
+              <LuCopy />
+              {copied ? "Copied!" : "Copy snippet"}
+            </Button>
           </section>
         </>
       )}
