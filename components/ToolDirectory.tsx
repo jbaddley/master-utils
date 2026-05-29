@@ -14,7 +14,7 @@ import {
   type ToolCategory,
 } from "@/lib/tool-catalog";
 
-const COLLAPSIBLE_CATEGORIES: ToolCategory[] = ["format-conversions", "platform-presets"];
+const COLLAPSIBLE_CATEGORIES: ToolCategory[] = ["format-conversions"];
 
 function ToolCard({ entry }: { entry: CatalogEntry }) {
   const Icon = entry.icon;
@@ -136,45 +136,9 @@ export function ToolDirectory() {
 
       {TOOL_CATEGORIES.map((cat) => {
         if (COLLAPSIBLE_CATEGORIES.includes(cat.id)) {
-          if (cat.id === "format-conversions") {
-            const menuEntries = getMenuToolsByCategory(cat.id);
-            const hub = menuEntries[0];
-            const popular = menuEntries.slice(1);
-            return (
-              <CollapsibleSection
-                key={cat.id}
-                categoryId={cat.id}
-                title={cat.label}
-                description={cat.description}
-              >
-                {hub && (
-                  <div className="tool-grid tool-grid--compact" style={{ marginBottom: "1rem" }}>
-                    <ToolCard entry={hub} />
-                  </div>
-                )}
-                {popular.length > 0 && (
-                  <div className="related conversion-chips">
-                    {popular.map((entry) => (
-                      <Link key={entry.slug} href={getCatalogHref(entry.slug)}>
-                        {entry.title}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
-                  <Link href="/convert-image/">All image format conversions →</Link>
-                </p>
-              </CollapsibleSection>
-            );
-          }
-
-          const entries = getToolsByCategory(cat.id);
-          const resizeEntries = entries.filter((e) => e.slug.startsWith("resize-"));
-          const compressEntries = entries.filter((e) => e.slug.startsWith("compress-"));
-          const otherEntries = entries.filter(
-            (e) => !e.slug.startsWith("resize-") && !e.slug.startsWith("compress-"),
-          );
-
+          const menuEntries = getMenuToolsByCategory(cat.id);
+          const hub = menuEntries[0];
+          const popular = menuEntries.slice(1);
           return (
             <CollapsibleSection
               key={cat.id}
@@ -182,35 +146,23 @@ export function ToolDirectory() {
               title={cat.label}
               description={cat.description}
             >
-              {resizeEntries.length > 0 && (
-                <div className="platform-preset-group">
-                  <h3 className="platform-preset-heading">Resize for platforms</h3>
-                  <div className="tool-grid tool-grid--compact">
-                    {resizeEntries.map((entry) => (
-                      <ToolCard key={entry.slug} entry={entry} />
-                    ))}
-                  </div>
+              {hub && (
+                <div className="tool-grid tool-grid--compact" style={{ marginBottom: "1rem" }}>
+                  <ToolCard entry={hub} />
                 </div>
               )}
-              {compressEntries.length > 0 && (
-                <div className="platform-preset-group">
-                  <h3 className="platform-preset-heading">Compress for platforms</h3>
-                  <div className="tool-grid tool-grid--compact">
-                    {compressEntries.map((entry) => (
-                      <ToolCard key={entry.slug} entry={entry} />
-                    ))}
-                  </div>
+              {popular.length > 0 && (
+                <div className="related conversion-chips">
+                  {popular.map((entry) => (
+                    <Link key={entry.slug} href={getCatalogHref(entry.slug)}>
+                      {entry.title}
+                    </Link>
+                  ))}
                 </div>
               )}
-              {otherEntries.length > 0 && (
-                <div className="platform-preset-group">
-                  <div className="tool-grid tool-grid--compact">
-                    {otherEntries.map((entry) => (
-                      <ToolCard key={entry.slug} entry={entry} />
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
+                <Link href="/convert-image/">All image format conversions →</Link>
+              </p>
             </CollapsibleSection>
           );
         }

@@ -106,12 +106,6 @@ export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
     icon: LuWorkflow,
   },
   {
-    id: "platform-presets",
-    label: "Platform Presets",
-    description: "Resize and compress for Instagram, Shopify, YouTube, and more.",
-    icon: LuLayoutGrid,
-  },
-  {
     id: "ai",
     label: "AI Tools",
     description: "AI-powered upscaling, enhancement, and background removal.",
@@ -197,6 +191,7 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     category: "video",
     icon: LuVolumeX,
     keywords: ["mute", "silent"],
+    inNav: false,
   },
   {
     slug: "video-thumbnail-generator",
@@ -293,6 +288,7 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     category: "audio",
     icon: LuMic,
     keywords: ["record", "microphone", "voice"],
+    inNav: false,
   },
   // QR
   {
@@ -392,6 +388,7 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     category: "security",
     icon: LuShield,
     keywords: ["exif", "gps", "metadata"],
+    inNav: false,
   },
   {
     slug: "blackout-tool",
@@ -400,6 +397,7 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     category: "security",
     icon: LuEraser,
     keywords: ["redact", "blackout", "privacy"],
+    inNav: false,
   },
 ];
 
@@ -410,7 +408,6 @@ const DEFAULT_ICONS: Partial<Record<ToolCategory, IconType>> = {
   audio: LuMusic,
   qr: LuQrCode,
   workflows: LuWorkflow,
-  "platform-presets": LuLayoutGrid,
   ai: LuSparkles,
   document: LuFileText,
   data: LuBraces,
