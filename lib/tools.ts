@@ -26,6 +26,9 @@ import {
   LuCode,
   LuMessageSquare,
   LuGitCompare,
+  LuPalette,
+  LuLayoutGrid,
+  LuArrowUpDown,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -282,6 +285,27 @@ export const TOOLS: Tool[] = [
     nav: "Diff Checker",
     tagline: "Compare two text blocks and highlight added and removed lines side by side.",
     icon: LuGitCompare,
+  },
+  {
+    slug: "color-toolbox",
+    title: "Color Toolbox",
+    nav: "Color Toolbox",
+    tagline: "Convert HEX, RGB, and HSL colors instantly, and check WCAG contrast ratios.",
+    icon: LuPalette,
+  },
+  {
+    slug: "pattern-generator",
+    title: "Pattern Generator",
+    nav: "Patterns",
+    tagline: "Generate repeating SVG/CSS background patterns — stripes, dots, grids, and more.",
+    icon: LuLayoutGrid,
+  },
+  {
+    slug: "reorder-pdf",
+    title: "Reorder PDF Pages",
+    nav: "Reorder PDF",
+    tagline: "Drag and drop PDF page thumbnails to rearrange order, delete pages, and download.",
+    icon: LuArrowUpDown,
   },
 ];
 
