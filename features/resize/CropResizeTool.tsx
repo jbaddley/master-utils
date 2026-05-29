@@ -1,7 +1,7 @@
 "use client";
 
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
-import { LuDownload, LuCheck, LuLink, LuLink2Off, LuRotateCcw, LuZoomIn, LuZoomOut } from "react-icons/lu";
+import { LuDownload, LuCheck, LuLink, LuLink2Off, LuRotateCcw, LuZoomIn, LuZoomOut, LuCopy } from "react-icons/lu";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,7 @@ export default function CropResizeTool({ defaultPresetId }: { defaultPresetId?: 
   const [cropFullMsg, setCropFullMsg] = useState(false);
   // Fix #7: encoding/download loading state
   const [isEncoding, setIsEncoding] = useState(false);
+  const [copiedB64, setCopiedB64] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -506,6 +507,19 @@ export default function CropResizeTool({ defaultPresetId }: { defaultPresetId?: 
     });
   };
 
+  const copyBase64 = async () => {
+    const blob = await encode();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    await navigator.clipboard.writeText(dataUrl);
+    setCopiedB64(true);
+    setTimeout(() => setCopiedB64(false), 2500);
+  };
+
   const selPx = boxPx();
 
   return (
@@ -815,6 +829,32 @@ export default function CropResizeTool({ defaultPresetId }: { defaultPresetId?: 
                   <div className="placeholder">Generating preview…</div>
                 )}
               </div>
+              {result && (
+                <div
+                  style={{
+                    padding: "0.6rem 0.75rem",
+                    borderTop: "1px solid var(--border)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isEncoding}
+                    onClick={() => void copyBase64()}
+                  >
+                    <LuCopy />
+                    {copiedB64 ? "Copied!" : "Copy as Base64"}
+                  </Button>
+                  <span
+                    style={{ fontSize: "11px", color: "var(--muted-foreground)" }}
+                  >
+                    data:{fmt};base64,…
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </>

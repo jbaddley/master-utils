@@ -1,44 +1,58 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { LuDownload, LuFileArchive, LuCopy, LuFileCode, LuFileJson } from "react-icons/lu";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { LuDownload, LuFileArchive, LuCopy, LuFileCode, LuFileJson, LuPencil } from "react-icons/lu";
 import JSZip from "jszip";
 import { Dropzone, ChangeImageButton } from "@/components/Dropzone";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { loadImageFile, type LoadedImage } from "@/lib/files";
 import { saveAs } from "@/lib/download";
 import {
   renderSquare,
   canvasPngBytes,
   buildIco,
-  HTML_SNIPPET,
-  WEBMANIFEST,
+  generateHtmlSnippet,
+  generateWebmanifest,
 } from "@/lib/favicon";
 
-// Files that go into the zip pack, in display order
-const PACK_FILES: {
-  filename: string;
-  size?: number; // render size in px (undefined = non-image file)
-  label: string;
-  where: string;
-}[] = [
-  { filename: "favicon.ico", size: 32, label: "favicon.ico", where: "Browser tab (legacy)" },
-  { filename: "favicon-16x16.png", size: 16, label: "favicon-16x16.png", where: "Browser tab" },
-  { filename: "favicon-32x32.png", size: 32, label: "favicon-32x32.png", where: "Browser / taskbar" },
-  { filename: "apple-touch-icon.png", size: 180, label: "apple-touch-icon.png", where: "iOS home screen" },
-  { filename: "android-chrome-192x192.png", size: 192, label: "android-chrome-192x192.png", where: "Android home screen" },
-  { filename: "android-chrome-512x512.png", size: 512, label: "android-chrome-512x512.png", where: "PWA splash screen" },
-  { filename: "site.webmanifest", label: "site.webmanifest", where: "PWA configuration" },
-  { filename: "snippet.html", label: "snippet.html", where: "Paste into <head>" },
-];
+/** Sanitise a user-supplied name: lowercase, alphanumeric + dashes only. */
+function sanitiseName(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "favicon";
+}
 
 export default function FaviconTool() {
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
-  // Map from filename → data URL (for image previews)
+  const [siteName, setSiteName] = useState("favicon");
+  // Map from file role → data URL (for image previews)
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const urlsRef = useRef<string[]>([]);
+
+  // Derive the sanitised name from the input
+  const name = sanitiseName(siteName);
+
+  // Pack file definitions derived from the current name
+  const packFiles = useMemo(() => [
+    { key: "ico",     filename: `${name}.ico`,                size: 32,  label: `${name}.ico`,                where: "Browser tab (legacy)" },
+    { key: "16",      filename: `${name}-16x16.png`,          size: 16,  label: `${name}-16x16.png`,          where: "Browser tab" },
+    { key: "32",      filename: `${name}-32x32.png`,          size: 32,  label: `${name}-32x32.png`,          where: "Browser / taskbar" },
+    { key: "touch",   filename: "apple-touch-icon.png",       size: 180, label: "apple-touch-icon.png",       where: "iOS home screen" },
+    { key: "192",     filename: "android-chrome-192x192.png", size: 192, label: "android-chrome-192x192.png", where: "Android home screen" },
+    { key: "512",     filename: "android-chrome-512x512.png", size: 512, label: "android-chrome-512x512.png", where: "PWA splash screen" },
+    { key: "manifest",filename: "site.webmanifest",                      label: "site.webmanifest",           where: "PWA configuration" },
+    { key: "snippet", filename: "snippet.html",                           label: "snippet.html",               where: "Paste into <head>" },
+  ], [name]);
+
+  const htmlSnippet = useMemo(
+    () => generateHtmlSnippet(`${name}.ico`, name),
+    [name],
+  );
 
   const onFile = async (file: File) => {
     setError(null);
@@ -60,23 +74,20 @@ export default function FaviconTool() {
     }
     urlsRef.current.forEach((u) => URL.revokeObjectURL(u));
     urlsRef.current = [];
-
-    // Build a canvas preview for every image entry in PACK_FILES
     const next: Record<string, string> = {};
-    for (const f of PACK_FILES) {
+    for (const f of packFiles) {
       if (f.size !== undefined) {
-        // Cap display render at 64px — no need to create a 512px canvas just to show it small
         const displaySize = Math.min(f.size, 64);
-        next[f.filename] = renderSquare(loaded.img, displaySize).toDataURL("image/png");
+        next[f.key] = renderSquare(loaded.img, displaySize).toDataURL("image/png");
       }
     }
     setPreviews(next);
-  }, [loaded]);
+  }, [loaded, packFiles]);
 
   const downloadIco = () => {
     if (!loaded) return;
     void saveAs({
-      suggestedName: "favicon.ico",
+      suggestedName: `${name}.ico`,
       description: "Icon",
       mime: "image/x-icon",
       ext: ".ico",
@@ -95,7 +106,7 @@ export default function FaviconTool() {
   const downloadZip = () => {
     if (!loaded) return;
     void saveAs({
-      suggestedName: "favicons.zip",
+      suggestedName: `${name}-favicons.zip`,
       description: "Zip archive",
       mime: "application/zip",
       ext: ".zip",
@@ -107,14 +118,14 @@ export default function FaviconTool() {
             [16, 32, 48].map(async (size) => ({ size, png: await png(size) })),
           ),
         );
-        zip.file("favicon.ico", ico);
-        zip.file("favicon-16x16.png", await png(16));
-        zip.file("favicon-32x32.png", await png(32));
+        zip.file(`${name}.ico`, ico);
+        zip.file(`${name}-16x16.png`, await png(16));
+        zip.file(`${name}-32x32.png`, await png(32));
         zip.file("apple-touch-icon.png", await png(180));
         zip.file("android-chrome-192x192.png", await png(192));
         zip.file("android-chrome-512x512.png", await png(512));
-        zip.file("site.webmanifest", WEBMANIFEST);
-        zip.file("snippet.html", HTML_SNIPPET);
+        zip.file("site.webmanifest", generateWebmanifest());
+        zip.file("snippet.html", htmlSnippet);
         return zip.generateAsync({ type: "blob" });
       },
     });
@@ -130,10 +141,23 @@ export default function FaviconTool() {
         <>
           <div className="toolbar">
             <ChangeImageButton onFile={onFile} />
+
+            {/* Rename input */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "0 1 220px" }}>
+              <LuPencil size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+              <Input
+                value={siteName}
+                onChange={(e) => setSiteName(e.target.value)}
+                placeholder="favicon"
+                aria-label="Favicon base name"
+                style={{ fontSize: "13px", height: "2rem" }}
+              />
+            </div>
+
             <div className="toolbar-spacer" />
             <Button variant="outline" onClick={downloadIco}>
               <LuDownload />
-              favicon.ico only
+              {name}.ico only
             </Button>
             <Button onClick={downloadZip}>
               <LuFileArchive />
@@ -145,7 +169,7 @@ export default function FaviconTool() {
           <div className="pane">
             <div className="panel-head">
               <span className="tag">Pack contents</span>
-              <span className="meta">{PACK_FILES.length} files · ready to drop into your project</span>
+              <span className="meta">{packFiles.length} files · ready to drop into your project</span>
             </div>
 
             <div
@@ -156,13 +180,13 @@ export default function FaviconTool() {
                 padding: "1rem",
               }}
             >
-              {PACK_FILES.map((f) => {
-                const previewUrl = previews[f.filename];
+              {packFiles.map((f) => {
+                const previewUrl = previews[f.key];
                 const isImage = f.size !== undefined;
 
                 return (
                   <div
-                    key={f.filename}
+                    key={f.key}
                     style={{
                       display: "flex",
                       flexDirection: "column",
@@ -216,6 +240,7 @@ export default function FaviconTool() {
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                         }}
+                        title={f.label}
                       >
                         {f.label}
                       </div>
@@ -253,13 +278,13 @@ export default function FaviconTool() {
                 whiteSpace: "pre",
               }}
             >
-              {HTML_SNIPPET}
+              {htmlSnippet}
             </pre>
             <Button
               variant="outline"
               style={{ marginTop: 10 }}
               onClick={() => {
-                void navigator.clipboard.writeText(HTML_SNIPPET).then(() => {
+                void navigator.clipboard.writeText(htmlSnippet).then(() => {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 });

@@ -66,3 +66,26 @@ export const WEBMANIFEST = JSON.stringify(
   null,
   2,
 );
+
+/** Generate an HTML <head> snippet using custom filenames. */
+export function generateHtmlSnippet(icoName: string, pngBase: string): string {
+  return `<link rel="icon" href="/${icoName}" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/${pngBase}-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/${pngBase}-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">`;
+}
+
+/** Generate a site.webmanifest JSON string. */
+export function generateWebmanifest(): string {
+  return JSON.stringify(
+    {
+      icons: [
+        { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+        { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      ],
+    },
+    null,
+    2,
+  );
+}
