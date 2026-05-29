@@ -5,6 +5,7 @@ import { LuDownload, LuCopy, LuLink, LuLink2Off } from "react-icons/lu";
 import { FileDropzone } from "@/components/FileDropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
 import { saveAs } from "@/lib/download";
@@ -67,6 +68,8 @@ export default function SvgToImageTool() {
   const [customW, setCustomW]     = useState(0);
   const [customH, setCustomH]     = useState(0);
   const [lockAspect, setLockAspect] = useState(true);
+  const [quality, setQuality]     = useState(92); // 1–100 for UI; divide by 100 for canvas
+  const [bgColor, setBgColor]     = useState("#ffffff");
   const [result, setResult]       = useState<{ url: string; size: number } | null>(null);
   const [isEncoding, setIsEncoding] = useState(false);
   const [copiedB64, setCopiedB64] = useState(false);
@@ -105,6 +108,9 @@ export default function SvgToImageTool() {
   const outW = scale === "custom" ? customW : Math.round(naturalW * scale);
   const outH = scale === "custom" ? customH : Math.round(naturalH * scale);
 
+  const needsQuality = fmt === "image/jpeg" || fmt === "image/webp";
+  const needsBg      = isOpaqueFormat(fmt); // JPG always; others transparent
+
   const encode = useCallback(async (): Promise<Blob> => {
     if (!svgUrl || !outW || !outH) throw new Error("Nothing to render.");
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -113,11 +119,11 @@ export default function SvgToImageTool() {
       el.onerror = () => reject(new Error("Could not render SVG — does it contain external resources?"));
       el.src = svgUrl;
     });
-    const bg = isOpaqueFormat(fmt) ? "#ffffff" : undefined;
+    const bg     = needsBg ? bgColor : undefined;
     const canvas = drawToCanvas(img, outW, outH, bg);
-    const quality = (fmt === "image/jpeg" || fmt === "image/webp") ? 0.92 : undefined;
-    return canvasToBlob(canvas, fmt, quality);
-  }, [svgUrl, outW, outH, fmt]);
+    const q      = needsQuality ? quality / 100 : undefined;
+    return canvasToBlob(canvas, fmt, q);
+  }, [svgUrl, outW, outH, fmt, needsBg, bgColor, needsQuality, quality]);
 
   // Re-render preview whenever format, scale, or file changes
   useEffect(() => {
@@ -138,7 +144,7 @@ export default function SvgToImageTool() {
       }
     });
     return () => { cancelled = true; };
-  }, [svgUrl, outW, outH, fmt, encode]);
+  }, [svgUrl, outW, outH, fmt, quality, bgColor, encode]);
 
   // Cleanup on unmount
   useEffect(() => () => {
@@ -314,6 +320,75 @@ export default function SvgToImageTool() {
                   </Button>
                 </div>
               </>
+            )}
+
+            {needsQuality && (
+              <div className="field">
+                <span className="field-label">
+                  Quality
+                  <span style={{ marginLeft: "0.5rem", fontWeight: 400, color: "var(--muted-foreground)" }}>
+                    {quality}%
+                  </span>
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <Slider
+                    min={30}
+                    max={100}
+                    step={1}
+                    value={[quality]}
+                    onValueChange={(v) => setQuality(Array.isArray(v) ? (v[0] ?? quality) : v)}
+                    style={{ flex: 1 }}
+                  />
+                  <Input
+                    type="number"
+                    min={30}
+                    max={100}
+                    value={quality}
+                    onChange={(e) => setQuality(Math.min(100, Math.max(30, Number(e.target.value))))}
+                    style={{ width: "4.5rem", fontSize: "13px", height: "2rem" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {needsBg && (
+              <div className="field">
+                <span className="field-label">Background color</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <input
+                    type="color"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    style={{
+                      width: "2rem",
+                      height: "2rem",
+                      padding: "0.15rem",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      background: "transparent",
+                      cursor: "pointer",
+                    }}
+                    aria-label="Background color picker"
+                  />
+                  <Input
+                    value={bgColor}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      // accept partial hex while typing; apply only when valid
+                      if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBgColor(v);
+                    }}
+                    onBlur={(e) => {
+                      // Pad to full hex on blur if needed
+                      if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setBgColor("#ffffff");
+                    }}
+                    placeholder="#ffffff"
+                    style={{ width: "6rem", fontSize: "13px", height: "2rem", fontFamily: "monospace" }}
+                  />
+                  <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+                    JPG has no transparency
+                  </span>
+                </div>
+              </div>
             )}
           </section>
 
