@@ -1029,6 +1029,22 @@
   to { transform: rotate(360deg); }
 }
 
+/* LLM streaming cursor */
+@keyframes llm-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.llm-cursor {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1em;
+  background: var(--primary);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: llm-blink 0.9s step-end infinite;
+  border-radius: 1px;
+}
+
 .pick-feedback .chip {
   display: inline-block;
   width: 14px;

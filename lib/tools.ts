@@ -29,6 +29,12 @@ import {
   LuPalette,
   LuLayoutGrid,
   LuArrowUpDown,
+  LuBrain,
+  LuLanguages,
+  LuFileQuestion,
+  LuSpellCheck,
+  LuList,
+  LuPencilLine,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -313,6 +319,63 @@ export const TOOLS: Tool[] = [
     nav: "Reorder PDF",
     tagline: "Drag and drop PDF page thumbnails to rearrange order, delete pages, and download.",
     icon: LuArrowUpDown,
+  },
+  // ── Local AI ──────────────────────────────────────────────────────────────
+  {
+    slug: "ai-chat",
+    title: "Local AI Chat",
+    nav: "AI Chat",
+    tagline: "Chat privately with local LLMs — Llama, Mistral, Phi-4, and more via Ollama.",
+    icon: LuBrain,
+  },
+  {
+    slug: "ai-summarize",
+    title: "AI Summarizer",
+    nav: "Summarize",
+    tagline: "Summarize long text into bullet points using a local LLM — 100% private.",
+    icon: LuList,
+  },
+  {
+    slug: "ai-rewrite",
+    title: "AI Rewriter",
+    nav: "Rewrite",
+    tagline: "Improve, shorten, formalize, or expand text with a local AI model.",
+    icon: LuPencilLine,
+  },
+  {
+    slug: "ai-translate",
+    title: "AI Translator",
+    nav: "Translate",
+    tagline: "Translate text to 20+ languages using a locally-running LLM.",
+    icon: LuLanguages,
+  },
+  {
+    slug: "ai-code",
+    title: "AI Code Helper",
+    nav: "Code AI",
+    tagline: "Explain, fix, generate, convert, and review code with a local LLM.",
+    icon: LuCode,
+  },
+  {
+    slug: "ai-extract",
+    title: "Key Point Extractor",
+    nav: "Extract",
+    tagline: "Pull out facts and key insights from any document as a bullet list.",
+    icon: LuFileText,
+  },
+  {
+    slug: "ai-qa",
+    title: "Document Q&A",
+    nav: "Doc Q&A",
+    tagline: "Paste a document and ask questions about it — answers from the text only.",
+    icon: LuFileQuestion,
+  },
+  {
+    slug: "ai-grammar",
+    title: "Grammar Fixer",
+    nav: "Grammar",
+    tagline: "Fix grammar, spelling, and punctuation while preserving your voice.",
+    icon: LuSpellCheck,
   },
 ];
 

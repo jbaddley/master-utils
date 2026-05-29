@@ -40,10 +40,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // COOP/COEP required for SharedArrayBuffer (ffmpeg.wasm multi-thread)
-        source: "/(.*)",
+        // AI pages: relax COEP so browsers can call a user's local Ollama
+        // when NEXT_PUBLIC_LLM_MODE=client (deployed app + local Ollama scenario).
+        source: "/:path((?:ai-)[^/]+)/",
         headers: [
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Opener-Policy",  value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
+        ],
+      },
+      {
+        // All other routes: strict COEP required for ffmpeg.wasm / SharedArrayBuffer
+        source: "/((?!ai-).*)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy",  value: "same-origin" },
           { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },

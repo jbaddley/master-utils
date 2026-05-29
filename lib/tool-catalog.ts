@@ -25,6 +25,7 @@ import {
   LuKey,
   LuFingerprint,
   LuLink,
+  LuBrain,
 } from "react-icons/lu";
 import { PLATFORM_PAGES } from "@/lib/platform-pages";
 import { TOOLS } from "@/lib/tools";
@@ -45,6 +46,7 @@ export type ToolCategory =
   | "workflows"
   | "platform-presets"
   | "ai"
+  | "local-ai"
   | "document"
   | "data"
   | "security";
@@ -129,6 +131,12 @@ export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
     description: "Strip metadata, redact images, generate passwords, and inspect URLs.",
     icon: LuShield,
   },
+  {
+    id: "local-ai",
+    label: "Local AI",
+    description: "Run open-source LLMs locally — chat, summarize, rewrite, translate, code, and more.",
+    icon: LuBrain,
+  },
 ];
 
 const CATEGORY_BY_TOOL_SLUG: Record<string, ToolCategory> = {
@@ -165,6 +173,15 @@ const CATEGORY_BY_TOOL_SLUG: Record<string, ToolCategory> = {
   "url-encoder": "security",
   "url-unshortener": "security",
   "url-parser": "security",
+  // Local AI
+  "ai-chat":     "local-ai",
+  "ai-summarize":"local-ai",
+  "ai-rewrite":  "local-ai",
+  "ai-translate":"local-ai",
+  "ai-code":     "local-ai",
+  "ai-extract":  "local-ai",
+  "ai-qa":       "local-ai",
+  "ai-grammar":  "local-ai",
 };
 
 const ORPHAN_ENTRIES: CatalogEntry[] = [
