@@ -386,14 +386,6 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     keywords: ["shopify", "product", "ecommerce"],
   },
   {
-    slug: "ocr",
-    title: "OCR Online",
-    tagline: "Extract text from images — same as Image to Text.",
-    category: "document",
-    icon: LuScanText,
-    keywords: ["ocr", "text", "scan"],
-  },
-  {
     slug: "strip-metadata",
     title: "Strip Image Metadata",
     tagline: "Remove EXIF and GPS from photos — same as Remove EXIF.",
