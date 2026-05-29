@@ -26,7 +26,7 @@ export function ModelPicker({ value, onChange }: Props) {
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
-    fetch("/api/ai/models")
+    fetch("/api/ai/models/")
       .then((r) => r.json() as Promise<string[]>)
       .then((list) => {
         setModels(list);

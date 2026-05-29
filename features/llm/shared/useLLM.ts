@@ -19,7 +19,7 @@ export function saveModel(model: string): void {
  */
 export function useLLM(options: { model: string; system: string }) {
   return useCompletion({
-    api: "/api/ai/complete",
+    api: "/api/ai/complete/",
     streamProtocol: "text",
     body: {
       model:  options.model,

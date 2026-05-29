@@ -49,7 +49,7 @@ export function useStreamingChat(options: { model: string; system?: string }) {
           })),
         };
 
-        const res = await fetch("/api/ai/chat", {
+        const res = await fetch("/api/ai/chat/", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify(payload),
