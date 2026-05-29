@@ -138,11 +138,14 @@ export default function PdfSplitTool() {
         setPageCount(count);
         applyRangeString(`1-${count}`, count);
 
-        // Render thumbnails progressively using pdfjs
+        // Render thumbnails progressively using pdfjs.
+        // IMPORTANT: pdfjs transfers the Uint8Array's ArrayBuffer to its worker,
+        // detaching the original. Pass bytes.slice() (a copy) so `bytes` — and
+        // the `pdfBytes` state referencing it — stay intact for pdf-lib in split().
         const pdfJs = await getPdfJs();
         const thumbArr: string[] = new Array(count).fill("");
         setThumbProgress({ current: 0, total: count });
-        await renderAllThumbs(pdfJs, bytes, (pageNum, url) => {
+        await renderAllThumbs(pdfJs, bytes.slice(), (pageNum, url) => {
           thumbArr[pageNum - 1] = url;
           setThumbs([...thumbArr]);
           setThumbProgress({ current: pageNum, total: count });

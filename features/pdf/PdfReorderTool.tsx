@@ -55,9 +55,12 @@ export default function PdfReorderTool() {
       const pdfJs = await getPdfJs();
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
+      // Store for pdf-lib BEFORE passing to pdfjs — pdfjs potentially transfers
+      // the underlying ArrayBuffer to its worker, detaching `bytes`. We keep a
+      // separate reference here and always pass a fresh .slice() copy to pdfjs.
       setPdfBytes(bytes);
 
-      const doc = await pdfJs.getDocument({ data: bytes }).promise;
+      const doc = await pdfJs.getDocument({ data: bytes.slice() }).promise;
       const count = doc.numPages;
       await doc.destroy();
 
@@ -65,7 +68,9 @@ export default function PdfReorderTool() {
       setRenderProgress({ current: 0, total: count });
       for (let i = 1; i <= count; i++) {
         setRenderProgress({ current: i, total: count });
-        const dataUrl = await renderThumbnail(pdfJs, bytes, i);
+        // Pass a fresh copy each time so the previous call's transfer doesn't
+        // leave `bytes` detached for subsequent iterations.
+        const dataUrl = await renderThumbnail(pdfJs, bytes.slice(), i);
         thumbs.push({ originalIndex: i, dataUrl });
       }
       setRenderProgress(null);
