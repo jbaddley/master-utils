@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { TOOLS } from "@/lib/tools";
+import { CategoryNav } from "@/components/CategoryNav";
+import { ToolSearch } from "@/components/ToolSearch";
 import { UserMenu } from "@/components/UserMenu";
 
 export function SiteHeader() {
@@ -8,13 +9,10 @@ export function SiteHeader() {
       <Link href="/" className="brand">
         Image<span className="arrow"> → </span>Tools
       </Link>
-      <nav className="site-nav" aria-label="Tools">
-        {TOOLS.map((t) => (
-          <Link key={t.slug} href={`/${t.slug}`}>
-            {t.nav}
-          </Link>
-        ))}
-      </nav>
+      <CategoryNav />
+      <div className="site-header-search">
+        <ToolSearch variant="compact" placeholder="Search…" />
+      </div>
       <UserMenu />
     </header>
   );

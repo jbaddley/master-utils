@@ -50,9 +50,8 @@ export default function Page() {
       ]}
       related={[
         { href: "/workflow/podcast-cover-art", label: "Podcast Cover Art workflow" },
-        { href: "/resize-image", label: "Resize image" },
+        { href: "/resize-image", label: "Crop & resize image" },
         { href: "/compress-image", label: "Compress image" },
-        { href: "/crop-image", label: "Crop image" },
         { href: "/workflow", label: "All workflow templates" },
       ]}
       showAds

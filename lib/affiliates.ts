@@ -29,7 +29,7 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
     },
     {
       label: "Canva",
-      description: "Drop your resized image into a Canva social media template.",
+      description: "Drop your cropped and resized image into a Canva social media template.",
       href: "https://www.canva.com/",
       cta: "Try Canva free →",
     },
@@ -64,14 +64,6 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Try Canva free →",
     },
   ],
-  "crop-image": [
-    {
-      label: "Later",
-      description: "Schedule your cropped images directly to social media.",
-      href: "https://later.com/",
-      cta: "Try Later free →",
-    },
-  ],
   "png-to-jpg": [
     {
       label: "Adobe Express",
@@ -88,7 +80,7 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Remove background →",
     },
   ],
-  "audio-converter": [
+  "convert-audio": [
     {
       label: "Descript",
       description: "Edit your audio and video like a document with AI-powered transcription.",
@@ -172,7 +164,7 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Start free on Buzzsprout →",
     },
   ],
-  "video-converter": [
+  "convert-video": [
     {
       label: "DaVinci Resolve",
       description: "Professional free video editor for color grading, editing, and effects.",

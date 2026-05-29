@@ -1,0 +1,238 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import Link from "next/link";
+import { LuChevronDown } from "react-icons/lu";
+import {
+  TOOL_CATEGORIES,
+  TOOL_CATALOG,
+  getCatalogHref,
+  getMenuCategoryCount,
+  getMenuToolsByCategory,
+  getToolsByCategory,
+  type CatalogEntry,
+  type ToolCategory,
+} from "@/lib/tool-catalog";
+
+const COLLAPSIBLE_CATEGORIES: ToolCategory[] = ["format-conversions", "platform-presets"];
+
+function ToolCard({ entry }: { entry: CatalogEntry }) {
+  const Icon = entry.icon;
+  return (
+    <Link href={getCatalogHref(entry.slug)} className="tool-card">
+      {Icon && <Icon className="tc-icon" aria-hidden />}
+      <h3>{entry.title}</h3>
+      <p>{entry.tagline}</p>
+    </Link>
+  );
+}
+
+function CollapsibleSection({
+  categoryId,
+  title,
+  description,
+  children,
+  defaultOpen = false,
+}: {
+  categoryId: ToolCategory;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <section
+      id={`category-${categoryId}`}
+      className="tool-directory-section collapsible-section"
+      data-category={categoryId}
+    >
+      <button
+        type="button"
+        className="collapsible-trigger"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="tool-directory-heading">
+          <span className="tool-directory-title">{title}</span>
+          <span className="tool-directory-desc">{description}</span>
+        </span>
+        <LuChevronDown className={`collapsible-chevron${open ? " is-open" : ""}`} aria-hidden />
+      </button>
+      {open && <div className="collapsible-content">{children}</div>}
+    </section>
+  );
+}
+
+function CategorySection({
+  categoryId,
+  title,
+  description,
+  entries,
+}: {
+  categoryId: ToolCategory;
+  title: string;
+  description: string;
+  entries: CatalogEntry[];
+}) {
+  if (entries.length === 0) return null;
+
+  return (
+    <section
+      id={`category-${categoryId}`}
+      className="tool-directory-section"
+      data-category={categoryId}
+    >
+      <div className="tool-directory-header">
+        <h2 className="tool-directory-title">{title}</h2>
+        <span className="tool-directory-count">{entries.length}</span>
+      </div>
+      <p className="tool-directory-desc">{description}</p>
+      <div className="tool-grid">
+        {entries.map((entry) => (
+          <ToolCard key={entry.slug} entry={entry} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ToolDirectory() {
+  const scrollToCategory = useCallback((categoryId: ToolCategory) => {
+    const el = document.getElementById(`category-${categoryId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("is-highlighted");
+    window.setTimeout(() => el.classList.remove("is-highlighted"), 1200);
+  }, []);
+
+  const featuredByCategory = new Map<ToolCategory, CatalogEntry[]>();
+  for (const cat of TOOL_CATEGORIES) {
+    const featured = TOOL_CATALOG.filter((e) => e.category === cat.id && e.featured);
+    if (featured.length > 0) {
+      featuredByCategory.set(cat.id, featured);
+    }
+  }
+
+  return (
+    <div className="tool-directory">
+      <div className="category-pills" role="navigation" aria-label="Tool categories">
+        {TOOL_CATEGORIES.map((cat) => {
+          const count = getMenuCategoryCount(cat.id);
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              className="category-pill"
+              onClick={() => scrollToCategory(cat.id)}
+            >
+              {cat.label}
+              <span className="category-pill-count">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {TOOL_CATEGORIES.map((cat) => {
+        if (COLLAPSIBLE_CATEGORIES.includes(cat.id)) {
+          if (cat.id === "format-conversions") {
+            const menuEntries = getMenuToolsByCategory(cat.id);
+            const hub = menuEntries[0];
+            const popular = menuEntries.slice(1);
+            return (
+              <CollapsibleSection
+                key={cat.id}
+                categoryId={cat.id}
+                title={cat.label}
+                description={cat.description}
+              >
+                {hub && (
+                  <div className="tool-grid tool-grid--compact" style={{ marginBottom: "1rem" }}>
+                    <ToolCard entry={hub} />
+                  </div>
+                )}
+                {popular.length > 0 && (
+                  <div className="related conversion-chips">
+                    {popular.map((entry) => (
+                      <Link key={entry.slug} href={getCatalogHref(entry.slug)}>
+                        {entry.title}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
+                  <Link href="/convert-image/">All image format conversions →</Link>
+                </p>
+              </CollapsibleSection>
+            );
+          }
+
+          const entries = getToolsByCategory(cat.id);
+          const resizeEntries = entries.filter((e) => e.slug.startsWith("resize-"));
+          const compressEntries = entries.filter((e) => e.slug.startsWith("compress-"));
+          const otherEntries = entries.filter(
+            (e) => !e.slug.startsWith("resize-") && !e.slug.startsWith("compress-"),
+          );
+
+          return (
+            <CollapsibleSection
+              key={cat.id}
+              categoryId={cat.id}
+              title={cat.label}
+              description={cat.description}
+            >
+              {resizeEntries.length > 0 && (
+                <div className="platform-preset-group">
+                  <h3 className="platform-preset-heading">Resize for platforms</h3>
+                  <div className="tool-grid tool-grid--compact">
+                    {resizeEntries.map((entry) => (
+                      <ToolCard key={entry.slug} entry={entry} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {compressEntries.length > 0 && (
+                <div className="platform-preset-group">
+                  <h3 className="platform-preset-heading">Compress for platforms</h3>
+                  <div className="tool-grid tool-grid--compact">
+                    {compressEntries.map((entry) => (
+                      <ToolCard key={entry.slug} entry={entry} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {otherEntries.length > 0 && (
+                <div className="platform-preset-group">
+                  <div className="tool-grid tool-grid--compact">
+                    {otherEntries.map((entry) => (
+                      <ToolCard key={entry.slug} entry={entry} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+          );
+        }
+
+        const featured = featuredByCategory.get(cat.id);
+        const entries =
+          featured && featured.length > 0
+            ? featured
+            : getToolsByCategory(cat.id)
+                .filter((e) => e.inNav !== false)
+                .slice(0, 8);
+
+        return (
+          <CategorySection
+            key={cat.id}
+            categoryId={cat.id}
+            title={cat.label}
+            description={cat.description}
+            entries={entries}
+          />
+        );
+      })}
+    </div>
+  );
+}

@@ -13,6 +13,19 @@ import {
   LuVideo,
   LuClapperboard,
   LuMic,
+  LuFileText,
+  LuScanText,
+  LuBraces,
+  LuBinary,
+  LuShield,
+  LuEraser,
+  LuKey,
+  LuFingerprint,
+  LuLink,
+  LuCaseSensitive,
+  LuCode,
+  LuMessageSquare,
+  LuGitCompare,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -40,24 +53,17 @@ export const TOOLS: Tool[] = [
     icon: LuArchive,
   },
   {
-    slug: "png-to-jpg",
+    slug: "convert-image",
     title: "Convert Image",
     nav: "Convert",
-    tagline: "Convert between PNG, JPG and WebP — any format pair.",
+    tagline: "Convert between PNG, JPG, WebP, AVIF, and more — output limited by input format.",
     icon: LuArrowRightLeft,
   },
   {
     slug: "resize-image",
-    title: "Resize Image",
-    nav: "Resize",
-    tagline: "Resize by pixels or percent, with aspect-ratio lock.",
-    icon: LuScaling,
-  },
-  {
-    slug: "crop-image",
-    title: "Crop Image",
-    nav: "Crop",
-    tagline: "Crop to any size or aspect ratio with a draggable box.",
+    title: "Crop & Resize Image",
+    nav: "Crop & Resize",
+    tagline: "Crop to any aspect ratio and resize to exact pixels — with social presets.",
     icon: LuCrop,
   },
   {
@@ -89,10 +95,10 @@ export const TOOLS: Tool[] = [
     icon: LuScaling,
   },
   {
-    slug: "audio-converter",
+    slug: "convert-audio",
     title: "Audio Converter",
     nav: "Audio",
-    tagline: "Convert MP3, WAV, OGG, M4A, FLAC and more — all in your browser.",
+    tagline: "Convert MP3, WAV, OGG, M4A, FLAC and more — output limited by input format.",
     icon: LuMusic,
   },
   {
@@ -103,10 +109,10 @@ export const TOOLS: Tool[] = [
     icon: LuScaling,
   },
   {
-    slug: "video-converter",
+    slug: "convert-video",
     title: "Video Converter",
     nav: "Video",
-    tagline: "Convert MP4, WebM, and MOV — trim, mute, compress, and extract audio.",
+    tagline: "Convert MP4, WebM, MOV, and more — output limited by input format.",
     icon: LuVideo,
   },
   {
@@ -137,89 +143,149 @@ export const TOOLS: Tool[] = [
     tagline: "Multi-step image processing: optimize, crop, resize, and convert in one click.",
     icon: LuWorkflow,
   },
+  {
+    slug: "merge-pdf",
+    title: "Merge PDF",
+    nav: "Merge PDF",
+    tagline: "Combine multiple PDFs into one file — reorder pages, download instantly.",
+    icon: LuFileText,
+  },
+  {
+    slug: "split-pdf",
+    title: "Split PDF",
+    nav: "Split PDF",
+    tagline: "Extract page ranges from a PDF without uploading to a server.",
+    icon: LuFileText,
+  },
+  {
+    slug: "pdf-to-image",
+    title: "PDF to Image",
+    nav: "PDF to Image",
+    tagline: "Render PDF pages as PNG or JPEG images in your browser.",
+    icon: LuFileText,
+  },
+  {
+    slug: "image-to-pdf",
+    title: "Image to PDF",
+    nav: "Image to PDF",
+    tagline: "Pack images into a single PDF with A4, Letter, or fit-to-image sizing.",
+    icon: LuFileText,
+  },
+  {
+    slug: "image-to-text",
+    title: "Image to Text (OCR)",
+    nav: "OCR",
+    tagline: "Extract text from images and PDFs with Tesseract — 100% in your browser.",
+    icon: LuScanText,
+  },
+  {
+    slug: "json-formatter",
+    title: "JSON Formatter",
+    nav: "JSON",
+    tagline: "Validate, pretty-print, and explore JSON with a collapsible tree view.",
+    icon: LuBraces,
+  },
+  {
+    slug: "csv-to-json",
+    title: "CSV to JSON",
+    nav: "CSV → JSON",
+    tagline: "Convert CSV spreadsheets to JSON arrays — auto-detects delimiters.",
+    icon: LuBraces,
+  },
+  {
+    slug: "json-to-csv",
+    title: "JSON to CSV",
+    nav: "JSON → CSV",
+    tagline: "Turn a JSON array into a downloadable CSV file.",
+    icon: LuBraces,
+  },
+  {
+    slug: "base64-encoder",
+    title: "Base64 Encoder",
+    nav: "Base64",
+    tagline: "Encode and decode text or files to Base64 — copy or download results.",
+    icon: LuBinary,
+  },
+  {
+    slug: "remove-exif",
+    title: "Remove EXIF",
+    nav: "Remove EXIF",
+    tagline: "View and strip GPS, camera, and other metadata before sharing photos.",
+    icon: LuShield,
+  },
+  {
+    slug: "redact-image",
+    title: "Privacy Redactor",
+    nav: "Redact",
+    tagline: "Black out or pixelate sensitive regions on screenshots and documents.",
+    icon: LuEraser,
+  },
+  {
+    slug: "password-generator",
+    title: "Password Generator",
+    nav: "Password",
+    tagline: "Generate secure random or memorable diceware passwords in your browser.",
+    icon: LuKey,
+  },
+  {
+    slug: "uuid-generator",
+    title: "UUID Generator",
+    nav: "UUID",
+    tagline: "Create v4, v1, or v5 UUIDs in bulk — copy or download as text.",
+    icon: LuFingerprint,
+  },
+  {
+    slug: "url-encoder",
+    title: "URL Encoder",
+    nav: "URL Encode",
+    tagline: "Encode or decode URL components and full URLs — instant, private.",
+    icon: LuLink,
+  },
+  {
+    slug: "url-unshortener",
+    title: "URL Unshortener",
+    nav: "Unshorten",
+    tagline: "Preview the final destination of a short link before you click.",
+    icon: LuLink,
+  },
+  {
+    slug: "url-parser",
+    title: "URL Parser",
+    nav: "URL Parser",
+    tagline: "Break a URL into protocol, host, path, query params, and hash.",
+    icon: LuLink,
+  },
+  {
+    slug: "text-case-converter",
+    title: "Text Case Converter",
+    nav: "Case Converter",
+    tagline: "Convert text between camelCase, PascalCase, snake_case, kebab-case, and more.",
+    icon: LuCaseSensitive,
+  },
+  {
+    slug: "code-formatter",
+    title: "Code Formatter",
+    nav: "Code Formatter",
+    tagline: "Format HTML, CSS, JavaScript, TypeScript, and JSON with Prettier — client-side.",
+    icon: LuCode,
+  },
+  {
+    slug: "social-media-character-counter",
+    title: "Social Media Character Counter",
+    nav: "Char Counter",
+    tagline: "Count characters for X, LinkedIn, Instagram, and Facebook with live limit warnings.",
+    icon: LuMessageSquare,
+  },
+  {
+    slug: "diff-checker",
+    title: "Diff Checker",
+    nav: "Diff Checker",
+    tagline: "Compare two text blocks and highlight added and removed lines side by side.",
+    icon: LuGitCompare,
+  },
 ];
 
-/** Format-conversion pairs that each get their own SEO landing page. */
-export const CONVERSIONS = [
-  "png-to-jpg",
-  "jpg-to-png",
-  "png-to-webp",
-  "webp-to-png",
-  "jpg-to-webp",
-  "webp-to-jpg",
-  "gif-to-png",
-  "bmp-to-png",
-  "gif-to-jpg",
-  "gif-to-webp",
-  "bmp-to-jpg",
-  "bmp-to-webp",
-  "avif-to-jpg",
-  "avif-to-png",
-  "avif-to-webp",
-  "png-to-avif",
-  "jpg-to-avif",
-  "webp-to-avif",
-  "svg-to-png",
-  "svg-to-jpg",
-  "svg-to-webp",
-] as const;
-
-export type Conversion = (typeof CONVERSIONS)[number];
-
-const MIME: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  webp: "image/webp",
-  gif: "image/gif",
-  bmp: "image/bmp",
-  avif: "image/avif",
-  svg: "image/svg+xml",
-};
-const LABEL: Record<string, string> = {
-  png: "PNG",
-  jpg: "JPG",
-  jpeg: "JPG",
-  webp: "WebP",
-  gif: "GIF",
-  bmp: "BMP",
-  avif: "AVIF",
-  svg: "SVG",
-};
-const EXT: Record<string, string> = {
-  png: ".png",
-  jpg: ".jpg",
-  jpeg: ".jpg",
-  webp: ".webp",
-  gif: ".gif",
-  bmp: ".bmp",
-  avif: ".avif",
-  svg: ".svg",
-};
-
-export type ConversionInfo = {
-  fromKey: string;
-  toKey: string;
-  fromLabel: string;
-  toLabel: string;
-  toMime: string;
-  toExt: string;
-};
-
-const UNSUPPORTED_OUTPUT = new Set(["svg", "gif", "bmp"]);
-
-/** Parse a slug like "png-to-jpg" into source/target format info. */
-export function parseConversion(slug: string): ConversionInfo | null {
-  const m = slug.match(/^([a-z]+)-to-([a-z]+)$/);
-  if (!m) return null;
-  const [, from, to] = m;
-  if (!LABEL[from] || !LABEL[to] || !MIME[to] || UNSUPPORTED_OUTPUT.has(to)) return null;
-  return {
-    fromKey: from,
-    toKey: to,
-    fromLabel: LABEL[from],
-    toLabel: LABEL[to],
-    toMime: MIME[to],
-    toExt: EXT[to],
-  };
-}
+/** @deprecated Image-only slugs; use CONVERSION_SLUGS from media-conversions for all media */
+export { CONVERSIONS, parseConversion } from "@/lib/media-conversions";
+export { CONVERSION_SLUGS } from "@/lib/media-conversions";
+export type { MediaConversionInfo as ConversionInfo } from "@/lib/media-conversions";

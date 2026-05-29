@@ -2,12 +2,11 @@
 
 import { useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
+import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuVolume2, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "@/lib/download";
-
-const CDNBASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
 
 const ACCEPTED_EXTS = ["mp4", "webm", "mov", "avi", "mkv", "ogg"];
 const ACCEPT_ATTR = ACCEPTED_EXTS.map((e) => `.${e}`).join(",");
@@ -30,7 +29,6 @@ function extOf(filename: string): string {
 }
 
 export default function VideoMuteTool() {
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -55,18 +53,6 @@ export default function VideoMuteTool() {
     if (f) handleFile(f);
   };
 
-  const getFFmpeg = async (): Promise<FFmpeg> => {
-    if (ffmpegRef.current?.loaded) return ffmpegRef.current;
-    const ffmpeg = new FFmpeg();
-    setStatus("loading");
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  };
-
   const mute = async () => {
     if (!file) return;
     setError(null);
@@ -75,12 +61,11 @@ export default function VideoMuteTool() {
 
     let ffmpeg: FFmpeg;
     try {
-      ffmpeg = await getFFmpeg();
+      setStatus("loading");
+      ffmpeg = await loadFFmpeg();
     } catch (e) {
       setStatus("error");
-      setError(
-        e instanceof Error ? `Failed to load ffmpeg.wasm: ${e.message}` : "Failed to load ffmpeg.wasm"
-      );
+      setError(formatFFmpegLoadError(e));
       return;
     }
 

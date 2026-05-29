@@ -2,12 +2,11 @@
 
 import { useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
+import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuMusic, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "@/lib/download";
-
-const CDNBASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
 
 const ACCEPTED_INPUTS = ["mp3", "wav", "ogg", "m4a", "flac", "aac"];
 const ACCEPT_ATTR = ACCEPTED_INPUTS.map((e) => `.${e}`).join(",");
@@ -42,7 +41,6 @@ export default function AudioEffectsTool({
 }: {
   mode: "speed" | "fade" | "pitch";
 }) {
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -77,18 +75,6 @@ export default function AudioEffectsTool({
     setDragging(false);
     const f = e.dataTransfer.files?.[0];
     if (f) handleFile(f);
-  };
-
-  const getFFmpeg = async (): Promise<FFmpeg> => {
-    if (ffmpegRef.current?.loaded) return ffmpegRef.current;
-    const ffmpeg = new FFmpeg();
-    setStatus("loading");
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
   };
 
   const buildFilter = (): string => {
@@ -129,7 +115,7 @@ export default function AudioEffectsTool({
 
     let ffmpeg: FFmpeg;
     try {
-      ffmpeg = await getFFmpeg();
+      setStatus("loading"); ffmpeg = await loadFFmpeg();
     } catch (e) {
       setStatus("error");
       setError(

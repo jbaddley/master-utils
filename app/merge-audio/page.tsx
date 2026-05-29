@@ -43,7 +43,7 @@ export default function Page() {
       ]}
       related={[
         { href: "/trim-audio", label: "Trim audio" },
-        { href: "/audio-converter", label: "Convert audio format" },
+        { href: "/convert-audio", label: "Convert audio format" },
         { href: "/audio-fade", label: "Add fade in/out" },
         { href: "/normalize-audio", label: "Normalize volume" },
       ]}

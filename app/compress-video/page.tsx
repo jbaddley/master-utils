@@ -48,7 +48,7 @@ export default function Page() {
       related={[
         { href: "/trim-video", label: "Trim video" },
         { href: "/mute-video", label: "Mute video" },
-        { href: "/video-converter", label: "Convert video format" },
+        { href: "/convert-video", label: "Convert video format" },
         { href: "/video-to-gif", label: "Video to GIF" },
       ]}
       showAds

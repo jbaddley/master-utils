@@ -42,7 +42,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/audio-converter", label: "Audio converter" },
+        { href: "/convert-audio", label: "Audio converter" },
         { href: "/mp4-to-mp3", label: "MP4 to MP3" },
         { href: "/wav-to-mp3", label: "WAV to MP3" },
         { href: "/mp3-to-wav", label: "MP3 to WAV" },

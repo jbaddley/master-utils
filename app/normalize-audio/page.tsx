@@ -41,7 +41,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/audio-converter", label: "Audio Converter" },
+        { href: "/convert-audio", label: "Audio Converter" },
         { href: "/trim-audio", label: "Trim Audio" },
         { href: "/remove-silence-from-audio", label: "Remove Silence from Audio" },
       ]}

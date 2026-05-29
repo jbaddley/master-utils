@@ -43,7 +43,7 @@ export default function Page() {
       related={[
         { href: "/compress-image", label: "Compress image" },
         { href: "/png-to-jpg", label: "Convert image" },
-        { href: "/crop-image", label: "Crop image" },
+        { href: "/resize-image", label: "Crop & resize image" },
       ]}
     >
       <SvgTool />

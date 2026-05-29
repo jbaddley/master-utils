@@ -51,7 +51,7 @@ export default function Page() {
       related={[
         { href: "/workflow/shopify-product", label: "Shopify Product workflow" },
         { href: "/compress-image-for-shopify", label: "Compress for Shopify" },
-        { href: "/resize-image", label: "Resize image" },
+        { href: "/resize-image", label: "Crop & resize image" },
         { href: "/compress-image", label: "Compress image" },
         { href: "/workflow", label: "All workflow templates" },
       ]}

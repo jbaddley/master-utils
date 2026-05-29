@@ -47,7 +47,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     ],
     related: [
       { href: "/compress-image", label: "Compress image" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/png-to-jpg", label: "Convert image" },
     ],
   },
@@ -81,7 +81,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
     ],
     related: [
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image", label: "Compress image" },
       { href: "/jpg-to-webp", label: "JPG to WebP" },
     ],
@@ -117,7 +117,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     ],
     related: [
       { href: "/compress-image", label: "Compress image" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/png-to-jpg", label: "PNG to JPG" },
     ],
   },
@@ -150,7 +150,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
     ],
     related: [
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/png-to-webp", label: "PNG to WebP" },
       { href: "/jpg-to-webp", label: "JPG to WebP" },
     ],
@@ -187,7 +187,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/png-to-webp", label: "PNG to WebP" },
       { href: "/jpg-to-webp", label: "JPG to WebP" },
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -219,7 +219,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
     ],
     related: [
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/png-to-webp", label: "PNG to WebP" },
       { href: "/jpg-to-webp", label: "JPG to WebP" },
     ],
@@ -255,7 +255,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/compress-image", label: "Compress image" },
       { href: "/png-to-jpg", label: "PNG to JPG" },
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -287,7 +287,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
     ],
     related: [
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image-for-shopify", label: "Compress for Shopify" },
       { href: "/png-to-jpg", label: "PNG to JPG" },
     ],
@@ -357,8 +357,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     ],
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
-      { href: "/resize-image", label: "Resize image" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -428,7 +427,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
       { href: "/resize-image-for-linkedin", label: "Resize for LinkedIn" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -462,7 +461,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
       { href: "/compress-image", label: "Compress image" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -496,7 +495,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/compress-image-for-shopify", label: "Compress for Shopify" },
       { href: "/compress-image-for-etsy", label: "Compress for Etsy" },
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -528,9 +527,8 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
     ],
     related: [
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image", label: "Compress image" },
-      { href: "/resize-image", label: "Resize image" },
     ],
   },
   {
@@ -599,7 +597,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     related: [
       { href: "/resize-image-for-youtube", label: "Resize for YouTube" },
       { href: "/compress-image", label: "Compress image" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
     ],
   },
   {
@@ -667,7 +665,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     ],
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/png-to-jpg", label: "PNG to JPG" },
     ],
   },

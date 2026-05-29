@@ -46,9 +46,8 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/resize-image", label: "Resize image" },
+        { href: "/resize-image", label: "Crop & resize image" },
         { href: "/compress-image", label: "Compress image" },
-        { href: "/crop-image", label: "Crop image" },
         { href: "/png-to-jpg", label: "Convert image" },
       ]}
       showAds

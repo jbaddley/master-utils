@@ -8,24 +8,74 @@ import { loadImageFile, baseName, type LoadedImage } from "@/lib/files";
 import { canvasToBlob, drawToCanvas, isOpaqueFormat } from "@/lib/image";
 import { formatBytes } from "@/lib/format";
 import { saveAs } from "@/lib/download";
+import {
+  IMAGE_INPUT_FORMATS,
+  IMAGE_OUTPUT_BY_INPUT,
+  IMAGE_LABEL,
+} from "@/lib/media-conversions";
+
+const IMAGE_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+const IMAGE_EXT: Record<string, string> = {
+  png: ".png",
+  jpg: ".jpg",
+  webp: ".webp",
+  avif: ".avif",
+};
+
+function extOf(filename: string): string {
+  const m = filename.match(/\.([a-z0-9]+)$/i);
+  return m ? m[1]!.toLowerCase() : "";
+}
+
+function normalizeImageExt(ext: string): string {
+  if (ext === "jpeg") return "jpg";
+  return ext;
+}
 
 export default function ConvertTool({
-  toMime,
-  toLabel,
-  toExt,
+  initialFrom = "png",
+  initialTo = "jpg",
 }: {
-  toMime: string;
-  toLabel: string;
-  toExt: string;
+  initialFrom?: string;
+  initialTo?: string;
 }) {
+  const [fromKey, setFromKey] = useState(initialFrom);
+  const [toKey, setToKey] = useState(initialTo);
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [result, setResult] = useState<{ url: string; size: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastUrl = useRef<string | null>(null);
+
+  const allowedOutputs = IMAGE_OUTPUT_BY_INPUT[fromKey] ?? IMAGE_OUTPUT_BY_INPUT.png!;
+  const toMime = IMAGE_MIME[toKey] ?? "image/jpeg";
+  const toLabel = IMAGE_LABEL[toKey] ?? toKey.toUpperCase();
+  const toExt = IMAGE_EXT[toKey] ?? ".jpg";
   const lossy = toMime === "image/jpeg" || toMime === "image/webp";
+
+  useEffect(() => {
+    if (!allowedOutputs.includes(toKey)) {
+      setToKey(allowedOutputs[0] ?? "jpg");
+    }
+  }, [fromKey, allowedOutputs, toKey]);
+
+  useEffect(() => {
+    setFromKey(initialFrom);
+    setToKey(initialTo);
+  }, [initialFrom, initialTo]);
 
   const onFile = async (file: File) => {
     setError(null);
+    const detected = normalizeImageExt(extOf(file.name));
+    if (detected && IMAGE_OUTPUT_BY_INPUT[detected]) {
+      setFromKey(detected === "jpeg" ? "jpg" : detected);
+      const outs = IMAGE_OUTPUT_BY_INPUT[detected]!;
+      if (!outs.includes(toKey)) setToKey(outs[0]!);
+    }
     try {
       const img = await loadImageFile(file);
       setLoaded((prev) => {
@@ -81,8 +131,50 @@ export default function ConvertTool({
     <div className="tool-ui">
       {error && <div className="error">{error}</div>}
 
+      <section className="card settings">
+        <div className="duo">
+          <label className="field">
+            <span className="field-label">Input format</span>
+            <select
+              value={fromKey}
+              onChange={(e) => {
+                setFromKey(e.target.value);
+                setLoaded(null);
+                setResult(null);
+              }}
+            >
+              {IMAGE_INPUT_FORMATS.map((f) => (
+                <option key={f} value={f}>
+                  {IMAGE_LABEL[f] ?? f.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-label">Output format</span>
+            <select
+              value={toKey}
+              onChange={(e) => {
+                setToKey(e.target.value);
+                setResult(null);
+              }}
+            >
+              {allowedOutputs.map((f) => (
+                <option key={f} value={f}>
+                  {IMAGE_LABEL[f] ?? f.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
       {!loaded ? (
-        <Dropzone onFile={onFile} onError={setError} />
+        <Dropzone
+          onFile={onFile}
+          onError={setError}
+          label={`Drop a ${IMAGE_LABEL[fromKey] ?? fromKey} image`}
+        />
       ) : (
         <>
           <div className="toolbar">

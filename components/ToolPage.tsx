@@ -24,6 +24,7 @@ export function ToolPage(props: {
   body?: ReactNode;
   related?: RelatedLink[];
   showAds?: boolean;
+  privacyNote?: string;
 }) {
   const ads = props.showAds !== false;
   const url = canonical(props.slug);
@@ -49,8 +50,8 @@ export function ToolPage(props: {
         {ads && <AdSlot variant="rectangle" />}
 
         <p className="privacy">
-          Private by design — all processing happens in your browser. Your
-          images are never uploaded to a server.
+          {props.privacyNote ??
+            "Private by design — all processing happens in your browser. Your images are never uploaded to a server."}
         </p>
 
         {props.related && props.related.length > 0 && (

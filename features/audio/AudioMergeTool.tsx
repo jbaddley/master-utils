@@ -2,11 +2,10 @@
 
 import { useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
+import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuPlus, LuDownload, LuX, LuMusic } from "react-icons/lu";
 import { saveAs } from "@/lib/download";
-
-const CDNBASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
 
 const MIME: Record<string, string> = {
   mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg",
@@ -17,7 +16,6 @@ function ext(name: string) { return name.split(".").pop()?.toLowerCase() ?? "mp3
 function mime(name: string) { return MIME[ext(name)] ?? "audio/mpeg"; }
 
 export default function AudioMergeTool() {
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [outputFmt, setOutputFmt] = useState("mp3");
@@ -34,24 +32,17 @@ export default function AudioMergeTool() {
   const removeFile = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
   const onDrop = (e: React.DragEvent) => { e.preventDefault(); addFiles(e.dataTransfer.files); };
 
-  const getFFmpeg = async () => {
-    if (ffmpegRef.current?.loaded) return ffmpegRef.current;
-    const ffmpeg = new FFmpeg();
-    setStatus("loading");
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  };
-
   const merge = async () => {
     if (files.length < 2) { setError("Add at least 2 audio files to merge."); return; }
     setError(null); setResultBlob(null); setProgress(0);
     let ffmpeg: FFmpeg;
-    try { ffmpeg = await getFFmpeg(); } catch (e) {
-      setStatus("error"); setError(e instanceof Error ? e.message : "Failed to load ffmpeg.wasm"); return;
+    try {
+      setStatus("loading");
+      ffmpeg = await loadFFmpeg();
+    } catch (e) {
+      setStatus("error");
+      setError(formatFFmpegLoadError(e));
+      return;
     }
     try {
       setStatus("converting");

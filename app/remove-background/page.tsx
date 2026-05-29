@@ -46,7 +46,7 @@ export default function Page() {
       ]}
       related={[
         { href: "/image-to-svg", label: "Image to SVG" },
-        { href: "/crop-image", label: "Crop image" },
+        { href: "/resize-image", label: "Crop & resize image" },
         { href: "/compress-image", label: "Compress image" },
       ]}
     >

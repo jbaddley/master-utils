@@ -37,8 +37,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/resize-image", label: "Resize image" },
-        { href: "/crop-image", label: "Crop image" },
+        { href: "/resize-image", label: "Crop & resize image" },
         { href: "/png-to-webp", label: "Convert image" },
       ]}
     >

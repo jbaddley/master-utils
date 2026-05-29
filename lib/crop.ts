@@ -16,6 +16,33 @@ export function cropImageData(
   return out;
 }
 
+/** Crop a region that may extend outside the source; out-of-bounds areas are transparent. */
+export function extendedCropImageData(
+  src: ImageData,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): ImageData {
+  const out = new ImageData(w, h);
+  const s = src.data;
+  const d = out.data;
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const sx = x + col;
+      const sy = y + row;
+      const di = (row * w + col) * 4;
+      if (sx < 0 || sy < 0 || sx >= src.width || sy >= src.height) continue;
+      const si = (sy * src.width + sx) * 4;
+      d[di] = s[si];
+      d[di + 1] = s[si + 1];
+      d[di + 2] = s[si + 2];
+      d[di + 3] = s[si + 3];
+    }
+  }
+  return out;
+}
+
 /** Bounding box of all non-transparent pixels, or null if fully transparent. */
 export function contentBounds(
   src: ImageData,

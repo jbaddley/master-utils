@@ -42,7 +42,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/audio-converter", label: "Audio Converter" },
+        { href: "/convert-audio", label: "Audio Converter" },
         { href: "/change-audio-speed", label: "Change Audio Speed" },
         { href: "/audio-fade", label: "Audio Fade In/Out" },
         { href: "/trim-audio", label: "Trim Audio" },

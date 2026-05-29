@@ -53,9 +53,8 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
       },
     ],
     related: [
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image", label: "Compress image" },
-      { href: "/crop-image", label: "Crop image" },
       { href: "/workflow/instagram-post", label: "Instagram Post workflow" },
     ],
   },
@@ -91,7 +90,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     ],
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
-      { href: "/crop-image", label: "Crop image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image", label: "Compress image" },
       { href: "/workflow/shopify-product", label: "Shopify Product workflow" },
     ],
@@ -128,7 +127,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     ],
     related: [
       { href: "/compress-image-for-shopify", label: "Compress for Shopify" },
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/compress-image", label: "Compress image" },
       { href: "/workflow/instagram-post", label: "Instagram Post workflow" },
     ],
@@ -165,7 +164,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     ],
     related: [
       { href: "/favicon-generator", label: "Favicon Generator" },
-      { href: "/resize-image", label: "Resize image" },
+      { href: "/resize-image", label: "Crop & resize image" },
       { href: "/image-to-svg", label: "Image to SVG" },
       { href: "/workflow/podcast-cover-art", label: "Podcast Cover Art workflow" },
     ],

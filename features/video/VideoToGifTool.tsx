@@ -2,17 +2,15 @@
 
 import { useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
 import { LuClapperboard, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { saveAs } from "@/lib/download";
-
-const CDNBASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 const MAX_DURATION = 30; // seconds
 
 function baseName(name: string) { return name.replace(/\.[^.]+$/, "") || "video"; }
 
 export default function VideoToGifTool() {
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fps, setFps] = useState(10);
@@ -30,26 +28,19 @@ export default function VideoToGifTool() {
   const onDrop = (e: React.DragEvent) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); };
   const reset = () => { setFile(null); setResultBlob(null); setResultUrl(null); setError(null); setStatus("idle"); };
 
-  const getFFmpeg = async () => {
-    if (ffmpegRef.current?.loaded) return ffmpegRef.current;
-    const ffmpeg = new FFmpeg();
-    setStatus("loading");
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  };
-
   const convert = async () => {
     if (!file) return;
     const clipDuration = parseFloat(duration) || 10;
     if (clipDuration > MAX_DURATION) { setError(`Duration capped at ${MAX_DURATION} seconds for GIF generation.`); return; }
     setError(null); setResultBlob(null); setResultUrl(null); setProgress(0);
     let ffmpeg: FFmpeg;
-    try { ffmpeg = await getFFmpeg(); } catch (e) {
-      setStatus("error"); setError(e instanceof Error ? e.message : "Failed to load ffmpeg.wasm"); return;
+    try {
+      setStatus("loading");
+      ffmpeg = await loadFFmpeg();
+    } catch (e) {
+      setStatus("error");
+      setError(formatFFmpegLoadError(e));
+      return;
     }
     try {
       setStatus("converting");

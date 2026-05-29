@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { TOOLS, CONVERSIONS, parseConversion } from "@/lib/tools";
+import { ToolSearch } from "@/components/ToolSearch";
+import { ToolDirectory } from "@/components/ToolDirectory";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -7,43 +7,23 @@ export default function Home() {
   return (
     <main className="page">
       <div className="hero">
-        <h1>Free Online Image Tools</h1>
+        <h1>Free Online Media Tools</h1>
         <p className="lede">
-          Fast, private image utilities that run entirely in your browser — no
-          uploads, no sign-up, no watermarks. Convert, compress, resize, crop,
-          vectorize and more.
+          Fast, private utilities for images, audio, video, and QR codes — all
+          running entirely in your browser. No uploads, no sign-up, no watermarks.
+          Convert, compress, resize, edit, and generate in one place.
         </p>
+        <div className="hero-search">
+          <ToolSearch variant="hero" placeholder="Search all tools — e.g. mp3, instagram, trim…" />
+        </div>
       </div>
 
-      <div className="tool-grid">
-        {TOOLS.map((t) => {
-          const Icon = t.icon;
-          return (
-            <Link key={t.slug} href={`/${t.slug}`} className="tool-card">
-              <Icon className="tc-icon" />
-              <h3>{t.title}</h3>
-              <p>{t.tagline}</p>
-            </Link>
-          );
-        })}
-      </div>
+      <ToolDirectory />
 
       <div className="prose">
-        <h2>Popular conversions</h2>
-        <div className="related">
-          {CONVERSIONS.map((c) => {
-            const info = parseConversion(c);
-            return (
-              <Link key={c} href={`/${c}`}>
-                {info ? `${info.fromLabel} to ${info.toLabel}` : c}
-              </Link>
-            );
-          })}
-        </div>
-
         <h2>Why these tools?</h2>
         <p>
-          Every utility here is 100% client-side: your images are processed
+          Every utility here is 100% client-side: your files are processed
           locally and never sent to a server. That means instant results,
           complete privacy, and no file-size limits beyond your own device.
         </p>

@@ -1,11 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
+import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import { LuMusic, LuDownload, LuRefreshCw } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "@/lib/download";
+import {
+  AUDIO_OUTPUT_BY_INPUT,
+  AUDIO_LABEL,
+  VIDEO_AS_AUDIO_INPUTS,
+} from "@/lib/media-conversions";
 
 type OutputFmt = "mp3" | "wav" | "ogg" | "m4a" | "flac" | "aac";
 
@@ -27,46 +33,102 @@ const FMT_LABEL: Record<OutputFmt, string> = {
   aac: "AAC — high quality",
 };
 
-const ALL_OUTPUT_FORMATS: OutputFmt[] = ["mp3", "wav", "ogg", "m4a", "flac", "aac"];
+const FMT_EXT: Record<OutputFmt, string> = {
+  mp3: "mp3",
+  wav: "wav",
+  ogg: "ogg",
+  m4a: "m4a",
+  flac: "flac",
+  aac: "m4a",
+};
 
-const CDNBASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
-
-const DEFAULT_ACCEPTED: string[] = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4"];
+const DEFAULT_ACCEPTED = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4", ...VIDEO_AS_AUDIO_INPUTS];
 
 function baseName(filename: string): string {
   return filename.replace(/\.[^.]+$/, "");
 }
 
+function extOf(filename: string): string {
+  const m = filename.match(/\.([a-z0-9]+)$/i);
+  return m ? m[1]!.toLowerCase() : "";
+}
+
+function isVideoExt(ext: string): boolean {
+  return VIDEO_AS_AUDIO_INPUTS.includes(ext);
+}
+
+function inputKeyForExt(ext: string, extractAudio?: boolean): string {
+  if (extractAudio && isVideoExt(ext)) return "video";
+  if (ext === "m4v") return "mp4";
+  return AUDIO_OUTPUT_BY_INPUT[ext] ? ext : "mp3";
+}
+
+function buildArgs(inputName: string, outputFmt: OutputFmt, stripVideo: boolean): string[] {
+  const outputName = `output.${FMT_EXT[outputFmt]}`;
+  const base = stripVideo ? ["-i", inputName, "-vn"] : ["-i", inputName];
+  switch (outputFmt) {
+    case "mp3":
+      return [...base, "-q:a", "0", outputName];
+    case "aac":
+      return [...base, "-c:a", "aac", "-q:a", "1", outputName];
+    case "ogg":
+      return [...base, "-c:a", "libvorbis", outputName];
+    case "flac":
+      return [...base, "-c:a", "flac", outputName];
+    default:
+      return [...base, outputName];
+  }
+}
+
 export default function AudioConverterTool({
-  defaultOutputFormat,
+  initialFrom,
+  initialTo = "mp3",
   acceptedInputs,
+  extractAudio,
 }: {
-  defaultOutputFormat?: string;
+  initialFrom?: string;
+  initialTo?: string;
   acceptedInputs?: string[];
+  extractAudio?: boolean;
 }) {
   const accepted = acceptedInputs ?? DEFAULT_ACCEPTED;
-  const acceptAttr = accepted.map((ext) => `.${ext}`).join(",");
+  const acceptAttr = [...new Set(accepted)].map((ext) => `.${ext}`).join(",");
 
-  const initialFmt = (
-    defaultOutputFormat && ALL_OUTPUT_FORMATS.includes(defaultOutputFormat as OutputFmt)
-      ? defaultOutputFormat
-      : "mp3"
-  ) as OutputFmt;
-
-  const ffmpegRef = useRef<FFmpeg | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const [file, setFile] = useState<File | null>(null);
-  const [outputFmt, setOutputFmt] = useState<OutputFmt>(initialFmt);
-  const [status, setStatus] = useState<"idle" | "loading" | "converting" | "done" | "error">(
-    "idle"
+  const [inputKey, setInputKey] = useState(initialFrom ?? "mp3");
+  const [outputFmt, setOutputFmt] = useState<OutputFmt>(
+    (initialTo as OutputFmt) in FMT_MIME ? (initialTo as OutputFmt) : "mp3",
   );
+
+  const allowedOutputs = useMemo(() => {
+    const keys = AUDIO_OUTPUT_BY_INPUT[inputKey] ?? AUDIO_OUTPUT_BY_INPUT.mp3!;
+    return keys.filter((k): k is OutputFmt => k in FMT_MIME);
+  }, [inputKey]);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "converting" | "done" | "error">("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  useEffect(() => {
+    if (!allowedOutputs.includes(outputFmt)) {
+      setOutputFmt(allowedOutputs[0] ?? "mp3");
+    }
+  }, [allowedOutputs, outputFmt]);
+
+  useEffect(() => {
+    if (initialFrom) setInputKey(initialFrom);
+    if (initialTo && initialTo in FMT_MIME) setOutputFmt(initialTo as OutputFmt);
+  }, [initialFrom, initialTo]);
+
   const handleFile = (f: File) => {
+    const ext = extOf(f.name);
+    const key = inputKeyForExt(ext, extractAudio);
+    setInputKey(key);
+    const outs = (AUDIO_OUTPUT_BY_INPUT[key] ?? []).filter((k): k is OutputFmt => k in FMT_MIME);
+    if (outs.length && !outs.includes(outputFmt)) setOutputFmt(outs[0]!);
     setFile(f);
     setResultBlob(null);
     setError(null);
@@ -81,18 +143,6 @@ export default function AudioConverterTool({
     if (f) handleFile(f);
   };
 
-  const getFFmpeg = async (): Promise<FFmpeg> => {
-    if (ffmpegRef.current?.loaded) return ffmpegRef.current;
-    const ffmpeg = new FFmpeg();
-    setStatus("loading");
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CDNBASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  };
-
   const convert = async () => {
     if (!file) return;
     setError(null);
@@ -101,39 +151,35 @@ export default function AudioConverterTool({
 
     let ffmpeg: FFmpeg;
     try {
-      ffmpeg = await getFFmpeg();
+      setStatus("loading");
+      ffmpeg = await loadFFmpeg();
     } catch (e) {
       setStatus("error");
-      setError(
-        e instanceof Error ? `Failed to load ffmpeg.wasm: ${e.message}` : "Failed to load ffmpeg.wasm"
-      );
+      setError(formatFFmpegLoadError(e));
       return;
     }
 
     try {
       setStatus("converting");
-      setProgress(0);
-
       const progressHandler = ({ progress: p }: { progress: number }) => {
         setProgress(Math.round(Math.max(0, Math.min(1, p)) * 100));
       };
       ffmpeg.on("progress", progressHandler);
 
-      const inputExt = file.name.split(".").pop() ?? "mp3";
+      const inputExt = extOf(file.name) || "mp3";
       const inputName = `input.${inputExt}`;
-      const outputName = `output.${outputFmt}`;
+      const stripVideo = extractAudio || isVideoExt(inputExt);
 
       await ffmpeg.writeFile(inputName, await fetchFile(file));
-      await ffmpeg.exec(["-i", inputName, outputName]);
+      await ffmpeg.exec(buildArgs(inputName, outputFmt, stripVideo));
 
-      const data = await ffmpeg.readFile(outputName);
-      // FileData is Uint8Array|string; copy buffer to plain ArrayBuffer for Blob
-      const audioData = typeof data === "string" ? new TextEncoder().encode(data).buffer : (data as Uint8Array).buffer.slice(0);
+      const outputName = `output.${FMT_EXT[outputFmt]}`;
+      const raw = await ffmpeg.readFile(outputName);
+      const audioData =
+        typeof raw === "string" ? new TextEncoder().encode(raw).buffer : (raw as Uint8Array).buffer.slice(0);
       const blob = new Blob([audioData as ArrayBuffer], { type: FMT_MIME[outputFmt] });
 
       ffmpeg.off("progress", progressHandler);
-
-      // Cleanup virtual FS
       try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
       try { await ffmpeg.deleteFile(outputName); } catch { /* ignore */ }
 
@@ -142,9 +188,7 @@ export default function AudioConverterTool({
       setStatus("done");
     } catch (e) {
       setStatus("error");
-      setError(
-        e instanceof Error ? `Conversion failed: ${e.message}` : "Conversion failed."
-      );
+      setError(e instanceof Error ? `Conversion failed: ${e.message}` : "Conversion failed.");
     }
   };
 
@@ -152,10 +196,10 @@ export default function AudioConverterTool({
     if (!file || !resultBlob) return;
     const blob = resultBlob;
     void saveAs({
-      suggestedName: `${baseName(file.name)}.${outputFmt}`,
+      suggestedName: `${baseName(file.name)}.${FMT_EXT[outputFmt]}`,
       description: `${outputFmt.toUpperCase()} audio`,
       mime: FMT_MIME[outputFmt],
-      ext: `.${outputFmt}`,
+      ext: `.${FMT_EXT[outputFmt]}`,
       getBlob: () => blob,
     });
   };
@@ -169,10 +213,55 @@ export default function AudioConverterTool({
   };
 
   const isWorking = status === "loading" || status === "converting";
+  const inputLabel = inputKey === "video" ? "Video" : (AUDIO_LABEL[inputKey] ?? inputKey.toUpperCase());
 
   return (
     <div className="tool-ui">
       {error && <div className="error">{error}</div>}
+
+      <section className="card settings">
+        <div className="duo">
+          <label className="field">
+            <span className="field-label">Input format</span>
+            <select
+              value={inputKey}
+              onChange={(e) => {
+                setInputKey(e.target.value);
+                setFile(null);
+                setResultBlob(null);
+              }}
+              disabled={!!file && isWorking}
+            >
+              {(extractAudio
+                ? ["video", ...Object.keys(AUDIO_OUTPUT_BY_INPUT).filter((k) => k !== "mp4")]
+                : Object.keys(AUDIO_OUTPUT_BY_INPUT)
+              ).map((k) => (
+                <option key={k} value={k}>
+                  {k === "video" ? "Video (any)" : (AUDIO_LABEL[k] ?? k.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-label">Output format</span>
+            <select
+              value={outputFmt}
+              onChange={(e) => {
+                setOutputFmt(e.target.value as OutputFmt);
+                setResultBlob(null);
+                setStatus("idle");
+              }}
+              disabled={isWorking}
+            >
+              {allowedOutputs.map((fmt) => (
+                <option key={fmt} value={fmt}>
+                  {FMT_LABEL[fmt]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
 
       {!file ? (
         <div
@@ -195,8 +284,8 @@ export default function AudioConverterTool({
           />
           <div className="dropzone-inner">
             <LuMusic className="dropzone-icon" />
-            <strong>Drop audio file or click to select</strong>
-            <span>Accepted: {accepted.join(", ").toUpperCase()}</span>
+            <strong>Drop {inputLabel} file or click to select</strong>
+            <span>Output: {allowedOutputs.map((f) => f.toUpperCase()).join(", ")}</span>
           </div>
         </div>
       ) : (
@@ -206,9 +295,7 @@ export default function AudioConverterTool({
               <LuRefreshCw />
               Change file
             </Button>
-            <span className="text-sm text-muted-foreground truncate max-w-[260px]">
-              {file.name}
-            </span>
+            <span className="text-sm text-muted-foreground truncate max-w-[260px]">{file.name}</span>
             <div className="toolbar-spacer" />
             {status === "done" ? (
               <Button onClick={download}>
@@ -217,49 +304,23 @@ export default function AudioConverterTool({
               </Button>
             ) : (
               <Button onClick={() => void convert()} disabled={isWorking}>
-                {isWorking ? (
-                  status === "loading" ? "Loading ffmpeg.wasm…" : `Converting… ${progress}%`
-                ) : (
-                  "Convert"
-                )}
+                {isWorking
+                  ? status === "loading"
+                    ? "Loading ffmpeg.wasm…"
+                    : `Converting… ${progress}%`
+                  : extractAudio
+                    ? "Extract audio"
+                    : "Convert"}
               </Button>
             )}
           </div>
-
-          <section className="card settings">
-            <label className="field">
-              <span className="field-label">Output format</span>
-              <select
-                value={outputFmt}
-                onChange={(e) => {
-                  setOutputFmt(e.target.value as OutputFmt);
-                  setResultBlob(null);
-                  setStatus("idle");
-                }}
-                disabled={isWorking}
-              >
-                {ALL_OUTPUT_FORMATS.map((fmt) => (
-                  <option key={fmt} value={fmt}>
-                    {FMT_LABEL[fmt]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </section>
 
           {isWorking && (
             <div className="card">
               <div className="field-label mb-2">
                 {status === "loading" ? "Loading ffmpeg.wasm…" : `Converting… ${progress}%`}
               </div>
-              <div
-                style={{
-                  height: 6,
-                  borderRadius: 3,
-                  background: "var(--border)",
-                  overflow: "hidden",
-                }}
-              >
+              <div style={{ height: 6, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
                 <div
                   style={{
                     height: "100%",
@@ -270,15 +331,6 @@ export default function AudioConverterTool({
                   }}
                 />
               </div>
-            </div>
-          )}
-
-          {status === "done" && (
-            <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <LuMusic style={{ flexShrink: 0, color: "var(--muted-foreground)" }} />
-              <span className="text-sm text-muted-foreground">
-                Ready — click <strong>Download {outputFmt.toUpperCase()}</strong> above to save.
-              </span>
             </div>
           )}
         </>

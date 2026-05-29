@@ -42,7 +42,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/audio-converter", label: "Convert recording to MP3" },
+        { href: "/convert-audio", label: "Convert recording to MP3" },
         { href: "/trim-audio", label: "Trim your recording" },
         { href: "/normalize-audio", label: "Normalize volume" },
         { href: "/remove-silence-from-audio", label: "Remove silence" },

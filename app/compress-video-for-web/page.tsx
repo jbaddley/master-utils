@@ -45,7 +45,7 @@ export default function Page() {
         { href: "/compress-video", label: "Compress video" },
         { href: "/compress-video-for-email", label: "Compress for email" },
         { href: "/trim-video", label: "Trim video" },
-        { href: "/video-converter", label: "Convert video format" },
+        { href: "/convert-video", label: "Convert video format" },
       ]}
       showAds
     >
