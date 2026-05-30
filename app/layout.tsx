@@ -6,16 +6,18 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
+import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
+import { CommandPalette } from "@/components/CommandPalette";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Free Online Image Tools — convert, compress, resize & more",
+    default: "BitMixer — Free Online Media & Utility Tools",
     template: `%s · ${SITE_NAME}`,
   },
   description:
-    "A free suite of fast, private image utilities that run entirely in your browser: convert, compress, resize, crop, vectorize to SVG, generate favicons and remove backgrounds.",
+    "A free suite of fast, private media utilities that run entirely in your browser: convert, compress, resize images; process audio and video; work with PDFs; extract text (OCR); generate QR codes, passwords, and more.",
 };
 
 export default function RootLayout({
@@ -26,10 +28,13 @@ export default function RootLayout({
       <body className="antialiased">
         <SessionProvider>
           <AuthProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-            <AuthModal />
+            <CommandPaletteProvider>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+              <AuthModal />
+              <CommandPalette />
+            </CommandPaletteProvider>
           </AuthProvider>
         </SessionProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (
@@ -45,6 +50,14 @@ export default function RootLayout({
       gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
     `}</Script>
           </>
+        )}
+        {process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID && (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
         )}
         {process.env.NEXT_PUBLIC_POSTHOG_KEY && (
           <Script id="posthog-init" strategy="afterInteractive">{`

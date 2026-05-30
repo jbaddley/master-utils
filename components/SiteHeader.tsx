@@ -1,21 +1,20 @@
 import Link from "next/link";
-import { TOOLS } from "@/lib/tools";
+import { CategoryNav } from "@/components/CategoryNav";
 import { UserMenu } from "@/components/UserMenu";
+import { SiteHeaderShell } from "@/components/SiteHeaderShell";
+import { SearchTriggerButton } from "@/components/SearchTriggerButton";
 
 export function SiteHeader() {
   return (
-    <header className="site-header">
+    <SiteHeaderShell>
       <Link href="/" className="brand">
         Image<span className="arrow"> → </span>Tools
       </Link>
-      <nav className="site-nav" aria-label="Tools">
-        {TOOLS.map((t) => (
-          <Link key={t.slug} href={`/${t.slug}`}>
-            {t.nav}
-          </Link>
-        ))}
-      </nav>
+      <CategoryNav />
+      <div className="site-header-search">
+        <SearchTriggerButton />
+      </div>
       <UserMenu />
-    </header>
+    </SiteHeaderShell>
   );
 }
