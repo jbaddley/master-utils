@@ -6,6 +6,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
+import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
+import { CommandPalette } from "@/components/CommandPalette";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,10 +28,13 @@ export default function RootLayout({
       <body className="antialiased">
         <SessionProvider>
           <AuthProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-            <AuthModal />
+            <CommandPaletteProvider>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+              <AuthModal />
+              <CommandPalette />
+            </CommandPaletteProvider>
           </AuthProvider>
         </SessionProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (

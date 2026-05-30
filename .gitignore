@@ -42,5 +42,5 @@ next-env.d.ts
 
 /lib/generated/prisma
 
-# ffmpeg.wasm binaries (copied from @ffmpeg/core on postinstall)
+# large wasm/binary assets loaded at runtime
 /public/ffmpeg/
