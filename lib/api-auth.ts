@@ -9,18 +9,24 @@ function todayString(): string {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-export async function validateApiKey(req: NextRequest): Promise<ApiAuthResult> {
+export async function validateApiKey(req: Request): Promise<ApiAuthResult> {
   const auth = req.headers.get("Authorization");
-  if (!auth?.startsWith("Bearer ")) {
+  const xApiKey = req.headers.get("X-API-Key");
+
+  let key: string;
+  if (auth?.startsWith("Bearer ")) {
+    key = auth.slice(7).trim();
+  } else if (xApiKey?.trim()) {
+    key = xApiKey.trim();
+  } else {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: "Missing or malformed Authorization header. Use: Bearer <api_key>" },
+        { error: "Missing API key. Use Authorization: Bearer <key> or X-API-Key: <key>" },
         { status: 401 },
       ),
     };
   }
-  const key = auth.slice(7).trim();
   if (!key) {
     return {
       ok: false,
