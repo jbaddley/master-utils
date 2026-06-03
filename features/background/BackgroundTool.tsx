@@ -477,29 +477,27 @@ export default function BackgroundTool() {
           <div className="actionbar">
             <ChangeImageButton onFile={onFile} />
             <div className="actionbar-spacer" />
-            <div className="ab-actions">
-              <Select
-                key={downloadSelectKey}
-                disabled={!sourceData}
-                onValueChange={(fmt) => {
-                  if (!fmt) return;
-                  onDownload(fmt as OutputFmt);
-                  setDownloadSelectKey((k) => k + 1);
-                }}
-              >
-                <SelectTrigger size="sm" title="Download result">
-                  <LuDownload />
-                  <SelectValue placeholder="Download" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  {OUTPUT_FORMATS.map((f) => (
-                    <SelectItem key={f.mime} value={f.mime}>
-                      {f.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              key={downloadSelectKey}
+              disabled={!sourceData}
+              onValueChange={(fmt) => {
+                if (!fmt) return;
+                onDownload(fmt as OutputFmt);
+                setDownloadSelectKey((k) => k + 1);
+              }}
+            >
+              <SelectTrigger size="sm" title="Download result">
+                <LuDownload />
+                <SelectValue placeholder="Download" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {OUTPUT_FORMATS.map((f) => (
+                  <SelectItem key={f.mime} value={f.mime}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tolerance */}

@@ -315,6 +315,7 @@ export default function SvgTool() {
     [cropBox, onCropDragMove, endCropDrag],
   );
 
+  const [cropFullMsg, setCropFullMsg] = useState(false);
   const commitCrop = useCallback(() => {
     if (!cropBox || !sourceData) return;
     const { width: W, height: H } = sourceData;
@@ -322,8 +323,13 @@ export default function SvgTool() {
     const y = Math.max(0, Math.round(cropBox.y * H));
     const w = Math.min(W - x, Math.max(1, Math.round(cropBox.w * W)));
     const h = Math.min(H - y, Math.max(1, Math.round(cropBox.h * H)));
-    if (w >= W && h >= H) return;
+    if (w >= W && h >= H) {
+      setCropFullMsg(true);
+      setTimeout(() => setCropFullMsg(false), 2000);
+      return;
+    }
     applyEdit(cropImageData(sourceData, x, y, w, h));
+    setCanvasTool("pick");
   }, [cropBox, sourceData, applyEdit]);
 
   const brushSegment = useCallback(
@@ -593,7 +599,7 @@ export default function SvgTool() {
           {loaded ? "Change image…" : "Select image…"}
         </Button>
         <div className="actionbar-spacer" />
-        <div className="ab-actions">
+        <div className="ab-actions panel-actions-dup">
           <Button disabled={!sourceData || converting} onClick={onConvert}>
             <LuSparkles />
             {converting ? "Converting…" : "Convert to SVG"}
@@ -879,6 +885,11 @@ export default function SvgTool() {
                   <div className="opt-buttons">
                     <Button size="sm" onClick={commitCrop}>Apply crop</Button>
                     <Button variant="outline" size="sm" onClick={resetCropBox}>Reset box</Button>
+                    {cropFullMsg && (
+                      <span className="tool-hint" style={{ color: "var(--muted-foreground)" }}>
+                        Selection covers full image — drag a handle to crop
+                      </span>
+                    )}
                   </div>
                 )}
                 {canvasTool === "pick" && pickInfo && (

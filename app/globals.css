@@ -97,7 +97,7 @@
 @layer components {
   .site-header {
     @apply flex items-center gap-4 px-6 py-3 border-b border-border
-      sticky top-0 z-40 bg-background
+      sticky top-0 z-[60] bg-background
       transition-[padding,background,backdrop-filter,border-color] duration-200;
   }
   .site-header--scrolled {
@@ -327,7 +327,7 @@
 
   /* ---- Mega-menu ---- */
   .mega-menu {
-    @apply absolute top-[calc(100%+6px)] left-0 z-50 w-[480px]
+    @apply absolute top-[calc(100%+6px)] left-0 z-[70] w-[480px]
       bg-popover border border-border rounded-xl shadow-lg overflow-hidden;
   }
   .mega-menu-header {
@@ -586,6 +586,42 @@
   cursor: cell;
 }
 
+/* Crop tool viewport / stage / workspace */
+.crop-canvas {
+  display: block;
+  padding: 0;
+  min-height: 0;
+}
+.crop-viewport {
+  overflow: auto;
+  width: 100%;
+  height: min(55vh, 520px);
+  background: var(--checker, #1a1e26);
+}
+.crop-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100%;
+  min-height: 100%;
+}
+.crop-workspace {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.crop-image-frame {
+  position: relative;
+  flex-shrink: 0;
+}
+.crop-image-frame canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* Crop overlay */
 .crop-overlay {
   position: absolute;
@@ -729,7 +765,7 @@
     @apply mt-[18px];
   }
   .actionbar {
-    @apply sticky top-0 z-50 flex flex-wrap items-center gap-2.5 mb-4 py-2.5 border-b border-border bg-background/90 backdrop-blur;
+    @apply sticky top-0 z-30 flex flex-wrap items-center gap-2.5 mb-4 py-2.5 border-b border-border bg-background/90 backdrop-blur;
   }
   .actionbar-spacer {
     @apply flex-1;
@@ -960,7 +996,8 @@
 }
 
 @media (min-width: 821px) {
-  .ab-actions {
+  /* panel-actions-dup is the actionbar copy of buttons also in .panel-actions; hide on wide screens */
+  .panel-actions-dup {
     display: none;
   }
 }
