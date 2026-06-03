@@ -58,6 +58,7 @@ const CATEGORY_MAP: Record<string, ToolCategory> = {
   "batch-compress": "image",
   "batch-resize": "image",
   "upscale-image": "image",
+  "print-prep": "image",
   "audio-converter": "audio",
   "favicon-generator": "utilities",
   "qr-code-generator": "utilities",

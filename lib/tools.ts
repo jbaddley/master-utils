@@ -10,6 +10,7 @@ import {
   LuMusic,
   LuQrCode,
   LuWorkflow,
+  LuPrinter,
 } from "react-icons/lu";
 
 export type Tool = {
@@ -98,6 +99,13 @@ export const TOOLS: Tool[] = [
     nav: "Upscale",
     tagline: "Enlarge images 2×, 3×, or 4× — smooth for photos, crisp for pixel art.",
     icon: LuScaling,
+  },
+  {
+    slug: "print-prep",
+    title: "Print Prep",
+    nav: "Print Prep",
+    tagline: "Crop, color-correct, and export photos ready for Costco, Walmart, and other print labs.",
+    icon: LuPrinter,
   },
   {
     slug: "qr-code-generator",
