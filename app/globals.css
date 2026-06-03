@@ -1140,6 +1140,22 @@
 .gif-select {
   @apply h-9 w-full rounded-lg border border-input bg-input/30 px-2.5 text-sm text-foreground;
 }
+.gif-frame-capture {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 10px;
+  color: var(--muted-foreground);
+}
+.gif-frame-label {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.gif-frame-fmt {
+  width: auto;
+  min-width: 90px;
+  flex-shrink: 0;
+}
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 @media (min-width: 821px) {

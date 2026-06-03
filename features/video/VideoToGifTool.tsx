@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import {
+  LuCamera,
   LuClapperboard,
   LuDownload,
   LuPause,
@@ -91,7 +92,11 @@ export default function VideoToGifTool() {
   const [startTime, setStartTime] = useState(0);
   const [clipDuration, setClipDuration] = useState(10);
 
-  // Settings
+  // Frame capture
+  type FrameFormat = "png" | "jpeg" | "webp";
+  const [frameFormat, setFrameFormat] = useState<FrameFormat>("png");
+
+  // GIF settings
   const [fps, setFps] = useState(10);
   const [width, setWidth] = useState(480);
 
@@ -296,6 +301,39 @@ export default function VideoToGifTool() {
     setClipDuration(d);
   };
 
+  // ── Frame capture ─────────────────────────────────────────────────────────
+
+  const captureFrame = () => {
+    const vid = videoRef.current;
+    if (!vid || !file || vid.videoWidth === 0) return;
+    const mime = frameFormat === "jpeg" ? "image/jpeg"
+      : frameFormat === "webp" ? "image/webp"
+      : "image/png";
+    const quality = frameFormat === "jpeg" ? 0.92 : undefined;
+    const t = currentTime;
+    const ts = `${Math.floor(t / 60)}m${(t % 60).toFixed(1).replace(".", "s")}`;
+    void saveAs({
+      suggestedName: `${baseName(file.name)}_${ts}.${frameFormat}`,
+      description: `Video Frame (${frameFormat.toUpperCase()})`,
+      mime,
+      ext: `.${frameFormat}`,
+      getBlob: () =>
+        new Promise<Blob>((resolve, reject) => {
+          const canvas = document.createElement("canvas");
+          canvas.width = vid.videoWidth;
+          canvas.height = vid.videoHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("No 2D context")); return; }
+          ctx.drawImage(vid, 0, 0);
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error("Failed to encode frame"))),
+            mime,
+            quality,
+          );
+        }),
+    });
+  };
+
   // ── Conversion ────────────────────────────────────────────────────────────
 
   const convert = async () => {
@@ -417,6 +455,27 @@ export default function VideoToGifTool() {
           </button>
           {/* Current time display */}
           <span className="gif-current-time">{fmtTime(currentTime)}</span>
+        </div>
+      )}
+
+      {/* ── Save frame ── */}
+      {videoDuration > 0 && (
+        <div className="gif-frame-capture">
+          <LuCamera size={14} />
+          <span className="gif-frame-label">Save frame as</span>
+          <select
+            className="gif-select gif-frame-fmt"
+            value={frameFormat}
+            onChange={(e) => setFrameFormat(e.target.value as FrameFormat)}
+          >
+            <option value="png">PNG</option>
+            <option value="jpeg">JPEG</option>
+            <option value="webp">WebP</option>
+          </select>
+          <Button variant="outline" size="sm" onClick={captureFrame}>
+            <LuCamera size={14} />
+            Save Frame
+          </Button>
         </div>
       )}
 
