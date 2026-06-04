@@ -983,6 +983,148 @@
   .affiliate-cta {
     @apply text-xs text-[#6ea8fe];
   }
+
+  /* Code editors (shared) */
+  .code-area {
+    @apply w-full min-h-[280px] resize-y rounded-lg border border-border bg-[#0c0e14]
+      px-3.5 py-3 font-mono text-[13px] leading-relaxed text-foreground
+      placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+  .code-output {
+    @apply overflow-auto rounded-lg border border-border bg-[#0c0e14] px-3.5 py-3
+      font-mono text-[13px] leading-relaxed text-foreground whitespace-pre;
+  }
+  .code-output--wrap {
+    @apply whitespace-pre-wrap break-all;
+  }
+
+  /* JSON formatter */
+  .json-formatter-workspace {
+    @apply grid gap-4 items-stretch;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 900px) {
+    .json-formatter-workspace {
+      grid-template-columns: 1fr 1fr;
+      min-height: min(72vh, 640px);
+    }
+  }
+  .json-formatter-pane {
+    @apply flex flex-col border border-border rounded-xl overflow-hidden bg-card min-h-[320px];
+  }
+  @media (min-width: 900px) {
+    .json-formatter-pane {
+      min-height: 0;
+    }
+  }
+  .json-formatter-pane-head {
+    @apply flex items-center justify-between gap-2.5 px-3.5 py-2.5 border-b border-border shrink-0;
+  }
+  .json-formatter-pane-foot {
+    @apply flex flex-wrap items-center gap-2.5 px-3.5 py-3 border-t border-border shrink-0;
+  }
+  .json-formatter-input {
+    @apply flex-1 min-h-[220px] rounded-none border-0 border-b border-border resize-none focus-visible:ring-0;
+  }
+  @media (min-width: 900px) {
+    .json-formatter-input {
+      min-height: 0;
+    }
+  }
+  .json-formatter-viewer {
+    @apply min-h-[280px];
+  }
+  .json-formatter-viewer-body {
+    @apply flex-1 min-h-0 overflow-auto bg-[#0c0e14] px-3.5 py-3;
+  }
+  .json-viewer-tabs {
+    @apply flex gap-0 -mb-2.5;
+  }
+  .json-viewer-tab {
+    @apply pb-2.5 px-1 mr-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground
+      border-b-2 border-transparent cursor-pointer bg-transparent;
+  }
+  .json-viewer-tab.active {
+    @apply text-foreground border-primary;
+  }
+  .json-viewer-placeholder {
+    @apply m-0 text-sm text-muted-foreground;
+  }
+  .json-formatter-output-actions {
+    @apply justify-start;
+  }
+
+  .json-tree-root {
+    @apply font-mono text-[13px] leading-[1.65];
+  }
+  .json-node {
+    @apply pl-0;
+  }
+  .json-children {
+    @apply border-l border-[#2a3344] ml-[11px] pl-3;
+  }
+  .json-line {
+    @apply py-px;
+  }
+  .json-toggle {
+    @apply flex flex-wrap items-baseline gap-0.5 w-full text-left py-px px-0
+      bg-transparent border-0 cursor-pointer rounded hover:bg-white/[0.04];
+    font: inherit;
+    color: inherit;
+  }
+  .json-caret {
+    @apply inline-block w-3.5 shrink-0 text-[#6ea8fe] text-[11px] leading-none;
+  }
+  .json-key {
+    @apply text-[#79c0ff];
+  }
+  .json-string {
+    @apply text-[#a5d6ff];
+  }
+  .json-number {
+    @apply text-[#ffa657];
+  }
+  .json-boolean {
+    @apply text-[#ff7b72];
+  }
+  .json-null {
+    @apply text-[#8b949e] italic;
+  }
+  .json-brace,
+  .json-punct {
+    @apply text-[#c9d1d9];
+  }
+  .json-preview {
+    @apply text-muted-foreground text-[12px] mx-1;
+  }
+
+  .json-formatted {
+    @apply m-0 font-mono text-[13px] leading-relaxed whitespace-pre;
+  }
+  .json-formatted code {
+    @apply block;
+  }
+  .json-hl-key {
+    @apply text-[#79c0ff];
+  }
+  .json-hl-string {
+    @apply text-[#a5d6ff];
+  }
+  .json-hl-number {
+    @apply text-[#ffa657];
+  }
+  .json-hl-boolean {
+    @apply text-[#ff7b72];
+  }
+  .json-hl-null {
+    @apply text-[#8b949e] italic;
+  }
+  .json-hl-punct {
+    @apply text-[#c9d1d9];
+  }
+  .json-hl-plain {
+    @apply text-foreground;
+  }
 }
 
 .pick-feedback .chip {
