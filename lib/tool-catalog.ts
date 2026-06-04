@@ -284,6 +284,14 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     keywords: ["pitch", "tone"],
   },
   {
+    slug: "audio-pitch-and-speed",
+    title: "Pitch & Speed Changer",
+    tagline: "Adjust pitch and tempo together with key and BPM hints.",
+    category: "audio",
+    icon: LuMusic,
+    keywords: ["pitch", "speed", "tempo", "bpm", "key"],
+  },
+  {
     slug: "audio-fade",
     title: "Audio Fade In/Out",
     tagline: "Add smooth fade-in and fade-out effects.",

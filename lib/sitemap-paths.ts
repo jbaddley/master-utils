@@ -24,6 +24,7 @@ const EXTRA_PATHS = [
   "ocr",
   "strip-metadata",
   "blackout-tool",
+  "audio-pitch-and-speed",
 ] as const;
 
 export type SitemapPath = {

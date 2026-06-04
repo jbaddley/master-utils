@@ -810,6 +810,68 @@
   .dropzone-inner span {
     @apply text-muted-foreground text-sm;
   }
+  .pitch-speed-empty {
+    @apply flex flex-col items-center text-center gap-3 py-6;
+  }
+  .pitch-speed-kicker {
+    @apply text-[11px] uppercase tracking-[0.18em] text-muted-foreground;
+  }
+  .pitch-speed-title {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight max-w-xl;
+  }
+  .pitch-speed-subtitle {
+    @apply text-muted-foreground text-sm max-w-lg mb-2;
+  }
+  .pitch-speed-dropzone {
+    @apply w-full max-w-xl py-14;
+  }
+  .pitch-speed-workspace {
+    @apply p-0 overflow-hidden mb-0;
+  }
+  .pitch-speed-waveform {
+    @apply h-[180px] sm:h-[220px] w-full bg-[#0a0c10];
+  }
+  .pitch-speed-controls {
+    @apply border-t border-border px-4 py-4 flex flex-col gap-3;
+  }
+  .pitch-speed-row {
+    @apply grid items-center gap-3;
+    grid-template-columns: 56px minmax(0, 1fr) 56px 88px;
+  }
+  .pitch-speed-row-secondary {
+    @apply -mt-1;
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+  .pitch-speed-label {
+    @apply text-[11px] uppercase tracking-wide text-muted-foreground font-medium;
+  }
+  .pitch-speed-value {
+    @apply text-sm tabular-nums text-right;
+  }
+  .pitch-speed-meta {
+    @apply flex flex-col items-end gap-0.5;
+  }
+  .pitch-speed-meta-label {
+    @apply text-[10px] uppercase tracking-wide text-muted-foreground;
+  }
+  .pitch-speed-meta-value {
+    @apply text-sm font-medium tabular-nums;
+  }
+  .pitch-speed-semitones {
+    @apply flex items-center gap-2 col-start-2;
+  }
+  .pitch-speed-transport {
+    @apply flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3;
+  }
+  .pitch-speed-playback {
+    @apply flex items-center gap-3 min-w-0 flex-1;
+  }
+  .pitch-speed-volume {
+    @apply w-[120px] shrink-0;
+  }
+  .pitch-speed-export {
+    @apply flex items-center gap-2 shrink-0;
+  }
   .placeholder {
     @apply text-muted-foreground/70 text-sm text-center p-6;
   }
