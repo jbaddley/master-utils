@@ -106,7 +106,8 @@ fetch_db_pass
 setup_ssh
 
 DB_PASS_ENC="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASS")"
-DATABASE_URL_ENC="postgresql://${DB_USER}:${DB_PASS_ENC}@${DB_HOST}:5432/${DB_NAME}"
+# Lightsail Postgres requires SSL from the app instance (non-SSL → pg_hba "no encryption").
+DATABASE_URL_ENC="postgresql://${DB_USER}:${DB_PASS_ENC}@${DB_HOST}:5432/${DB_NAME}?uselibpqcompat=true&sslmode=require"
 export DATABASE_URL_ENC
 
 echo "▸ SSH preflight"
