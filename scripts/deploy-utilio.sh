@@ -136,6 +136,8 @@ echo "▸ Build and migrate"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
 set -e
 cd $APP_DIR
+df -h / | tail -1
+rm -rf node_modules .next
 npm ci --include=dev
 set -a && source .env.local && set +a
 npx prisma generate
