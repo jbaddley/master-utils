@@ -119,8 +119,12 @@ set -e
 cat > $APP_DIR/.env.local <<ENV
 DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENC}@${DB_HOST}:5432/${DB_NAME}"
 AUTH_SECRET="${AUTH_SECRET}"
+AUTH_URL="https://${DOMAIN}"
+AUTH_TRUST_HOST="true"
 NEXT_PUBLIC_SITE_URL="https://${DOMAIN}"
 NEXT_PUBLIC_SITE_NAME="Utilio"
+GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 AWS_REGION="us-east-1"
 AWS_ACCESS_KEY_ID="${UTILIO_AWS_KEY}"
 AWS_SECRET_ACCESS_KEY="${UTILIO_AWS_SECRET}"
@@ -138,7 +142,7 @@ npx prisma generate
 npx prisma migrate deploy
 NODE_OPTIONS="--max-old-space-size=3072" npm run build
 pm2 delete utilio 2>/dev/null || true
-NODE_ENV=production pm2 start "npm start" --name utilio
+HOSTNAME=0.0.0.0 NODE_ENV=production pm2 start "npm start" --name utilio
 pm2 save
 sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>/dev/null || true
 REMOTE_BUILD
@@ -153,7 +157,11 @@ utilio.solutions, www.utilio.solutions {
 		Cross-Origin-Opener-Policy "same-origin"
 		Cross-Origin-Embedder-Policy "require-corp"
 	}
-	reverse_proxy 127.0.0.1:3000
+	reverse_proxy 127.0.0.1:3000 {
+		header_up Host {host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto {scheme}
+	}
 }
 CADDY
 sudo caddy validate --config /etc/caddy/Caddyfile
