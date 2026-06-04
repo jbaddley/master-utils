@@ -1080,7 +1080,16 @@
     }
   }
   .json-formatter-pane-head {
-    @apply flex items-center justify-between gap-2.5 px-3.5 py-2.5 border-b border-border shrink-0;
+    @apply flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 border-b border-border shrink-0;
+  }
+  .json-indent-control {
+    @apply flex items-center gap-2 ml-auto;
+  }
+  .json-indent-label {
+    @apply text-[11px] uppercase tracking-wide text-muted-foreground;
+  }
+  .json-indent-control select {
+    @apply h-7 rounded-md border border-input bg-input/30 px-2 text-xs text-foreground;
   }
   .json-formatter-pane-foot {
     @apply flex flex-wrap items-center gap-2.5 px-3.5 py-3 border-t border-border shrink-0;

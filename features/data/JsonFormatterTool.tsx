@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
-type ViewerTab = "tree" | "formatted";
+type ViewerTab = "tree" | "formatted" | "minified";
+
+const INDENT_OPTIONS = [2, 4, 8] as const;
 
 function JsonTree({ value, name }: { value: JsonValue; name?: string }) {
   const [open, setOpen] = useState(true);
@@ -95,16 +97,17 @@ function JsonTree({ value, name }: { value: JsonValue; name?: string }) {
   );
 }
 
-/** Lightweight syntax highlight for the formatted JSON tab. */
-function FormattedJson({ text }: { text: string }) {
+/** Lightweight syntax highlight — preserves whitespace so pretty-printed layout stays intact. */
+function HighlightedJson({ text }: { text: string }) {
   const parts = useMemo(() => {
     const tokens: { key: string; text: string }[] = [];
     const re =
-      /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[{}\[\],:]|[^\s{}[\],:]+/g;
+      /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[{}\[\],:]|\s+|[^\s{}[\],:"]+/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
       const raw = m[0];
-      if (m[2]) tokens.push({ key: "key", text: raw });
+      if (/^\s+$/.test(raw)) tokens.push({ key: "plain", text: raw });
+      else if (m[2]) tokens.push({ key: "key", text: raw });
       else if (m[1] && !m[2]) tokens.push({ key: "string", text: raw });
       else if (m[3]) tokens.push({ key: m[3] === "null" ? "null" : "boolean", text: raw });
       else if (/^-?\d/.test(raw)) tokens.push({ key: "number", text: raw });
@@ -141,20 +144,17 @@ function formatJsonError(err: unknown, input: string): string {
 export default function JsonFormatterTool() {
   const [input, setInput] = useState('{\n  "hello": "world"\n}');
   const [parsed, setParsed] = useState<JsonValue | null>(null);
-  const [formatted, setFormatted] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [viewerTab, setViewerTab] = useState<ViewerTab>("formatted");
+  const [indentSpaces, setIndentSpaces] = useState<number>(2);
 
   const format = () => {
     try {
       const value = JSON.parse(input) as JsonValue;
-      const out = JSON.stringify(value, null, 2);
       setParsed(value);
-      setFormatted(out);
       setError(null);
     } catch (e) {
       setParsed(null);
-      setFormatted("");
       setError(formatJsonError(e, input));
     }
   };
@@ -164,16 +164,21 @@ export default function JsonFormatterTool() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const output = useMemo(() => formatted || (parsed ? JSON.stringify(parsed, null, 2) : ""), [formatted, parsed]);
+  const formattedOutput = useMemo(
+    () => (parsed !== null ? JSON.stringify(parsed, null, indentSpaces) : ""),
+    [parsed, indentSpaces],
+  );
+  const minifiedOutput = useMemo(() => (parsed !== null ? JSON.stringify(parsed) : ""), [parsed]);
   const hasResult = parsed !== null && !error;
+  const activeOutput = viewerTab === "minified" ? minifiedOutput : formattedOutput;
 
   const download = () => {
-    if (!output) return;
-    const blob = new Blob([output], { type: "application/json" });
+    if (!activeOutput) return;
+    const blob = new Blob([activeOutput], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "formatted.json";
+    a.download = viewerTab === "minified" ? "minified.json" : "formatted.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -221,7 +226,31 @@ export default function JsonFormatterTool() {
               >
                 Formatted JSON
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewerTab === "minified"}
+                className={cn("json-viewer-tab", viewerTab === "minified" && "active")}
+                onClick={() => setViewerTab("minified")}
+              >
+                Minimize
+              </button>
             </div>
+            <label className="json-indent-control">
+              <span className="json-indent-label">Indent</span>
+              <select
+                value={indentSpaces}
+                onChange={(e) => setIndentSpaces(Number(e.target.value))}
+                aria-label="Indent spaces"
+                disabled={!hasResult}
+              >
+                {INDENT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n} spaces
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="json-formatter-viewer-body" role="tabpanel">
@@ -233,14 +262,16 @@ export default function JsonFormatterTool() {
               <div className="json-tree-root">
                 <JsonTree value={parsed} />
               </div>
+            ) : viewerTab === "minified" ? (
+              <HighlightedJson text={minifiedOutput} />
             ) : (
-              <FormattedJson text={output} />
+              <HighlightedJson text={formattedOutput} />
             )}
           </div>
 
           <div className="json-formatter-pane-foot json-formatter-output-actions">
-            <CopyButton getText={() => output} label="Copy JSON" disabled={!output} />
-            <Button type="button" variant="outline" onClick={download} disabled={!output}>
+            <CopyButton getText={() => activeOutput} label="Copy JSON" disabled={!activeOutput} />
+            <Button type="button" variant="outline" onClick={download} disabled={!activeOutput}>
               <LuDownload /> Download
             </Button>
           </div>
