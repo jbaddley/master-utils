@@ -2,8 +2,10 @@
 # Deploy master-utils / image-tools to theater-stack Lightsail instance.
 #
 # Usage:
-#   set -a && source .env.deploy.local && set +a   # S3 keys + AUTH_SECRET only
+#   set -a && source .env.deploy.local && set +a   # S3 keys (required)
 #   ./scripts/deploy-utilio.sh
+#
+# Production app config (DB, auth, Google OAuth) is read from .env.production.
 #
 # DB_PASS is fetched automatically via your default AWS CLI credentials
 # (just-write-cli). Do NOT use utilio-s3 for Lightsail API calls.
@@ -12,6 +14,32 @@
 # (theater-stack-deploy.pem on disk is not required).
 
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Bash `source` breaks on DB passwords with backticks/shell metacharacters.
+load_env_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  eval "$(python3 - "$file" <<'PY'
+import re, shlex, sys
+path = sys.argv[1]
+for raw in open(path):
+    line = raw.strip()
+    if not line or line.startswith("#"):
+        continue
+    m = re.match(r"([A-Za-z_][A-Za-z0-9_]*)=(.*)", line)
+    if not m:
+        continue
+    key, val = m.group(1), m.group(2).strip()
+    if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+        val = val[1:-1]
+    print(f"export {key}={shlex.quote(val)}")
+PY
+)"
+}
+
+load_env_file "$ROOT/.env.production"
 
 HOST="54.152.205.78"
 INSTANCE="theater-stack"
@@ -28,7 +56,10 @@ DB_NAME="dbmaster"
 
 UTILIO_AWS_KEY="${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID in .env.deploy.local (utilio-s3)}"
 UTILIO_AWS_SECRET="${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY in .env.deploy.local}"
-AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -base64 32)}"
+AUTH_SECRET="${AUTH_SECRET:-${NEXTAUTH_SECRET:-$(openssl rand -base64 32)}}"
+AUTH_URL="${AUTH_URL:-${NEXTAUTH_URL:-https://${DOMAIN}}}"
+GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 
 aws_admin() {
   env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN aws "$@"
@@ -75,6 +106,8 @@ fetch_db_pass
 setup_ssh
 
 DB_PASS_ENC="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASS")"
+DATABASE_URL_ENC="postgresql://${DB_USER}:${DB_PASS_ENC}@${DB_HOST}:5432/${DB_NAME}"
+export DATABASE_URL_ENC
 
 echo "▸ SSH preflight"
 "${SSH[@]}" "ubuntu@$HOST" "echo ok"
@@ -114,28 +147,54 @@ fi
 REMOTE_SYNC
 
 echo "▸ Write .env.local"
-"${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_ENV
-set -e
-cat > $APP_DIR/.env.local <<ENV
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENC}@${DB_HOST}:5432/${DB_NAME}"
-AUTH_SECRET="${AUTH_SECRET}"
-AUTH_URL="https://${DOMAIN}"
-AUTH_TRUST_HOST="true"
-NEXT_PUBLIC_SITE_URL="https://${DOMAIN}"
-NEXT_PUBLIC_SITE_NAME="Utilio"
-GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
-GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
-AWS_REGION="us-east-1"
-AWS_ACCESS_KEY_ID="${UTILIO_AWS_KEY}"
-AWS_SECRET_ACCESS_KEY="${UTILIO_AWS_SECRET}"
-AWS_S3_BUCKET="utilio-uploads"
-ENV
-REMOTE_ENV
+export AUTH_URL AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET UTILIO_AWS_KEY UTILIO_AWS_SECRET
+export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://${DOMAIN}}"
+export NEXT_PUBLIC_SITE_NAME="${NEXT_PUBLIC_SITE_NAME:-Utilio}"
+export LLM_BASE_URL="${LLM_BASE_URL:-http://localhost:11434/v1}"
+export LLM_API_KEY="${LLM_API_KEY:-ollama}"
+export LLM_DEFAULT_MODEL="${LLM_DEFAULT_MODEL:-llama3.2}"
+export NEXT_PUBLIC_LLM_MODE="${NEXT_PUBLIC_LLM_MODE:-server}"
+python3 - "$APP_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $APP_DIR/.env.local"
+import os, shlex, sys
+
+app_dir = sys.argv[1]  # unused; path is passed on remote argv
+
+def q(key: str) -> str:
+    return shlex.quote(os.environ[key])
+
+lines = [
+    f"DATABASE_URL={q('DATABASE_URL_ENC')}",
+    f"AUTH_SECRET={q('AUTH_SECRET')}",
+    f"AUTH_URL={q('AUTH_URL')}",
+    "AUTH_TRUST_HOST=true",
+    f"NEXT_PUBLIC_SITE_URL={q('NEXT_PUBLIC_SITE_URL')}",
+    f"NEXT_PUBLIC_SITE_NAME={q('NEXT_PUBLIC_SITE_NAME')}",
+    f"GOOGLE_CLIENT_ID={q('GOOGLE_CLIENT_ID')}",
+    f"GOOGLE_CLIENT_SECRET={q('GOOGLE_CLIENT_SECRET')}",
+    f"LLM_BASE_URL={q('LLM_BASE_URL')}",
+    f"LLM_API_KEY={q('LLM_API_KEY')}",
+    f"LLM_DEFAULT_MODEL={q('LLM_DEFAULT_MODEL')}",
+    f"NEXT_PUBLIC_LLM_MODE={q('NEXT_PUBLIC_LLM_MODE')}",
+    "AWS_REGION=us-east-1",
+    f"AWS_ACCESS_KEY_ID={q('UTILIO_AWS_KEY')}",
+    f"AWS_SECRET_ACCESS_KEY={q('UTILIO_AWS_SECRET')}",
+    "AWS_S3_BUCKET=utilio-uploads",
+]
+os.environ.setdefault("NEXT_PUBLIC_SITE_URL", f"https://{os.environ.get('DOMAIN', 'utilio.solutions')}")
+os.environ.setdefault("NEXT_PUBLIC_SITE_NAME", "Utilio")
+os.environ.setdefault("LLM_BASE_URL", "http://localhost:11434/v1")
+os.environ.setdefault("LLM_API_KEY", "ollama")
+os.environ.setdefault("LLM_DEFAULT_MODEL", "llama3.2")
+os.environ.setdefault("NEXT_PUBLIC_LLM_MODE", "server")
+sys.stdout.write("\n".join(lines) + "\n")
+PY
 
 echo "▸ Build and migrate"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
 set -e
 cd $APP_DIR
+# OAuth requires a full redirect to Google (redirect: false is credentials-only).
+sed -i 's/await nextAuthSignIn("google", { redirect: false });/await nextAuthSignIn("google");/' context/AuthContext.tsx 2>/dev/null || true
 df -h / | tail -1
 pm2 stop utilio 2>/dev/null || true
 if [ -d node_modules ]; then
