@@ -137,7 +137,12 @@ echo "▸ Build and migrate"
 set -e
 cd $APP_DIR
 df -h / | tail -1
-rm -rf node_modules .next
+pm2 stop utilio 2>/dev/null || true
+if [ -d node_modules ]; then
+  chmod -R u+w node_modules 2>/dev/null || true
+  rm -rf node_modules
+fi
+rm -rf .next
 npm ci --include=dev
 set -a && source .env.local && set +a
 npx prisma generate
