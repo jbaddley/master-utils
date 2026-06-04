@@ -20,9 +20,11 @@ DOMAIN="utilio.solutions"
 APP_DIR="/srv/app"
 REPO="https://github.com/jbaddley/master-utils.git"
 
-DB_HOST="ls-249d31080d21016b1c6e91ef4b22ba33dcc029eb.cefoy40yw3l4.us-east-1.rds.amazonaws.com"
+DB_REGION="us-west-2"
+DB_LIGHTSAIL_NAME="master-utils"
+DB_HOST="ls-58907195a82f03c61fc90514bcda4858f2ad4e4f.c9ikm6m4kgcr.us-west-2.rds.amazonaws.com"
 DB_USER="dbmasteruser"
-DB_NAME="theater_stack"
+DB_NAME="dbmaster"
 
 UTILIO_AWS_KEY="${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID in .env.deploy.local (utilio-s3)}"
 UTILIO_AWS_SECRET="${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY in .env.deploy.local}"
@@ -38,8 +40,8 @@ fetch_db_pass() {
   fi
   echo "▸ Fetching DB password (default AWS CLI profile, not utilio-s3)"
   DB_PASS="$(aws_admin lightsail get-relational-database-master-user-password \
-    --relational-database-name theater-stack-db \
-    --region "$REGION" \
+    --relational-database-name "$DB_LIGHTSAIL_NAME" \
+    --region "$DB_REGION" \
     --query masterUserPassword \
     --output text)"
 }
