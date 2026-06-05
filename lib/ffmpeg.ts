@@ -26,6 +26,22 @@ export function loadFFmpeg(): Promise<FFmpeg> {
   return loadPromise;
 }
 
+/** Stop in-flight ffmpeg work so a new encode can start (e.g. pitch/speed changed). */
+export async function abortFFmpeg(): Promise<void> {
+  if (!instance?.loaded) {
+    instance = null;
+    loadPromise = null;
+    return;
+  }
+  try {
+    await instance.terminate();
+  } catch {
+    /* ignore */
+  }
+  instance = null;
+  loadPromise = null;
+}
+
 export function formatFFmpegLoadError(e: unknown): string {
   return e instanceof Error
     ? `Failed to load ffmpeg.wasm: ${e.message}`

@@ -143,7 +143,7 @@ if [ ! -d $APP_DIR/.git ]; then
   sudo git clone $REPO $APP_DIR
   sudo chown -R ubuntu:ubuntu $APP_DIR
 else
-  cd $APP_DIR && git pull
+  cd $APP_DIR && git fetch origin && git reset --hard origin/main
 fi
 REMOTE_SYNC
 
@@ -194,8 +194,6 @@ echo "▸ Build and migrate"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
 set -e
 cd $APP_DIR
-# OAuth requires a full redirect to Google (redirect: false is credentials-only).
-sed -i 's/await nextAuthSignIn("google", { redirect: false });/await nextAuthSignIn("google");/' context/AuthContext.tsx 2>/dev/null || true
 df -h / | tail -1
 pm2 stop utilio 2>/dev/null || true
 if [ -d node_modules ]; then

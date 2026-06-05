@@ -36,7 +36,7 @@ import {
   type AudioOutputFmt,
 } from "@/lib/audio-utils";
 import { saveAs } from "@/lib/download";
-import { formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
+import { abortFFmpeg, formatFFmpegLoadError, loadFFmpeg } from "@/lib/ffmpeg";
 import AudioWaveform from "@/features/audio/AudioWaveform";
 
 const OUTPUT_FORMATS: AudioOutputFmt[] = ["mp3", "wav", "ogg", "m4a", "flac", "aac"];
@@ -46,6 +46,7 @@ export default function AudioPitchSpeedTool() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processGenRef = useRef(0);
+  const processedKeyRef = useRef("");
 
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -70,6 +71,7 @@ export default function AudioPitchSpeedTool() {
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [analysisDone, setAnalysisDone] = useState(false);
 
   const revokePreview = useCallback((url: string | null) => {
     if (url) URL.revokeObjectURL(url);
@@ -92,6 +94,8 @@ export default function AudioPitchSpeedTool() {
     setProgress(0);
     setIsPlaying(false);
     setPlayhead(0);
+    setAnalysisDone(false);
+    processedKeyRef.current = "";
   }, [previewUrl, revokePreview]);
 
   const handleFile = async (f: File) => {
@@ -109,6 +113,7 @@ export default function AudioPitchSpeedTool() {
       setDetectedBpm(analysis.bpm);
       setDetectedKey(analysis.key);
       setDuration(analysis.duration);
+      setAnalysisDone(true);
       setStatus("idle");
     } catch (e) {
       setStatus("error");
@@ -127,6 +132,7 @@ export default function AudioPitchSpeedTool() {
       const gen = ++processGenRef.current;
       setError(null);
       setProgress(0);
+      await abortFFmpeg();
 
       let ffmpeg: FFmpeg;
       try {
@@ -191,11 +197,15 @@ export default function AudioPitchSpeedTool() {
     [file, outputFmt]
   );
 
+  const settingsKey = `${pitch}|${speed}|${outputFmt}`;
+
   const schedulePreview = useCallback(() => {
     if (!file) return;
+    if (processedKeyRef.current === settingsKey) return;
     if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
 
     if (pitch === 0 && speed === 1) {
+      processedKeyRef.current = settingsKey;
       setPreviewUrl((prev) => {
         revokePreview(prev);
         return URL.createObjectURL(file);
@@ -213,6 +223,7 @@ export default function AudioPitchSpeedTool() {
         const blob = await processAudio(pitch, speed);
         if (!blob) return;
 
+        processedKeyRef.current = settingsKey;
         setPreviewUrl((prev) => {
           revokePreview(prev);
           return URL.createObjectURL(blob);
@@ -224,15 +235,15 @@ export default function AudioPitchSpeedTool() {
         setIsPlaying(false);
       })();
     }, 700);
-  }, [file, pitch, speed, processAudio, revokePreview]);
+  }, [file, pitch, speed, settingsKey, processAudio, revokePreview]);
 
   useEffect(() => {
-    if (!file || status === "analyzing") return;
+    if (!file || !analysisDone) return;
     schedulePreview();
     return () => {
       if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
     };
-  }, [file, pitch, speed, outputFmt, schedulePreview, status]);
+  }, [file, pitch, speed, outputFmt, analysisDone, schedulePreview]);
 
   useEffect(() => {
     const audio = audioRef.current;
