@@ -190,7 +190,7 @@ os.environ.setdefault("NEXT_PUBLIC_LLM_MODE", "server")
 sys.stdout.write("\n".join(lines) + "\n")
 PY
 
-echo "▸ Build and migrate"
+echo "▸ Build and migrate (site will 502 until pm2 restarts — ~8–10 min)"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
 set -e
 cd $APP_DIR
@@ -213,6 +213,7 @@ sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>
 REMOTE_BUILD
 
 echo "▸ Caddy reverse proxy (this instance uses Caddy, not nginx)"
+setup_ssh
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_CADDY
 set -e
 sudo tee /etc/caddy/Caddyfile >/dev/null <<'CADDY'
