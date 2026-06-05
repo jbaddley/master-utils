@@ -16,6 +16,9 @@ export default function Home() {
         <div className="hero-search">
           <ToolSearch variant="hero" placeholder="Search all tools — e.g. mp3, instagram, trim…" />
         </div>
+        <p className="browse-search-hint">
+          Press <kbd>⌘K</kbd> or <kbd>/</kbd> to search from anywhere
+        </p>
       </div>
 
       <ToolDirectory />

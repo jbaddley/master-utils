@@ -11,7 +11,7 @@ export function SearchTriggerButton() {
       type="button"
       className="search-trigger"
       onClick={openPalette}
-      aria-label="Search tools (⌘K)"
+      aria-label="Search tools (⌘K or /)"
     >
       <LuSearch className="search-trigger-icon" aria-hidden />
       <span className="search-trigger-text">Search…</span>

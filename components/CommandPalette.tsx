@@ -1,25 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuSearch, LuX } from "react-icons/lu";
+import { LuSearch, LuStar, LuX } from "react-icons/lu";
 import { useCommandPalette } from "@/context/CommandPaletteContext";
+import { useFavorites } from "@/context/FavoritesContext";
+import { NAV_GROUPS } from "@/lib/nav-groups";
 import {
-  TOOL_CATEGORIES,
   getCatalogHref,
   getCategoryLabel,
   searchTools,
   type CatalogEntry,
 } from "@/lib/tool-catalog";
 
+type PaletteItem =
+  | { type: "tool"; entry: CatalogEntry }
+  | { type: "group"; href: string; label: string };
+
 export function CommandPalette() {
   const { open, closePalette } = useCommandPalette();
+  const { favorites } = useFavorites();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogEntry[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const idleItems: PaletteItem[] = useMemo(() => {
+    const items: PaletteItem[] = favorites.map((entry) => ({
+      type: "tool" as const,
+      entry,
+    }));
+    for (const group of NAV_GROUPS) {
+      items.push({ type: "group", href: group.href, label: group.label });
+    }
+    return items;
+  }, [favorites]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -28,8 +45,8 @@ export function CommandPalette() {
       return;
     }
     const t = setTimeout(() => {
-      setResults(searchTools(query).slice(0, 9));
-      setActiveIndex(-1);
+      setResults(searchTools(query).slice(0, 12));
+      setActiveIndex(0);
     }, 150);
     return () => clearTimeout(t);
   }, [query]);
@@ -60,12 +77,14 @@ export function CommandPalette() {
     [router, closePalette],
   );
 
+  const listLen = query.trim() ? results.length : idleItems.length;
+
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    const listLen = results.length > 0 ? results.length : TOOL_CATEGORIES.length;
     if (e.key === "Escape") {
       closePalette();
       return;
     }
+    if (listLen === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, listLen - 1));
@@ -76,11 +95,14 @@ export function CommandPalette() {
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      if (results.length > 0) {
-        const entry = results[activeIndex >= 0 ? activeIndex : 0];
-        navigate(getCatalogHref(entry.slug));
-      } else if (activeIndex >= 0) {
-        navigate(`/#category-${TOOL_CATEGORIES[activeIndex].id}`);
+      const idx = activeIndex >= 0 ? activeIndex : 0;
+      if (query.trim()) {
+        const entry = results[idx];
+        if (entry) navigate(getCatalogHref(entry.slug));
+      } else {
+        const item = idleItems[idx];
+        if (item?.type === "tool") navigate(getCatalogHref(item.entry.slug));
+        if (item?.type === "group") navigate(item.href);
       }
     }
   }
@@ -103,7 +125,7 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             className="cmd-palette-input"
-            placeholder="Search tools…"
+            placeholder="Search any tool…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
@@ -121,19 +143,45 @@ export function CommandPalette() {
         </div>
 
         {!showResults && (
-          <div className="cmd-palette-empty">
-            <div className="cmd-palette-cat-grid" id="cmd-palette-list">
-              {TOOL_CATEGORIES.map((cat, i) => {
-                const Icon = cat.icon;
+          <div className="cmd-palette-empty" id="cmd-palette-list">
+            {favorites.length > 0 && (
+              <>
+                <div className="cmd-palette-section-label">
+                  <LuStar aria-hidden /> Favorites
+                </div>
+                <ul className="cmd-palette-results cmd-palette-results--compact">
+                  {favorites.map((entry, i) => {
+                    const Icon = entry.icon;
+                    return (
+                      <li key={entry.slug}>
+                        <Link
+                          href={getCatalogHref(entry.slug)}
+                          className={`cmd-palette-result${activeIndex === i ? " is-active" : ""}`}
+                          onClick={closePalette}
+                        >
+                          {Icon && <Icon className="cmd-palette-result-icon" aria-hidden />}
+                          <span className="cmd-palette-result-title">{entry.title}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+            <div className="cmd-palette-section-label">Browse</div>
+            <div className="cmd-palette-cat-grid">
+              {NAV_GROUPS.map((group, i) => {
+                const Icon = group.icon;
+                const idx = favorites.length + i;
                 return (
                   <Link
-                    key={cat.id}
-                    href={`/#category-${cat.id}`}
-                    className={`cmd-palette-cat-tile${activeIndex === i ? " is-active" : ""}`}
+                    key={group.id}
+                    href={group.href}
+                    className={`cmd-palette-cat-tile${activeIndex === idx ? " is-active" : ""}`}
                     onClick={closePalette}
                   >
                     <Icon className="cmd-palette-cat-icon" aria-hidden />
-                    <span className="cmd-palette-cat-label">{cat.label}</span>
+                    <span className="cmd-palette-cat-label">{group.label}</span>
                   </Link>
                 );
               })}
@@ -180,6 +228,9 @@ export function CommandPalette() {
           </span>
           <span>
             <kbd>↵</kbd> open
+          </span>
+          <span>
+            <kbd>/</kbd> or <kbd>⌘K</kbd> search
           </span>
           <span>
             <kbd>esc</kbd> close

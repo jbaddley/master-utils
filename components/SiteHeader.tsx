@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CategoryNav } from "@/components/CategoryNav";
+import { FavoritesMenu, MainNav } from "@/components/MainNav";
 import { UserMenu } from "@/components/UserMenu";
 import { SiteHeaderShell } from "@/components/SiteHeaderShell";
 import { SearchTriggerButton } from "@/components/SearchTriggerButton";
@@ -10,8 +10,9 @@ export function SiteHeader() {
       <Link href="/" className="brand">
         Image<span className="arrow"> → </span>Tools
       </Link>
-      <CategoryNav />
-      <div className="site-header-search">
+      <MainNav />
+      <div className="site-header-actions">
+        <FavoritesMenu />
         <SearchTriggerButton />
       </div>
       <UserMenu />

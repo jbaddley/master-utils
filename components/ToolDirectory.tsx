@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { LuChevronDown } from "react-icons/lu";
+import { NAV_GROUPS } from "@/lib/nav-groups";
 import {
   TOOL_CATEGORIES,
   TOOL_CATALOG,
@@ -99,14 +100,6 @@ function CategorySection({
 }
 
 export function ToolDirectory() {
-  const scrollToCategory = useCallback((categoryId: ToolCategory) => {
-    const el = document.getElementById(`category-${categoryId}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    el.classList.add("is-highlighted");
-    window.setTimeout(() => el.classList.remove("is-highlighted"), 1200);
-  }, []);
-
   const featuredByCategory = new Map<ToolCategory, CatalogEntry[]>();
   for (const cat of TOOL_CATEGORIES) {
     const featured = TOOL_CATALOG.filter((e) => e.category === cat.id && e.featured);
@@ -117,19 +110,17 @@ export function ToolDirectory() {
 
   return (
     <div className="tool-directory">
-      <div className="category-pills" role="navigation" aria-label="Tool categories">
-        {TOOL_CATEGORIES.map((cat) => {
-          const count = getMenuCategoryCount(cat.id);
+      <div className="category-pills" role="navigation" aria-label="Browse by category">
+        {NAV_GROUPS.map((group) => {
+          const count = group.categories.reduce(
+            (sum, cat) => sum + getMenuCategoryCount(cat),
+            0,
+          );
           return (
-            <button
-              key={cat.id}
-              type="button"
-              className="category-pill"
-              onClick={() => scrollToCategory(cat.id)}
-            >
-              {cat.label}
+            <Link key={group.id} href={group.href} className="category-pill">
+              {group.label}
               <span className="category-pill-count">{count}</span>
-            </button>
+            </Link>
           );
         })}
       </div>

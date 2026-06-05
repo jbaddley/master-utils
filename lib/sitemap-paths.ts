@@ -25,6 +25,10 @@ const EXTRA_PATHS = [
   "strip-metadata",
   "blackout-tool",
   "audio-pitch-and-speed",
+  "browse/media",
+  "browse/documents",
+  "browse/ai",
+  "browse/utilities",
 ] as const;
 
 export type SitemapPath = {

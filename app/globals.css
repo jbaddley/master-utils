@@ -234,10 +234,163 @@
 
   /* ---- Site header search area ---- */
   .site-header-search {
-    @apply ml-auto shrink-0;
+    @apply shrink-0;
+  }
+  .site-header-actions {
+    @apply ml-auto flex items-center gap-2 shrink-0;
   }
   .site-header .brand {
     @apply shrink-0;
+  }
+
+  /* ---- Main nav (4 categories) ---- */
+  .main-nav {
+    @apply hidden lg:flex items-center gap-1 ml-3;
+  }
+  .main-nav-link {
+    @apply px-3 py-1.5 text-[13px] font-medium text-muted-foreground no-underline
+      rounded-md whitespace-nowrap hover:text-foreground hover:bg-secondary transition-colors;
+  }
+  .main-nav-link.is-active {
+    @apply text-foreground bg-secondary;
+  }
+
+  /* ---- Favorites menu ---- */
+  .favorites-menu {
+    @apply relative;
+  }
+  .favorites-menu-trigger {
+    @apply relative flex items-center justify-center w-9 h-9
+      text-muted-foreground bg-transparent border border-border rounded-lg cursor-pointer
+      hover:text-foreground hover:bg-secondary transition-colors;
+  }
+  .favorites-menu-icon {
+    @apply w-4 h-4;
+  }
+  .favorites-menu-count {
+    @apply absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-semibold
+      leading-4 text-center text-primary-foreground bg-primary rounded-full;
+  }
+  .favorites-menu-backdrop {
+    @apply fixed inset-0 z-[65];
+  }
+  .favorites-menu-panel {
+    @apply absolute top-[calc(100%+6px)] right-0 z-[70] w-[min(280px,calc(100vw-24px))]
+      bg-popover border border-border rounded-xl shadow-lg overflow-hidden;
+  }
+  .favorites-menu-header {
+    @apply px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground
+      border-b border-border;
+  }
+  .favorites-menu-empty {
+    @apply px-3 py-4 text-sm text-muted-foreground m-0;
+  }
+  .favorites-menu-list {
+    @apply m-0 p-1.5 list-none max-h-[280px] overflow-y-auto;
+  }
+  .favorites-menu-list li {
+    @apply flex items-center gap-1;
+  }
+  .favorites-menu-item {
+    @apply flex flex-1 items-center gap-2 min-w-0 px-2 py-2 text-sm text-foreground
+      no-underline rounded-lg hover:bg-secondary transition-colors;
+  }
+  .favorites-menu-item-icon {
+    @apply w-4 h-4 shrink-0 text-muted-foreground;
+  }
+  .favorites-menu-item-title {
+    @apply truncate;
+  }
+  .favorites-menu-remove {
+    @apply flex items-center justify-center w-7 h-7 shrink-0
+      text-muted-foreground bg-transparent border-0 rounded-md cursor-pointer
+      hover:text-foreground hover:bg-secondary;
+  }
+
+  /* ---- Favorite toggle on tool pages ---- */
+  .page-hero-title-row {
+    @apply flex items-start gap-3;
+  }
+  .page-hero-title-row h1 {
+    @apply flex-1 min-w-0;
+  }
+  .favorite-toggle {
+    @apply flex items-center justify-center w-9 h-9 shrink-0 mt-0.5
+      text-muted-foreground bg-secondary border border-border rounded-lg cursor-pointer
+      hover:text-foreground transition-colors;
+  }
+  .favorite-toggle.is-active {
+    @apply text-amber-400 border-amber-400/40;
+  }
+  .favorite-toggle.is-active svg {
+    fill: currentColor;
+  }
+
+  /* ---- Browse category pages ---- */
+  .browse-hero {
+    @apply text-center mb-10;
+  }
+  .browse-hero-icon-wrap {
+    @apply inline-flex items-center justify-center w-12 h-12 mb-3
+      rounded-xl bg-secondary border border-border;
+  }
+  .browse-hero-icon {
+    @apply w-6 h-6 text-primary;
+  }
+  .browse-hero h1 {
+    @apply text-3xl font-bold tracking-tight mb-2;
+  }
+  .browse-search {
+    @apply max-w-xl mx-auto mt-6;
+  }
+  .browse-search-hint {
+    @apply text-xs text-muted-foreground mt-2 mb-0;
+  }
+  .browse-search-hint kbd {
+    @apply px-1.5 py-0.5 bg-secondary border border-border rounded text-[10px] font-mono;
+  }
+  .browse-other {
+    @apply mt-12 pt-8 border-t border-border;
+  }
+
+  /* ---- Tool directory ---- */
+  .tool-directory {
+    @apply mt-6;
+  }
+  .tool-directory-section {
+    @apply mb-10 scroll-mt-24;
+  }
+  .tool-directory-section.is-highlighted {
+    @apply outline outline-2 outline-primary/40 outline-offset-4 rounded-xl;
+  }
+  .tool-directory-header {
+    @apply flex items-center gap-2 mb-1;
+  }
+  .tool-directory-title {
+    @apply text-xl font-semibold m-0;
+  }
+  .tool-directory-count {
+    @apply text-xs font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full;
+  }
+  .tool-directory-desc {
+    @apply text-sm text-muted-foreground mb-4 m-0;
+  }
+  .category-pills {
+    @apply flex flex-wrap gap-2 mb-8;
+  }
+  .category-pill {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium
+      text-muted-foreground no-underline bg-secondary border border-border rounded-full
+      hover:text-foreground hover:border-[#39414f] transition-colors;
+  }
+  .category-pill-count {
+    @apply text-xs text-muted-foreground/80 tabular-nums;
+  }
+  .tc-icon {
+    @apply w-5 h-5 mb-2 text-muted-foreground;
+  }
+  .hero-search {
+    @apply max-w-xl mx-auto mt-6;
   }
 
   /* ---- Search trigger button ---- */
@@ -388,7 +541,7 @@
 
   /* ---- Mobile nav ---- */
   .mobile-nav-toggle {
-    @apply lg:hidden flex items-center justify-center ml-auto mr-0 w-9 h-9
+    @apply lg:hidden flex items-center justify-center w-9 h-9
       bg-transparent border border-border rounded-lg text-foreground cursor-pointer
       hover:bg-secondary;
   }
@@ -460,6 +613,26 @@
   .mobile-nav-link-icon {
     @apply w-3.5 h-3.5 shrink-0 text-muted-foreground/70;
   }
+  .mobile-nav-body {
+    @apply flex-1 overflow-y-auto px-4 py-3;
+  }
+  .mobile-nav-search-btn {
+    @apply flex items-center justify-between w-full px-3 py-2.5 mb-4 text-sm
+      text-muted-foreground bg-secondary border border-border rounded-lg cursor-pointer
+      hover:text-foreground;
+  }
+  .mobile-nav-search-btn kbd {
+    @apply text-[10px] font-mono px-1.5 py-0.5 bg-muted border border-border rounded;
+  }
+  .mobile-nav-section-label {
+    @apply text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2;
+  }
+  .mobile-nav-links--flat {
+    @apply pl-0 mb-4;
+  }
+  .mobile-nav-link--group {
+    @apply py-2 text-sm font-medium;
+  }
 
   /* ---- Command palette ---- */
   .cmd-palette-overlay {
@@ -491,8 +664,17 @@
     @apply p-3;
   }
   .cmd-palette-cat-grid {
-    @apply grid gap-2;
-    grid-template-columns: repeat(3, 1fr);
+    @apply grid grid-cols-2 gap-2;
+  }
+  .cmd-palette-section-label {
+    @apply flex items-center gap-1.5 px-1 py-2 text-[11px] font-semibold uppercase
+      tracking-widest text-muted-foreground;
+  }
+  .cmd-palette-results--compact {
+    @apply max-h-[160px] mb-2;
+  }
+  .cmd-palette-results--compact .cmd-palette-result {
+    @apply py-2;
   }
   .cmd-palette-cat-tile {
     @apply flex flex-col items-center gap-1.5 p-3 text-center no-underline
@@ -1240,7 +1422,8 @@
   .site-header {
     @apply px-3.5 gap-2;
   }
-  .site-header-search {
+  .site-header-actions .search-trigger-text,
+  .site-header-actions .search-trigger-kbd {
     @apply hidden;
   }
   .canvas img,

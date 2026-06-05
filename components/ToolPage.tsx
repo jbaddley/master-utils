@@ -4,6 +4,7 @@ import { JsonLd } from "./JsonLd";
 import { canonical } from "@/lib/seo";
 import { AdSlot } from "@/components/AdSlot";
 import { AffiliateCards } from "@/components/AffiliateCards";
+import { FavoriteToggle } from "@/components/FavoriteToggle";
 
 export type QA = { q: string; a: string };
 export type RelatedLink = { href: string; label: string };
@@ -31,7 +32,10 @@ export function ToolPage(props: {
   return (
     <main className="page">
       <div className="page-hero">
-        <h1>{props.h1}</h1>
+        <div className="page-hero-title-row">
+          <h1>{props.h1}</h1>
+          <FavoriteToggle slug={props.slug} title={props.h1} />
+        </div>
         <p className="lede">{props.lede}</p>
       </div>
 

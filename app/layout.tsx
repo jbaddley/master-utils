@@ -7,6 +7,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
 import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 import { CommandPalette } from "@/components/CommandPalette";
 import "./globals.css";
 
@@ -29,11 +30,13 @@ export default function RootLayout({
         <SessionProvider>
           <AuthProvider>
             <CommandPaletteProvider>
-              <SiteHeader />
-              {children}
-              <SiteFooter />
-              <AuthModal />
-              <CommandPalette />
+              <FavoritesProvider>
+                <SiteHeader />
+                {children}
+                <SiteFooter />
+                <AuthModal />
+                <CommandPalette />
+              </FavoritesProvider>
             </CommandPaletteProvider>
           </AuthProvider>
         </SessionProvider>
