@@ -6,10 +6,36 @@ import {
   SUBDOMAIN_APEX,
 } from "@/lib/subdomains";
 
+/** Auth.js trustHost reads X-Forwarded-*; Caddy → Node often leaves the internal origin as localhost:3000. */
+function forwardProxyHeaders(request: NextRequest): Headers {
+  const headers = new Headers(request.headers);
+  const host = headers.get("host");
+  if (host) {
+    headers.set("x-forwarded-host", host);
+  }
+  const proto =
+    headers.get("x-forwarded-proto") ??
+    (request.nextUrl.protocol === "https:" ? "https" : "http");
+  headers.set("x-forwarded-proto", proto);
+  return headers;
+}
+
+function passThrough(request: NextRequest) {
+  return NextResponse.next({
+    request: { headers: forwardProxyHeaders(request) },
+  });
+}
+
+function rewriteTo(request: NextRequest, url: URL) {
+  return NextResponse.rewrite(url, {
+    request: { headers: forwardProxyHeaders(request) },
+  });
+}
+
 export function middleware(request: NextRequest) {
   const label = getSubdomainLabel(request.headers.get("host") ?? "");
   if (!label) {
-    return NextResponse.next();
+    return passThrough(request);
   }
 
   const targetPath = getSubdomainPath(label);
@@ -22,25 +48,25 @@ export function middleware(request: NextRequest) {
 
   if (shouldPrefixAllPaths(label)) {
     if (pathname.startsWith(base)) {
-      return NextResponse.next();
+      return passThrough(request);
     }
     // App Router API routes are always mounted at /api/*, not under /swim.
     if (pathname === "/api" || pathname.startsWith("/api/")) {
-      return NextResponse.next();
+      return passThrough(request);
     }
     const suffix = pathname === "/" ? "" : pathname.replace(/\/$/, "");
     const url = request.nextUrl.clone();
     url.pathname = `${base}${suffix}/`;
-    return NextResponse.rewrite(url);
+    return rewriteTo(request, url);
   }
 
   if (pathname !== "/" && pathname !== "") {
-    return NextResponse.next();
+    return passThrough(request);
   }
 
   const url = request.nextUrl.clone();
   url.pathname = `${base}/`;
-  return NextResponse.rewrite(url);
+  return rewriteTo(request, url);
 }
 
 export const config = {
