@@ -8,6 +8,7 @@ import { LuMenu, LuX } from "react-icons/lu";
 import {
   isSwimNavLinkActive,
   SWIM_NAV_LINKS,
+  swimPublicHref,
   type SwimNavLink,
 } from "@/lib/swim-nav";
 
@@ -18,22 +19,24 @@ function visibleSwimLinks(session: ReturnType<typeof useSession>["data"]): SwimN
 function SwimNavLinks({
   pathname,
   links,
+  isSubdomain,
   onNavigate,
   className,
 }: {
   pathname: string;
   links: SwimNavLink[];
+  isSubdomain: boolean;
   onNavigate?: () => void;
   className?: string;
 }) {
   return (
     <>
       {links.map((link) => {
-        const active = isSwimNavLinkActive(pathname, link);
+        const active = isSwimNavLinkActive(pathname, link, isSubdomain);
         return (
           <Link
             key={link.id}
-            href={link.href}
+            href={swimPublicHref(link.href, isSubdomain)}
             className={`main-nav-link${active ? " is-active" : ""}${className ? ` ${className}` : ""}`}
             onClick={onNavigate}
           >
@@ -50,11 +53,13 @@ function SwimMobileNav({
   onClose,
   pathname,
   links,
+  isSubdomain,
 }: {
   open: boolean;
   onClose: () => void;
   pathname: string;
   links: SwimNavLink[];
+  isSubdomain: boolean;
 }) {
   useEffect(() => {
     if (!open) {
@@ -97,11 +102,11 @@ function SwimMobileNav({
         <div className="mobile-nav-body">
           <ul className="mobile-nav-links mobile-nav-links--flat">
             {links.map((link) => {
-              const active = isSwimNavLinkActive(pathname, link);
+              const active = isSwimNavLinkActive(pathname, link, isSubdomain);
               return (
                 <li key={link.id}>
                   <Link
-                    href={link.href}
+                    href={swimPublicHref(link.href, isSubdomain)}
                     className={`mobile-nav-link${active ? " is-active" : ""}`}
                     onClick={onClose}
                   >
@@ -117,7 +122,7 @@ function SwimMobileNav({
   );
 }
 
-export function SwimNav() {
+export function SwimNav({ isSubdomain }: { isSubdomain: boolean }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -127,7 +132,7 @@ export function SwimNav() {
   return (
     <>
       <nav className="main-nav" aria-label="Swim">
-        <SwimNavLinks pathname={pathname} links={links} />
+        <SwimNavLinks pathname={pathname} links={links} isSubdomain={isSubdomain} />
       </nav>
 
       <button
@@ -145,6 +150,7 @@ export function SwimNav() {
         onClose={closeMobile}
         pathname={pathname}
         links={links}
+        isSubdomain={isSubdomain}
       />
     </>
   );

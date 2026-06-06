@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { SessionProvider } from "next-auth/react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -9,21 +10,25 @@ import { AuthModal } from "@/components/AuthModal";
 import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { CommandPalette } from "@/components/CommandPalette";
+import { getSubdomainLabel } from "@/lib/subdomains";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Utilio — Free Online Media & Utility Tools",
+    default: "Utilio — Online Media & Utility Tools",
     template: `%s · ${SITE_NAME}`,
   },
   description:
-    "A free suite of fast, private media utilities that run entirely in your browser: convert, compress, resize images; process audio and video; work with PDFs; extract text (OCR); generate QR codes, passwords, and more.",
+    "Privacy-first media utilities for images, audio, video, PDFs, and more. Many tools run in your browser; Pro adds batch processing and power features.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const host = (await headers()).get("host") ?? "";
+  const isSwimSubdomain = getSubdomainLabel(host) === "swim";
+
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
@@ -31,7 +36,7 @@ export default function RootLayout({
           <AuthProvider>
             <CommandPaletteProvider>
               <FavoritesProvider>
-                <SiteHeader />
+                <SiteHeader isSwimSubdomain={isSwimSubdomain} />
                 {children}
                 <SiteFooter />
                 <AuthModal />

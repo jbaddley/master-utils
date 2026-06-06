@@ -1,3 +1,5 @@
+import { getSubdomainLabel } from "@/lib/subdomains";
+
 export type SwimNavLink = {
   id: string;
   label: string;
@@ -16,10 +18,39 @@ export function isSwimPath(pathname: string): boolean {
   return pathname === "/swim" || pathname.startsWith("/swim/");
 }
 
-export function isSwimNavLinkActive(pathname: string, link: SwimNavLink): boolean {
+/** True when the host is swim.utilio.solutions (browser URL paths omit /swim prefix). */
+export function isSwimSubdomainHost(host: string): boolean {
+  return getSubdomainLabel(host) === "swim";
+}
+
+export function isSwimAppPath(pathname: string, host?: string | null): boolean {
+  return isSwimPath(pathname) || Boolean(host && isSwimSubdomainHost(host));
+}
+
+/** Map browser pathname on swim subdomain to internal /swim/* path for active states. */
+export function toInternalSwimPath(pathname: string, isSubdomain: boolean): string {
+  if (!isSubdomain) return pathname;
+  if (pathname === "/" || pathname === "") return "/swim/";
+  const normalized = pathname.endsWith("/") ? pathname : `${pathname}/`;
+  return `/swim${normalized}`;
+}
+
+/** Public href for swim routes (short paths on swim subdomain). */
+export function swimPublicHref(internalHref: string, isSubdomain: boolean): string {
+  if (!isSubdomain) return internalHref;
+  const stripped = internalHref.replace(/^\/swim\/?/, "/");
+  return stripped === "/" ? "/" : stripped.endsWith("/") ? stripped : `${stripped}/`;
+}
+
+export function isSwimNavLinkActive(
+  pathname: string,
+  link: SwimNavLink,
+  isSubdomain = false,
+): boolean {
+  const internalPath = toInternalSwimPath(pathname, isSubdomain);
   const prefix = link.matchPrefix ?? link.href.replace(/\/$/, "");
   if (link.id === "home") {
-    return pathname === "/swim" || pathname === "/swim/";
+    return internalPath === "/swim" || internalPath === "/swim/";
   }
-  return pathname.startsWith(prefix);
+  return internalPath.startsWith(prefix);
 }
