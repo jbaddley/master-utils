@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <span>© {new Date().getFullYear()} BitMixer</span>
+      <span>© {new Date().getFullYear()} Utilio</span>
       <span>·</span>
       <span>Free, in-browser media tools — your files never leave your device.</span>
       <Link href="/">Home</Link>

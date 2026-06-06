@@ -1,8 +1,8 @@
-# BitMixer Expansion Roadmap: Universal Utility Hub
+# Utilio Expansion Roadmap: Universal Utility Hub
 
 ## 1. Project Overview
 
-**Objective:** Expand BitMixer from a media-centric tool (Image, Video, Audio, QR) into a universal utility hub.
+**Objective:** Expand Utilio from a media-centric tool (Image, Video, Audio, QR) into a universal utility hub.
 
 **Core Philosophy:** Privacy-first (client-side processing), high scannability, and frictionless "one-click" workflows.
 
@@ -28,7 +28,7 @@
 
 ## 3. Phase 2: Security & Privacy (The "Trust" Layer)
 
-**Focus:** Tools that establish BitMixer as a safe, local-only environment.
+**Focus:** Tools that establish Utilio as a safe, local-only environment.
 
 ### Metadata Scrubber (EXIF)
 - [ ] Tool to strip GPS and camera data from images
@@ -88,7 +88,7 @@ To be followed by the agent for all new tools:
 - **Architecture:** Prioritize Client-Side Processing (Wasm/WebWorkers). Files should never leave the user's machine unless strictly necessary.
 - **UI/UX:** Every tool must have a "Copy to Clipboard" button and a "Download" button.
 - **SEO:** Each tool page requires unique Meta Tags and a H2 section explaining "How to use [Tool] without uploading files."
-- **Performance:** Lazy-load libraries (like Tesseract or PDF.js) only when the specific tool is accessed to keep the initial BitMixer load-time fast.
+- **Performance:** Lazy-load libraries (like Tesseract or PDF.js) only when the specific tool is accessed to keep the initial Utilio load-time fast.
 
 ---
 

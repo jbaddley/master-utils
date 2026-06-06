@@ -14,7 +14,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "BitMixer — Free Online Media & Utility Tools",
+    default: "Utilio — Free Online Media & Utility Tools",
     template: `%s · ${SITE_NAME}`,
   },
   description:

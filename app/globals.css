@@ -427,7 +427,7 @@
     @apply absolute left-2.5 w-4 h-4 text-muted-foreground pointer-events-none z-10;
   }
   .tool-search-input {
-    @apply pl-8 w-full;
+    @apply w-full;
   }
   .tool-search--hero .tool-search-input {
     @apply h-11 text-base;

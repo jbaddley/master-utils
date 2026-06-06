@@ -212,24 +212,12 @@ pm2 save
 sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>/dev/null || true
 REMOTE_BUILD
 
-echo "▸ Caddy reverse proxy (this instance uses Caddy, not nginx)"
+echo "▸ Caddy reverse proxy (generated from config/subdomains.json)"
 setup_ssh
-"${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_CADDY
+CADDYFILE="$("$ROOT/scripts/generate-caddyfile.sh")"
+printf '%s\n' "$CADDYFILE" | "${SSH[@]}" "ubuntu@$HOST" "sudo tee /etc/caddy/Caddyfile >/dev/null"
+"${SSH[@]}" "ubuntu@$HOST" bash <<'REMOTE_CADDY'
 set -e
-sudo tee /etc/caddy/Caddyfile >/dev/null <<'CADDY'
-utilio.solutions, www.utilio.solutions {
-	encode gzip
-	header {
-		Cross-Origin-Opener-Policy "same-origin"
-		Cross-Origin-Embedder-Policy "require-corp"
-	}
-	reverse_proxy 127.0.0.1:3000 {
-		header_up Host {host}
-		header_up X-Forwarded-Host {host}
-		header_up X-Forwarded-Proto {scheme}
-	}
-}
-CADDY
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 REMOTE_CADDY

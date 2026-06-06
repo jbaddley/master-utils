@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { LuSearch } from "react-icons/lu";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   getCatalogHref,
   getCategoryLabel,
@@ -124,7 +125,7 @@ export function ToolSearch({
           aria-activedescendant={
             activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined
           }
-          className="tool-search-input"
+          className={cn("tool-search-input pl-9")}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);

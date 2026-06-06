@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         method: "HEAD",
         redirect: "manual",
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { "User-Agent": "BitMixer-URL-Unshortener/1.0" },
+        headers: { "User-Agent": "Utilio-URL-Unshortener/1.0" },
       });
 
       if (res.status >= 300 && res.status < 400) {
