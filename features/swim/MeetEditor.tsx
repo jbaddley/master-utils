@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import QRCode from "qrcode";
 import type { SwimMeet, SwimOrgRole } from "@prisma/client";
+import { FileDropzone } from "@/components/FileDropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,12 +36,28 @@ type Props = {
   meet: SwimMeet;
 };
 
+const EDIT_ENTRY_FIELD_LABELS = {
+  lastName: "Last Name",
+  firstName: "First Name",
+  age: "Age",
+  team: "Team",
+  event: "Event",
+  heat: "Heat",
+  lane: "Lane",
+  seedTime: "Seed Time",
+} as const;
+
 export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   const [tab, setTab] = useState<"entries" | "import" | "publish" | "details">("entries");
   const [meet, setMeet] = useState(initialMeet);
   const [entries, setEntries] = useState<FlatEntry[]>([]);
   const [csvText, setCsvText] = useState("");
-  const [preview, setPreview] = useState<{ rows: SwimProgramRow[]; issues: { row: number; message: string }[] } | null>(null);
+  const [csvFileName, setCsvFileName] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    rows: SwimProgramRow[];
+    issues: { row: number; message: string }[];
+    hasHeaderRow?: boolean;
+  } | null>(null);
   const [mappingMode, setMappingMode] = useState(false);
   const [suggestedMapping, setSuggestedMapping] = useState<ColumnMapping | null>(null);
   const [importResult, setImportResult] = useState<string>("");
@@ -147,6 +164,26 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
     }
   }
 
+  function resetImportState() {
+    setPreview(null);
+    setMappingMode(false);
+    setSuggestedMapping(null);
+    setImportResult("");
+  }
+
+  function handleCsvTextChange(text: string) {
+    setCsvText(text);
+    setCsvFileName(null);
+    resetImportState();
+  }
+
+  async function loadCsvFile(file: File) {
+    const text = await file.text();
+    setCsvText(text);
+    setCsvFileName(file.name);
+    resetImportState();
+  }
+
   async function previewImport() {
     if (mappingMode) {
       const res = await fetch(`/api/swim/meets/${meet.id}/import/map`, {
@@ -165,7 +202,9 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
       });
       const data = await res.json();
       setPreview(data);
-      if (data.issues?.some((i: { message: string }) => i.message.includes("Missing headers"))) {
+      if (data.rows?.length > 0) {
+        setMappingMode(false);
+      } else if (data.issues?.some((i: { message: string }) => i.message.includes("Missing headers"))) {
         setMappingMode(true);
         const mapRes = await fetch(`/api/swim/meets/${meet.id}/import/map`, {
           method: "POST",
@@ -248,7 +287,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
             <form onSubmit={(e) => saveEntry(e)} className="swim-grid-2">
               {(["lastName", "firstName", "age", "teamCode", "eventLabel", "heatLabel", "lane", "seedTimeDisplay"] as const).map((f) => (
                 <div key={f} className="swim-form-row">
-                  <Label>{f}</Label>
+                  <Label>{FIELD_TO_CANONICAL[f]}</Label>
                   <Input value={newEntry[f]} onChange={(e) => setNewEntry({ ...newEntry, [f]: e.target.value })} required={f !== "seedTimeDisplay"} />
                 </div>
               ))}
@@ -261,7 +300,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
               <form onSubmit={(e) => saveEntry(e, editEntry)} className="swim-grid-2">
                 {(["lastName", "firstName", "age", "team", "event", "heat", "lane", "seedTime"] as const).map((f) => (
                   <div key={f} className="swim-form-row">
-                    <Label>{f}</Label>
+                    <Label>{EDIT_ENTRY_FIELD_LABELS[f]}</Label>
                     <Input
                       value={String(editEntry[f])}
                       onChange={(e) =>
@@ -290,9 +329,23 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
       {tab === "import" && isAdmin && (
         <div className="swim-card space-y-3">
           <h2>Import CSV</h2>
-          <p className="swim-meet-meta">Paste meet program CSV or upload. Canonical headers: Last Name, First Name, Age, Team, Event, Heat, Lane, Seed Time.</p>
-          <Textarea rows={8} value={csvText} onChange={(e) => setCsvText(e.target.value)} placeholder="Paste CSV here…" />
-          <input type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) f.text().then(setCsvText); }} />
+          <p className="swim-meet-meta">
+            Upload a file or paste CSV below. Headers are detected automatically; files without a header row are read in
+            column order: Last Name, First Name, Age, Team, Event, Heat, Lane, Seed Time.
+          </p>
+          <FileDropzone
+            accept=".csv,text/csv,text/plain"
+            label="Drop a CSV file here"
+            onFiles={(files) => void loadCsvFile(files[0])}
+            onError={(msg) => setImportResult(msg)}
+          />
+          {csvFileName && <p className="swim-meet-meta">Loaded: {csvFileName}</p>}
+          <Textarea
+            rows={8}
+            value={csvText}
+            onChange={(e) => handleCsvTextChange(e.target.value)}
+            placeholder="Or paste CSV here…"
+          />
           {mappingMode && suggestedMapping && (
             <div>
               <h3>Column mapping</h3>
@@ -310,7 +363,10 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
           </div>
           {preview && (
             <div>
-              <p>{preview.rows.length} valid rows, {preview.issues.length} issues</p>
+              <p>
+                {preview.rows.length} valid rows, {preview.issues.length} issues
+                {preview.hasHeaderRow === false && " (no header row detected — using column order)"}
+              </p>
               {preview.issues.slice(0, 5).map((i, idx) => (
                 <p key={idx} className="swim-error">Row {i.row}: {i.message}</p>
               ))}

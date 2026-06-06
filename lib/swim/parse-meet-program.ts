@@ -1,3 +1,10 @@
+import {
+  detectCsvHasHeaderRow,
+  parseCsvLineCells,
+  suggestColumnMapping,
+  applyColumnMapping,
+} from "./column-mapper";
+
 export const CANONICAL_HEADERS = [
   "Last Name",
   "First Name",
@@ -170,57 +177,69 @@ function detectDelimiter(line: string): "," | "\t" {
   return tabs > commas ? "\t" : ",";
 }
 
-function parseCsvLine(line: string, delimiter: "," | "\t"): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === delimiter && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current.trim());
-  return result;
+function cellsToCanonicalRecord(cells: string[]): Record<string, string> {
+  const record: Record<string, string> = {};
+  CANONICAL_HEADERS.forEach((h, idx) => {
+    record[h] = cells[idx] ?? "";
+  });
+  return record;
 }
 
 export function parseMeetProgramCsv(text: string): {
   rows: SwimProgramRow[];
   issues: ParseIssue[];
   headers: string[];
+  hasHeaderRow: boolean;
 } {
   const cleaned = text.replace(/^\uFEFF/, "").trim();
   const lines = cleaned.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length === 0) {
-    return { rows: [], issues: [{ row: 0, message: "Empty file" }], headers: [] };
+    return { rows: [], issues: [{ row: 0, message: "Empty file" }], headers: [], hasHeaderRow: true };
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const headers = parseCsvLine(lines[0], delimiter);
+  const firstCells = parseCsvLineCells(lines[0], delimiter);
+  const hasHeaderRow = detectCsvHasHeaderRow(firstCells);
   const issues: ParseIssue[] = [];
   const rows: SwimProgramRow[] = [];
 
+  if (!hasHeaderRow) {
+    const dataLines = lines;
+    for (let i = 0; i < dataLines.length; i++) {
+      const cells = parseCsvLineCells(dataLines[i], delimiter);
+      const { row, issues: rowIssues } = parseSwimProgramRow(cellsToCanonicalRecord(cells), i + 1);
+      issues.push(...rowIssues);
+      if (row) rows.push(row);
+    }
+    return { rows, issues, headers: [...CANONICAL_HEADERS], hasHeaderRow: false };
+  }
+
+  const headers = firstCells;
   const missingHeaders = CANONICAL_HEADERS.filter((h) => !headers.includes(h));
+
   if (missingHeaders.length > 0) {
+    const { mapping } = suggestColumnMapping(headers);
+    const mappedFields = Object.keys(mapping).length;
+    if (mappedFields >= 5) {
+      for (let i = 1; i < lines.length; i++) {
+        const cells = parseCsvLineCells(lines[i], delimiter);
+        const record = applyColumnMapping(headers, cells, mapping);
+        const { row, issues: rowIssues } = parseSwimProgramRow(record, i + 1);
+        issues.push(...rowIssues);
+        if (row) rows.push(row);
+      }
+      return { rows, issues, headers, hasHeaderRow: true };
+    }
+
     issues.push({
       row: 0,
       message: `Missing headers: ${missingHeaders.join(", ")}. Use column mapping for non-standard files.`,
     });
-    return { rows, issues, headers };
+    return { rows, issues, headers, hasHeaderRow: true };
   }
 
   for (let i = 1; i < lines.length; i++) {
-    const cells = parseCsvLine(lines[i], delimiter);
+    const cells = parseCsvLineCells(lines[i], delimiter);
     const record: Record<string, string> = {};
     headers.forEach((h, idx) => {
       record[h] = cells[idx] ?? "";
@@ -230,7 +249,7 @@ export function parseMeetProgramCsv(text: string): {
     if (row) rows.push(row);
   }
 
-  return { rows, issues, headers };
+  return { rows, issues, headers, hasHeaderRow: true };
 }
 
 export function swimmerDisplayName(row: Pick<SwimProgramRow, "firstName" | "lastName">): string {
