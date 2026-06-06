@@ -84,8 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    // OAuth must redirect the browser to Google (redirect: false leaves the user on-page).
-    await nextAuthSignIn("google");
+    const callbackUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}`
+        : "/";
+    await nextAuthSignIn("google", { callbackUrl });
   }, []);
 
   const signOut = useCallback(async () => {

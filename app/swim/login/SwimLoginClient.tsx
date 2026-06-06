@@ -11,7 +11,10 @@ import { Label } from "@/components/ui/label";
 export default function SwimLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/swim/manage/";
+  const swimBase = process.env.NEXT_PUBLIC_SWIM_URL?.replace(/\/$/, "") ?? "";
+  const oauthCallbackUrl =
+    searchParams.get("callbackUrl") ??
+    (swimBase ? `${swimBase}/manage/` : "/swim/manage/");
   const [tab, setTab] = useState<"signin" | "signup" | "magic">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +38,7 @@ export default function SwimLoginPage() {
       }
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) throw new Error("Invalid email or password");
-      router.push(callbackUrl);
+      router.push("/manage/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -49,7 +52,7 @@ export default function SwimLoginPage() {
     setMessage("");
     setLoading(true);
     try {
-      const result = await signIn("email", { email, redirect: false, callbackUrl });
+      const result = await signIn("email", { email, redirect: false, callbackUrl: oauthCallbackUrl });
       if (result?.error) throw new Error("Could not send magic link");
       setMessage("Check your email for a sign-in link.");
     } catch (err) {
@@ -103,7 +106,7 @@ export default function SwimLoginPage() {
       )}
 
       <div style={{ marginTop: "1rem" }}>
-        <Button variant="outline" className="w-full" onClick={() => signIn("google", { callbackUrl })}>
+        <Button variant="outline" className="w-full" onClick={() => signIn("google", { callbackUrl: oauthCallbackUrl })}>
           Continue with Google
         </Button>
       </div>
