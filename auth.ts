@@ -11,16 +11,20 @@ import { SUBDOMAIN_APEX } from "@/lib/subdomains";
 const authCookieDomain =
   process.env.NODE_ENV === "production" ? `.${SUBDOMAIN_APEX}` : undefined;
 
+const sharedAuthCookies = authCookieDomain
+  ? {
+      sessionToken: { options: { domain: authCookieDomain } },
+      callbackUrl: { options: { domain: authCookieDomain } },
+      csrfToken: { options: { domain: authCookieDomain } },
+      pkceCodeVerifier: { options: { domain: authCookieDomain } },
+      state: { options: { domain: authCookieDomain } },
+    }
+  : undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   adapter: PrismaAdapter(prisma),
-  ...(authCookieDomain
-    ? {
-        cookies: {
-          sessionToken: { options: { domain: authCookieDomain } },
-        },
-      }
-    : {}),
+  ...(sharedAuthCookies ? { cookies: sharedAuthCookies } : {}),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
