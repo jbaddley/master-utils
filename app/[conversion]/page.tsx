@@ -84,8 +84,8 @@ export default async function Page({
           a: `Open this page, confirm the format pair, drop your file, and download the result. Processing runs locally in your browser.`,
         },
         {
-          q: "Is it free and private?",
-          a: "Yes. There is no sign-up or watermark, and your file never leaves your device.",
+          q: "Does it cost anything? Is my file uploaded?",
+          a: "Single-file conversion is free with no watermark. For this tool, processing runs in your browser — your file is not uploaded to Utilio servers.",
         },
         {
           q: "Can I use other format pairs?",

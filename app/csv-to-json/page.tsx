@@ -11,7 +11,7 @@ export const metadata: Metadata = buildMetadata({
 });
 
 const PRIVACY =
-  "Private by design — conversion runs locally in your browser. Your spreadsheet data never leaves your device.";
+  "Private by design — conversion runs locally in your browser. Your spreadsheet data is not uploaded to Utilio servers for this tool.";
 
 export default function Page() {
   return (

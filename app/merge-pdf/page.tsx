@@ -20,7 +20,7 @@ export default function Page() {
       h1="Merge PDF"
       appName="PDF Merger"
       privacyNote={PRIVACY}
-      lede="Combine two or more PDFs into a single file. Drag to reorder, merge, and download — all processing stays on your device."
+      lede="Combine two or more PDFs into a single file. Drag to reorder, merge, and download — all processing runs in your browser."
       steps={[
         "Drop or select two or more PDF files.",
         "Drag files to set the merge order.",
@@ -33,7 +33,7 @@ export default function Page() {
         },
         {
           q: "Are my PDFs uploaded?",
-          a: "No — merging uses pdf-lib in your browser. Files never leave your computer.",
+          a: "No — merging uses pdf-lib in your browser. Files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

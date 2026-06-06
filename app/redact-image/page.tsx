@@ -31,7 +31,7 @@ export default function Page() {
           <h2>How to redact sensitive information from images without uploading</h2>
           <p>
             All editing runs in your browser on a canvas. Nothing is sent to a server, so confidential screenshots stay
-            on your device.
+            on your browser and are not uploaded to Utilio servers.
           </p>
         </>
       }

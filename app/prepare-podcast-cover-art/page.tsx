@@ -45,7 +45,7 @@ export default function Page() {
         },
         {
           q: "Are my images uploaded anywhere?",
-          a: "No. All processing runs entirely in your browser. Your artwork never leaves your device.",
+          a: "No. All processing runs entirely in your browser. Your artwork is not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

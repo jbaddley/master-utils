@@ -17,7 +17,7 @@ export default function Page() {
       slug="convert-video"
       h1="Video Converter"
       appName="Video Converter"
-      lede="Convert video between common formats. Pick input and output types, drop your file, and download — processing stays on your device."
+      lede="Convert video between common formats. Pick input and output types, drop your file, and download — processing runs in your browser."
       steps={[
         "Choose input and output video formats.",
         "Drop or select a video file.",

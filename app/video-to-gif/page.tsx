@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my video uploaded to a server?",
-          a: "No. All conversion happens in your browser using ffmpeg.wasm (WebAssembly). Your files never leave your device.",
+          a: "No. All conversion happens in your browser using ffmpeg.wasm (WebAssembly). For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

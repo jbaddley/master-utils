@@ -2,17 +2,18 @@ import { ToolSearch } from "@/components/ToolSearch";
 import { ToolDirectory } from "@/components/ToolDirectory";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import {
+  SITE_HERO_LEDE,
+  SITE_HERO_TITLE,
+  SITE_WHY_SECTION,
+} from "@/lib/utilio-messaging";
 
 export default function Home() {
   return (
     <main className="page">
       <div className="hero">
-        <h1>Free Online Media Tools</h1>
-        <p className="lede">
-          Fast, private utilities for images, audio, video, and QR codes — all
-          running entirely in your browser. No uploads, no sign-up, no watermarks.
-          Convert, compress, resize, edit, and generate in one place.
-        </p>
+        <h1>{SITE_HERO_TITLE}</h1>
+        <p className="lede">{SITE_HERO_LEDE}</p>
         <div className="hero-search">
           <ToolSearch variant="hero" placeholder="Search all tools — e.g. mp3, instagram, trim…" />
         </div>
@@ -25,11 +26,7 @@ export default function Home() {
 
       <div className="prose">
         <h2>Why these tools?</h2>
-        <p>
-          Every utility here is 100% client-side: your files are processed
-          locally and never sent to a server. That means instant results,
-          complete privacy, and no file-size limits beyond your own device.
-        </p>
+        <p>{SITE_WHY_SECTION}</p>
       </div>
 
       <JsonLd

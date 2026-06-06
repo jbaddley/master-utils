@@ -70,6 +70,7 @@ export async function getRaisingBostonProgress(): Promise<RaisingBostonProgress>
 export function isRaisingBostonDonation(metadata: Record<string, string> | null): boolean {
   if (metadata?.purpose === "raising-boston") return true;
 
-  const productId = process.env.STRIPE_DONATION_PRODUCT_ID;
+  const productId =
+    process.env.DONATION_PRODUCT_ID || process.env.STRIPE_DONATION_PRODUCT_ID;
   return Boolean(productId && metadata?.product_id === productId);
 }

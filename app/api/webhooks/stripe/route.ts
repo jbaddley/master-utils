@@ -1,27 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type Stripe from "stripe";
-import { prisma } from "@/lib/prisma";
-import { isRaisingBostonDonation } from "@/lib/raising-boston";
-
-async function recordRaisingBostonDonation(session: Stripe.Checkout.Session) {
-  if (session.payment_status !== "paid") return;
-
-  const metadata = session.metadata ?? {};
-  if (!isRaisingBostonDonation(metadata)) return;
-
-  const amountCents = session.amount_total;
-  if (!amountCents || amountCents <= 0) return;
-
-  await prisma.raisingBostonDonation.upsert({
-    where: { stripeSessionId: session.id },
-    create: {
-      stripeSessionId: session.id,
-      amountCents,
-      currency: session.currency ?? "usd",
-    },
-    update: {},
-  });
-}
+import { handleStripeWebhookEvent } from "@/lib/stripe-webhook-handlers";
 
 export async function POST(req: NextRequest) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -34,7 +12,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Lazy-import Stripe to avoid module-level initialization errors
   const { default: Stripe } = await import("stripe");
   const stripe = new Stripe(stripeSecretKey, {
     apiVersion: "2026-05-27.dahlia",
@@ -50,7 +27,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let event: Stripe.Event;
+  let event;
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
@@ -60,38 +37,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (
-    event.type === "customer.subscription.created" ||
-    event.type === "customer.subscription.updated"
-  ) {
-    const sub = event.data.object as Stripe.Subscription;
-    const customerId = sub.customer as string;
-    const plan = sub.status === "active" ? "pro" : "free";
-
-    const customer = await stripe.customers.retrieve(customerId);
-    if (!customer.deleted && customer.email) {
-      await prisma.user.updateMany({
-        where: { email: customer.email },
-        data: { plan },
-      });
-    }
-  }
-
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    const customerId = sub.customer as string;
-    const customer = await stripe.customers.retrieve(customerId);
-    if (!customer.deleted && customer.email) {
-      await prisma.user.updateMany({
-        where: { email: customer.email },
-        data: { plan: "free" },
-      });
-    }
-  }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    await recordRaisingBostonDonation(session);
+  try {
+    await handleStripeWebhookEvent(stripe, event);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Webhook handler failed";
+    console.error(`Stripe webhook ${event.type} failed:`, message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

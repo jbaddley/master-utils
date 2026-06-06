@@ -16,7 +16,7 @@ export default function Page() {
       slug="change-audio-pitch"
       h1="Change Audio Pitch"
       appName="Audio Pitch Shifter"
-      lede="Shift the pitch of any audio file up or down by semitones. Transpose vocals or instruments without expensive software — completely free, runs in your browser."
+      lede="Shift the pitch of any audio file up or down by semitones. Transpose vocals or instruments without expensive software — runs in your browser — free for single-file use."
       steps={[
         "Drop or select an audio file (MP3, WAV, OGG, M4A, FLAC, or AAC).",
         "Drag the pitch slider to the desired semitone shift (−6 to +6).",
@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my audio file uploaded anywhere?",
-          a: "No. All processing happens locally in your browser using WebAssembly. Your files never leave your device.",
+          a: "No. All processing happens locally in your browser using WebAssembly. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

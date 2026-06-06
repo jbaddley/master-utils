@@ -2,28 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
 import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
+import { PricingProCta } from "@/components/PricingProCta";
+import { PRO_SUBSCRIPTION_BENEFITS } from "@/lib/pro-plan";
+import {
+  PRICING_DESCRIPTION,
+  PRICING_PRIVACY_FAQ,
+} from "@/lib/utilio-messaging";
 
 export const metadata: Metadata = buildMetadata({
   title: "Pricing — Free & Pro plans",
-  description:
-    "Image Tools is free forever for single-file exports. Upgrade to Pro for batch processing, export history, and priority processing.",
+  description: PRICING_DESCRIPTION,
   path: "/pricing",
 });
 
 const FREE_FEATURES = [
-  "Unlimited single-file exports",
-  "All 7+ tools (convert, compress, resize, crop, SVG, favicon, remove background)",
-  "No sign-up required",
-  "100% client-side — your files never leave your browser",
+  "Single-file exports on many tools",
+  "Core utilities (convert, compress, resize, crop, SVG, favicon, remove background)",
+  "No sign-up required for free tier",
+  "Privacy-first — many tools run in your browser",
 ];
 
-const PRO_FEATURES = [
-  "Everything in Free",
-  "Batch processing (up to 50 files at once)",
-  "30-day export history",
-  "No ads",
-  "Priority processing",
-];
+const PRO_FEATURES = [...PRO_SUBSCRIPTION_BENEFITS];
 
 const BUSINESS_FEATURES = [
   "Everything in Pro",
@@ -57,10 +56,6 @@ function CheckIcon() {
 }
 
 export default function PricingPage() {
-  const monthlyUrl = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_MONTHLY;
-  const annualUrl = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_ANNUAL;
-  const hasStripe = Boolean(monthlyUrl || annualUrl);
-
   return (
     <main className="page">
       <div className="hero">
@@ -80,7 +75,7 @@ export default function PricingPage() {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="pricing-price">$0</span>
-              <span className="pricing-period">/ forever</span>
+              <span className="pricing-period"> to start</span>
             </div>
           </div>
 
@@ -128,33 +123,7 @@ export default function PricingPage() {
           </ul>
 
           <div className="flex flex-col gap-2">
-            {hasStripe ? (
-              <>
-                {monthlyUrl && (
-                  <a
-                    href={monthlyUrl}
-                    className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-9 px-4 text-sm font-medium transition-colors w-full text-center"
-                  >
-                    Subscribe monthly — $9/mo
-                  </a>
-                )}
-                {annualUrl && (
-                  <a
-                    href={annualUrl}
-                    className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted hover:text-foreground h-9 px-4 text-sm font-medium transition-colors w-full text-center"
-                  >
-                    Subscribe yearly — $79/yr
-                  </a>
-                )}
-              </>
-            ) : (
-              <button
-                disabled
-                className="inline-flex items-center justify-center rounded-lg bg-primary/40 text-primary-foreground/60 h-9 px-4 text-sm font-medium w-full cursor-not-allowed"
-              >
-                Coming soon
-              </button>
-            )}
+            <PricingProCta />
           </div>
         </div>
         {/* Business tier */}
@@ -214,10 +183,7 @@ export default function PricingPage() {
         </div>
         <div className="faq-item">
           <h3>Is my data private?</h3>
-          <p>
-            All image processing happens locally in your browser — your files
-            are never uploaded to our servers.
-          </p>
+          <p>{PRICING_PRIVACY_FAQ}</p>
         </div>
       </div>
     </main>

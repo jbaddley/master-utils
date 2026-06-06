@@ -7,15 +7,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  plan          String    @default("free")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String    @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  plan                 String    @default("free")
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
   apiKeys       ApiKey[]
@@ -261,5 +263,16 @@ model RaisingBostonDonation {
   stripeSessionId String   @unique
   amountCents     Int
   currency        String   @default("usd")
+  createdAt       DateTime @default(now())
+}
+
+model ManagedPaymentPurchase {
+  id              String   @id @default(cuid())
+  stripeSessionId String   @unique
+  productKey      String   @default("hamlet-ebook")
+  amountCents     Int
+  currency        String   @default("usd")
+  customerEmail   String?
+  paymentStatus   String
   createdAt       DateTime @default(now())
 }

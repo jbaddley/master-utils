@@ -6,7 +6,7 @@ import { FavoritesMenu, MainNav } from "@/components/MainNav";
 import { UserMenu } from "@/components/UserMenu";
 import { SiteHeaderShell } from "@/components/SiteHeaderShell";
 import { SearchTriggerButton } from "@/components/SearchTriggerButton";
-import { DonateButton } from "@/components/DonateButton";
+import { DonateButtonSlot } from "@/components/DonateButtonSlot";
 import { SwimNav, SwimUserMenu } from "@/components/SwimNav";
 import { swimPublicHref } from "@/lib/swim-nav";
 import { useSwimApp } from "@/hooks/useSwimApp";
@@ -22,7 +22,7 @@ export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: b
         </Link>
         <SwimNav isSubdomain={isSubdomain} />
         <div className="site-header-actions">
-          <DonateButton />
+          <DonateButtonSlot />
           <SwimUserMenu />
         </div>
       </SiteHeaderShell>
@@ -36,7 +36,7 @@ export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: b
       </Link>
       <MainNav />
       <div className="site-header-actions">
-        <DonateButton />
+        <DonateButtonSlot />
         <FavoritesMenu />
         <SearchTriggerButton />
       </div>

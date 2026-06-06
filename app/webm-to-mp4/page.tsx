@@ -34,7 +34,7 @@ export default function Page() {
         },
         {
           q: "Are my files kept private?",
-          a: "Yes. All conversion runs locally in your browser using WebAssembly. Your files never leave your device.",
+          a: "Yes. All conversion runs locally in your browser using WebAssembly. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

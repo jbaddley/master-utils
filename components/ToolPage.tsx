@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { JsonLd } from "./JsonLd";
 import { canonical } from "@/lib/seo";
+import { DEFAULT_PRIVACY_NOTE } from "@/lib/utilio-messaging";
 import { AdSlot } from "@/components/AdSlot";
 import { AffiliateCards } from "@/components/AffiliateCards";
 import { FavoriteToggle } from "@/components/FavoriteToggle";
@@ -54,8 +55,7 @@ export function ToolPage(props: {
         {ads && <AdSlot variant="rectangle" />}
 
         <p className="privacy">
-          {props.privacyNote ??
-            "Private by design — all processing happens in your browser. Your images are never uploaded to a server."}
+          {props.privacyNote ?? DEFAULT_PRIVACY_NOTE}
         </p>
 
         {props.related && props.related.length > 0 && (

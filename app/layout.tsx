@@ -6,7 +6,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { AuthProvider } from "@/context/AuthContext";
+import { DonationProvider } from "@/context/DonationContext";
 import { AuthModal } from "@/components/AuthModal";
+import { SubscribeModal } from "@/components/SubscribeModal";
 import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -43,15 +45,18 @@ export default async function RootLayout({
       <body className="antialiased">
         <SessionProvider>
           <AuthProvider>
-            <CommandPaletteProvider>
-              <FavoritesProvider>
-                <SiteHeader isSwimSubdomain={isSwimSubdomain} />
-                {children}
-                <SiteFooter />
-                <AuthModal />
-                <CommandPalette />
-              </FavoritesProvider>
-            </CommandPaletteProvider>
+            <DonationProvider>
+              <CommandPaletteProvider>
+                <FavoritesProvider>
+                  <SiteHeader isSwimSubdomain={isSwimSubdomain} />
+                  {children}
+                  <SiteFooter />
+                  <AuthModal />
+                  <SubscribeModal />
+                  <CommandPalette />
+                </FavoritesProvider>
+              </CommandPaletteProvider>
+            </DonationProvider>
           </AuthProvider>
         </SessionProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (

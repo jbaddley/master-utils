@@ -37,7 +37,7 @@ export default function Page() {
         },
         {
           q: "Is this tool private?",
-          a: "Completely. Processing runs in your browser via WebAssembly. Your video file is never uploaded to a server — everything stays on your device.",
+          a: "Yes. Processing runs in your browser via WebAssembly. Your video file is not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

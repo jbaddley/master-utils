@@ -16,7 +16,7 @@ export default function Page() {
       slug="audio-fade"
       h1="Audio Fade In/Out"
       appName="Audio Fade Tool"
-      lede="Add smooth fade in and fade out effects to any audio file. Set the duration for each fade and download instantly — completely free, runs in your browser."
+      lede="Add smooth fade in and fade out effects to any audio file. Set the duration for each fade and download instantly — runs in your browser — free for single-file use."
       steps={[
         "Drop or select an audio file (MP3, WAV, OGG, M4A, FLAC, or AAC).",
         "Set the fade in duration (seconds from the start).",
@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my audio file uploaded anywhere?",
-          a: "No. All processing happens locally in your browser using WebAssembly. Your files never leave your device.",
+          a: "No. All processing happens locally in your browser using WebAssembly. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

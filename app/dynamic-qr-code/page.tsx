@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { UpgradeToProButton } from "@/components/UpgradeToProButton";
 import { useAuth } from "@/context/AuthContext";
 import { SITE_URL } from "@/lib/seo";
 
@@ -138,9 +138,7 @@ export default function DynamicQRCodePage() {
       ) : !isPro ? (
         <div className="history-empty">
           <p>Dynamic QR codes are a Pro feature.</p>
-          <Link href="/pricing">
-            <Button>Upgrade to Pro</Button>
-          </Link>
+          <UpgradeToProButton />
         </div>
       ) : (
         <>

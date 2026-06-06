@@ -49,7 +49,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
       },
       {
         q: "Is my artwork uploaded anywhere?",
-        a: "No. The entire workflow runs in your browser using the Canvas API. Your files never leave your device.",
+        a: "No. The entire workflow runs in your browser using the Canvas API. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
       },
     ],
     related: [

@@ -4,7 +4,7 @@ import { ToolPage } from "@/components/ToolPage";
 import AiSummarizeTool from "@/features/llm/AiSummarizeTool";
 
 export const metadata: Metadata = buildMetadata({
-  title: "AI Text Summarizer — Local LLM, 100% Private",
+  title: "AI Text Summarizer — Local LLM via Ollama",
   description:
     "Summarize long articles, documents, and reports into concise bullet points using a local AI model. Runs on your machine via Ollama.",
   path: "ai-summarize",
@@ -16,7 +16,7 @@ export default function Page() {
       slug="ai-summarize"
       h1="AI Summarizer"
       appName="AI Summarizer"
-      lede="Turn long text into concise bullet points using a local LLM — your text never leaves your machine."
+      lede="Turn long text into concise bullet points using a local LLM — runs on your machine when connected to Ollama."
       steps={[
         "Install Ollama (ollama.com) and pull a model: ollama pull llama3.1:8b",
         "Paste your article or document into the left pane.",
@@ -42,7 +42,7 @@ export default function Page() {
         { href: "/ai-rewrite/",   label: "AI Rewriter"          },
         { href: "/ai-chat/",      label: "Local AI Chat"         },
       ]}
-      privacyNote="All processing runs on your local machine via Ollama. Your text is never uploaded anywhere."
+      privacyNote="Processing runs on your local Ollama server — your text is not uploaded to Utilio."
     >
       <AiSummarizeTool />
     </ToolPage>

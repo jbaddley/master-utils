@@ -35,7 +35,7 @@ export default function Page() {
         },
         {
           q: "Are my images uploaded anywhere?",
-          a: "No. All processing happens locally in your browser using JavaScript and Canvas. Your files never leave your device.",
+          a: "No. All processing happens locally in your browser using JavaScript and Canvas. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
         {
           q: "Can I create custom workflows?",

@@ -34,7 +34,7 @@ export default function Page() {
         },
         {
           q: "Are my video files uploaded anywhere?",
-          a: "No. Audio extraction uses ffmpeg.wasm running entirely in your browser. Your files never leave your device.",
+          a: "No. Audio extraction uses ffmpeg.wasm running entirely in your browser. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { dailyLimitForPlan } from "@/lib/pro-plan";
 import { randomBytes } from "crypto";
 
 function generateKey(): string {
   return "mu_" + randomBytes(24).toString("hex");
-}
-
-function dailyLimitForPlan(plan: string): number {
-  if (plan === "pro") return 10000;
-  return 100;
 }
 
 export async function GET() {

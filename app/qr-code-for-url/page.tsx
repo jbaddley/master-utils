@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Does the URL get sent to your server?",
-          a: "No — everything runs in your browser using the open-source qrcode library. Your URL never leaves your device.",
+          a: "No — everything runs in your browser using the open-source qrcode library. Your URL is not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

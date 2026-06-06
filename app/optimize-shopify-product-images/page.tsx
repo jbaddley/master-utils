@@ -45,7 +45,7 @@ export default function Page() {
         },
         {
           q: "Are my product images uploaded to the cloud?",
-          a: "No. The optimization happens entirely in your browser using the Canvas API. Your images never leave your device during processing.",
+          a: "No. The optimization happens entirely in your browser using the Canvas API. Your images are not uploaded to Utilio servers for this tool during processing.",
         },
       ]}
       related={[

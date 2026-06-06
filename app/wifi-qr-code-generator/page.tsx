@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my password sent anywhere?",
-          a: "No — the QR code is generated locally in your browser. Your network name and password never leave your device.",
+          a: "No — the QR code is generated locally in your browser. Your network credentials are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

@@ -1,17 +1,27 @@
-import { Button } from "@/components/ui/button";
-import { getDonationLink } from "@/lib/donation";
+"use client";
 
-export function DonateButton() {
-  const donationLink = getDonationLink();
-  if (!donationLink) return null;
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useDonation } from "@/context/DonationContext";
+import type { VariantProps } from "class-variance-authority";
+
+type DonateButtonProps = {
+  className?: string;
+} & Pick<VariantProps<typeof buttonVariants>, "variant" | "size">;
+
+export function DonateButton({
+  variant = "outline",
+  size = "sm",
+  className,
+}: DonateButtonProps) {
+  const { openDonateModal } = useDonation();
 
   return (
     <Button
-      variant="outline"
-      size="sm"
-      render={
-        <a href={donationLink} target="_blank" rel="noopener noreferrer" />
-      }
+      type="button"
+      variant={variant}
+      size={size}
+      className={className}
+      onClick={openDonateModal}
     >
       Donate
     </Button>

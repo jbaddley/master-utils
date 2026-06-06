@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Are my URLs sent to a server?",
-          a: "No — the QR code is generated entirely in your browser using the open-source qrcode library. Nothing leaves your device.",
+          a: "No — the QR code is generated entirely in your browser using the open-source qrcode library. Nothing is sent to Utilio servers for this tool.",
         },
       ]}
       related={[

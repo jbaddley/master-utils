@@ -16,7 +16,7 @@ export default function Page() {
       slug="video-thumbnail-generator"
       h1="Video Thumbnail Generator"
       appName="Video Thumbnail Generator"
-      lede="Scrub to any frame in your video and save it as a high-quality PNG. Works entirely in your browser — your video never leaves your device."
+      lede="Scrub to any frame in your video and save it as a high-quality PNG. Works entirely in your browser — your video is not uploaded to Utilio servers for this tool."
       steps={[
         "Drop or select a video file (MP4, WebM, MOV).",
         "Drag the time scrubber to the frame you want.",
@@ -33,7 +33,7 @@ export default function Page() {
         },
         {
           q: "Is my video private?",
-          a: "Yes — the tool uses the browser's built-in Canvas API. Your video file is never uploaded to any server; all processing stays entirely on your device.",
+          a: "Yes — the tool uses the browser's built-in Canvas API. Your video file is not uploaded to Utilio servers for this tool.",
         },
         {
           q: "What can I use video thumbnails for?",

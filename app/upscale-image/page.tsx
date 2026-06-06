@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Upscale Image — enlarge photos 2×, 3×, 4× free",
   description:
-    "Upscale images 2×, 3×, or 4× without losing quality. Free, browser-based image enlarger — your files never leave your device.",
+    "Upscale images 2×, 3×, or 4× without losing quality. Browser-based image enlarger — free for single files, processing runs in your browser.",
   path: "upscale-image",
 });
 
@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Are my images uploaded to a server?",
-          a: "No. All processing runs in your browser using the Canvas API. Your images never leave your device.",
+          a: "No. All processing runs in your browser using the Canvas API. Your images are not uploaded to Utilio servers for this tool.",
         },
         {
           q: "What is the difference between Smooth and Crisp mode?",

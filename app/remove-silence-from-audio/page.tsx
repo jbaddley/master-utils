@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Remove Silence from Audio — free silence stripper",
   description:
-    "Strip silent gaps from podcasts, lectures, and recordings automatically. Free, browser-based, no upload needed.",
+    "Strip silent gaps from podcasts, lectures, and recordings automatically. Browser-based — free for single files, no upload to Utilio servers.",
   path: "remove-silence-from-audio",
 });
 
@@ -37,7 +37,7 @@ export default function Page() {
         },
         {
           q: "Are my audio files uploaded to a server?",
-          a: "No. All processing runs locally in your browser using WebAssembly (ffmpeg.wasm). Your files never leave your device, and nothing is stored or transmitted to any server.",
+          a: "No. All processing runs locally in your browser using WebAssembly (ffmpeg.wasm). Your files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

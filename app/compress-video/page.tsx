@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my video uploaded to a server?",
-          a: "No. All processing happens locally in your browser using ffmpeg.wasm (WebAssembly). Your video files never leave your device.",
+          a: "No. All processing happens locally in your browser using ffmpeg.wasm (WebAssembly). Your video files are not uploaded to Utilio servers for this tool.",
         },
         {
           q: "What is H.265 or HEVC — can you compress to that?",

@@ -36,7 +36,7 @@ export default function Page() {
         },
         {
           q: "Is my PDF safe?",
-          a: "Completely — the file never leaves your device. All processing uses pdf-lib and PDF.js running in your browser.",
+          a: "For this tool, the file is processed in your browser and is not uploaded to Utilio servers. All processing uses pdf-lib and PDF.js running in your browser.",
         },
         {
           q: "Can I undo a deleted page?",

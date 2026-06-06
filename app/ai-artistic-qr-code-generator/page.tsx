@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { UpgradeToProButton } from "@/components/UpgradeToProButton";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AiArtisticQRCodeGeneratorPage() {
@@ -74,9 +74,7 @@ export default function AiArtisticQRCodeGeneratorPage() {
       ) : !isPro ? (
         <div className="history-empty">
           <p>AI Artistic QR Code Generator is a Pro feature.</p>
-          <Link href="/pricing">
-            <Button>Upgrade to Pro</Button>
-          </Link>
+          <UpgradeToProButton />
         </div>
       ) : (
         <div className="card" style={{ padding: "1.5rem", maxWidth: "640px", margin: "0 auto" }}>

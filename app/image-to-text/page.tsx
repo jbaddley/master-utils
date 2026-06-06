@@ -31,7 +31,7 @@ export default function Page() {
           <h2>How to extract text from an image without uploading it</h2>
           <p>
             Drop a photo, scan, or screenshot — or a one-page PDF. Tesseract.js loads on first use and
-            processes pixels locally, so sensitive documents never leave your device.
+            processes pixels locally, so sensitive documents are not uploaded to Utilio servers for this tool.
           </p>
         </>
       }

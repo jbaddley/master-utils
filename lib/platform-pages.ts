@@ -42,7 +42,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
       {
         q: "Are my images uploaded anywhere?",
-        a: "No — all resizing runs entirely in your browser. Your files never leave your device.",
+        a: "No — all resizing runs entirely in your browser. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
       },
     ],
     related: [
@@ -112,7 +112,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
       {
         q: "Does this tool upload my image?",
-        a: "No — resizing is 100% local in your browser. Nothing is sent to a server.",
+        a: "No — resizing runs in your browser for this tool. Files are not uploaded to Utilio servers.",
       },
     ],
     related: [
@@ -198,7 +198,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       "Compress images before uploading to WordPress. Reduce file size to improve page speed and SEO rankings. Free, private, browser-based.",
     h1: "Compress Image for WordPress",
     lede:
-      "Large images are a top cause of slow WordPress sites. Compress before uploading — this tool runs in your browser so your images never leave your device.",
+      "Large images are a top cause of slow WordPress sites. Compress before uploading — this tool runs in your browser and files are not uploaded to Utilio servers.",
     steps: [
       "Drop or select your image.",
       "Choose WebP or JPEG and dial in the quality slider.",
@@ -249,7 +249,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
       },
       {
         q: "Is my image uploaded to a server when I compress it?",
-        a: "No — all compression runs entirely in your browser using WebAssembly. Your image never leaves your device.",
+        a: "No — all compression runs entirely in your browser using WebAssembly. Your image is not uploaded to Utilio servers for this tool.",
       },
     ],
     related: [

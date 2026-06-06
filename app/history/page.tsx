@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { UpgradeToProButton } from "@/components/UpgradeToProButton";
 import { useAuth } from "@/context/AuthContext";
 import { formatBytes } from "@/lib/format";
 
@@ -63,9 +64,7 @@ export default function HistoryPage() {
       ) : !isPro ? (
         <div className="history-empty">
           <p>Export history is a Pro feature.</p>
-          <Link href="/pricing">
-            <Button>Upgrade to Pro</Button>
-          </Link>
+          <UpgradeToProButton />
         </div>
       ) : fetching ? (
         <div className="batch-empty">Loading history…</div>

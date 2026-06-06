@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my video uploaded to a server?",
-          a: "No. All compression runs in your browser using WebAssembly. Your files stay on your device.",
+          a: "No. All compression runs in your browser using WebAssembly. Your files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

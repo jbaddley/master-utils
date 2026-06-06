@@ -16,7 +16,7 @@ export default function Page() {
       slug="change-audio-speed"
       h1="Change Audio Speed"
       appName="Audio Speed Changer"
-      lede="Speed up or slow down any audio file without changing the pitch. Adjust from 0.5× to 2.0× — completely free, runs in your browser."
+      lede="Speed up or slow down any audio file without changing the pitch. Adjust from 0.5× to 2.0× — runs in your browser — free for single-file use."
       steps={[
         "Drop or select an audio file (MP3, WAV, OGG, M4A, FLAC, or AAC).",
         "Drag the speed slider to your desired playback rate.",
@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my audio file uploaded anywhere?",
-          a: "No. All processing happens locally in your browser using WebAssembly. Your files never leave your device.",
+          a: "No. All processing happens locally in your browser using WebAssembly. For this tool, files are processed in your browser and are not uploaded to Utilio servers.",
         },
       ]}
       related={[

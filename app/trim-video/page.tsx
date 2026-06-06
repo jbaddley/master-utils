@@ -37,7 +37,7 @@ export default function Page() {
         },
         {
           q: "Are my videos uploaded to a server?",
-          a: "No — all trimming runs locally in your browser using WebAssembly. Your video file never leaves your device.",
+          a: "No — all trimming runs locally in your browser using WebAssembly. Your video file is not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

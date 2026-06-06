@@ -37,7 +37,7 @@ export default function Page() {
         },
         {
           q: "Are my files uploaded to a server?",
-          a: "No — the entire conversion runs in your browser. Your SVG never leaves your device.",
+          a: "No — the entire conversion runs in your browser. Your SVG is not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

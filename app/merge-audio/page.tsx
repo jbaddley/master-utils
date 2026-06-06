@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Merge Audio — join multiple audio files into one free",
   description:
-    "Combine multiple MP3, WAV, OGG, or FLAC files into a single audio file. Free, browser-based — your files never leave your device.",
+    "Combine multiple MP3, WAV, OGG, or FLAC files into a single audio file. Browser-based — free for single files, processing runs in your browser.",
   path: "merge-audio",
 });
 
@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Are my files uploaded to a server?",
-          a: "No. Merging happens entirely in your browser using ffmpeg.wasm. Your audio files never leave your device.",
+          a: "No. Merging happens entirely in your browser using ffmpeg.wasm. Your audio files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

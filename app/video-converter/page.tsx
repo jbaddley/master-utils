@@ -16,7 +16,7 @@ export default function Page() {
       slug="video-converter"
       h1="Video Converter"
       appName="Video Converter"
-      lede="Convert MP4, WebM, MOV, AVI, and MKV videos between formats. Everything runs in your browser using WebAssembly — your files never leave your device."
+      lede="Convert MP4, WebM, MOV, AVI, and MKV videos between formats. Everything runs in your browser using WebAssembly — your files are not uploaded to Utilio servers for this tool."
       steps={[
         "Drop or select a video file (MP4, WebM, MOV, AVI, or MKV).",
         "Choose the output format: MP4 (H.264), WebM (VP9), or OGV (Theora).",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { UpgradeToProButton } from "@/components/UpgradeToProButton";
 import { LuCopy, LuCheck, LuTrash2, LuPlus } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +105,7 @@ export default function AccountPage() {
             {isPro ? (
               <ManageSubscriptionButton />
             ) : (
-              <Link href="/pricing"><Button size="sm">Upgrade to Pro</Button></Link>
+              <UpgradeToProButton size="sm" />
             )}
           </div>
         </div>

@@ -42,7 +42,7 @@ export default function Page() {
         { href: "/json-formatter/",  label: "JSON Formatter"  },
         { href: "/ai-chat/",         label: "Local AI Chat"   },
       ]}
-      privacyNote="All processing runs on your local machine via Ollama. Your code is never uploaded anywhere."
+      privacyNote="Processing runs on your local Ollama server — your code is not uploaded to Utilio."
     >
       <AiCodeTool />
     </ToolPage>

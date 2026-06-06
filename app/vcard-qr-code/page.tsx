@@ -38,7 +38,7 @@ export default function Page() {
         },
         {
           q: "Is my contact information sent to a server?",
-          a: "No — the QR code is generated entirely in your browser. Your data never leaves your device.",
+          a: "No — the QR code is generated entirely in your browser. Your data is not uploaded to Utilio servers for this tool.",
         },
         {
           q: "Can I add a photo or other fields?",

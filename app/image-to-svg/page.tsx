@@ -25,11 +25,11 @@ export default function Page() {
       faqs={[
         {
           q: "Is the image-to-SVG converter free?",
-          a: "Yes — completely free, with no sign-up, no watermark and no file-size limits.",
+          a: "Yes — free for single-file use, with no sign-up, no watermark and no file-size limits.",
         },
         {
           q: "Do my images get uploaded to a server?",
-          a: "No. Tracing runs entirely in your browser, so your image never leaves your device.",
+          a: "No. Tracing runs entirely in your browser, so your image is not uploaded to Utilio servers for this tool.",
         },
         {
           q: "Which formats can I convert to SVG?",

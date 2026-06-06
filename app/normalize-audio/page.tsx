@@ -37,7 +37,7 @@ export default function Page() {
         },
         {
           q: "Are my audio files uploaded to a server?",
-          a: "No. All processing is done locally in your browser using WebAssembly (ffmpeg.wasm). Your files never leave your device and nothing is stored or transmitted.",
+          a: "No. All processing is done locally in your browser using WebAssembly (ffmpeg.wasm). Your files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

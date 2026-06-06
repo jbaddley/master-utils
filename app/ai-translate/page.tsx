@@ -42,7 +42,7 @@ export default function Page() {
         { href: "/ai-grammar/",   label: "Grammar Fixer" },
         { href: "/ai-chat/",      label: "Local AI Chat" },
       ]}
-      privacyNote="All processing runs on your local machine via Ollama. Your text is never uploaded anywhere."
+      privacyNote="Processing runs on your local Ollama server — your text is not uploaded to Utilio."
     >
       <AiTranslateTool />
     </ToolPage>

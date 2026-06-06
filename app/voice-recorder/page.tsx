@@ -30,7 +30,7 @@ export default function Page() {
         },
         {
           q: "Does the recording get uploaded?",
-          a: "No. Recording uses the browser's built-in MediaRecorder API — everything stays on your device.",
+          a: "No. Recording uses the browser's built-in MediaRecorder API — audio is not uploaded to Utilio servers for this tool.",
         },
         {
           q: "Can I record system audio (music, videos playing on screen)?",

@@ -33,7 +33,7 @@ export default function Page() {
         },
         {
           q: "Are my images uploaded?",
-          a: "No — compression runs entirely in your browser, so files never leave your device.",
+          a: "No — compression runs entirely in your browser, so files are not uploaded to Utilio servers for this tool.",
         },
       ]}
       related={[

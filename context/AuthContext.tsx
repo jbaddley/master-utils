@@ -32,6 +32,9 @@ interface AuthContextValue {
   openAuthModal: () => void;
   closeAuthModal: () => void;
   authModalOpen: boolean;
+  openSubscribeModal: () => void;
+  closeSubscribeModal: () => void;
+  subscribeModalOpen: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,6 +42,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
 
   const user: AuthUser | null = session?.user
     ? {
@@ -90,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const openAuthModal = useCallback(() => setAuthModalOpen(true), []);
   const closeAuthModal = useCallback(() => setAuthModalOpen(false), []);
+  const openSubscribeModal = useCallback(() => setSubscribeModalOpen(true), []);
+  const closeSubscribeModal = useCallback(() => setSubscribeModalOpen(false), []);
 
   return (
     <AuthContext.Provider
@@ -104,6 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         openAuthModal,
         closeAuthModal,
         authModalOpen,
+        openSubscribeModal,
+        closeSubscribeModal,
+        subscribeModalOpen,
       }}
     >
       {children}

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
 import { RaisingBostonProgress } from "@/components/RaisingBostonProgress";
 import { Button } from "@/components/ui/button";
-import { getDonationLink } from "@/lib/donation";
+import { DonateButtonSlot } from "@/components/DonateButtonSlot";
+import { getDonationProductId } from "@/lib/donation";
 import {
   BETA_READ_URL,
   GOAL_CENTS,
@@ -22,29 +23,30 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Why Utilio — Raising Boston",
+  title: "About Me — Raising Boston",
   description:
-    "Utilio is free, privacy-first tools built by Jason Baddley. Support publishing Raising Boston — a family story about Boston Mack and Darnay Wiggins.",
+    "Jason Baddley builds privacy-first tools and community utilities like Utilio Swim. Support publishing Raising Boston — a family story about Boston Mack and Darnay Wiggins.",
   path: "/why-utilio",
 });
 
 export default function WhyUtilioPage() {
-  const donationLink = getDonationLink();
+  const donationsConfigured = Boolean(getDonationProductId());
 
   return (
     <main className="page why-utilio-page">
       <div className="hero">
-        <h1>Why Utilio</h1>
+        <h1>About Me</h1>
         <p className="lede">
-          Utilio is a collection of free, privacy-first tools that run entirely in
-          your browser. I built them to help people get things done without
-          uploading files to strangers — and to create sustainable side income
-          for my family.
+          I build privacy-first tools — from in-browser image utilities to
+          community software like a swim meet manager — so people and local
+          groups can get real work done without surprise fees or unclear data
+          handling. Utilio is also how I create sustainable side income for my
+          family.
         </p>
       </div>
 
       <div className="prose why-utilio-section">
-        <h2>About Jason</h2>
+        <h2>Background</h2>
         <p>
           I&apos;m Jason Baddley, a fullstack engineering leader based in Lehi,
           Utah. I&apos;ve spent more than a decade building with React, TypeScript,
@@ -60,13 +62,33 @@ export default function WhyUtilioPage() {
         </p>
         <p>
           I love building things that make people&apos;s lives easier — whether
-          that&apos;s enterprise scheduling software for 27,000+ users or a free
-          image compressor that never sees your files.
+          that&apos;s enterprise scheduling software for 27,000+ users or image
+          tools designed to keep processing as local as possible.
         </p>
       </div>
 
       <div className="prose why-utilio-section">
-        <h2>Raising Boston</h2>
+        <h2>Community tools</h2>
+        <p>
+          Not everything I build is a personal productivity app. I also create
+          free utilities for communities that are often stuck paying for software
+          they barely use — swim leagues, clubs, and volunteer-run organizations
+          that deserve capable tools without a subscription bill.
+        </p>
+        <p>
+          <strong>Utilio Swim</strong>{" "}
+          is a swim meet manager that lets leagues import meet programs, edit
+          entries, publish heat sheets, and share public links with families.
+          It&apos;s free to use: no per-athlete fees, no paywall on the basics
+          communities actually need.
+        </p>
+        <p>
+          <Link href="/swim/">Explore Utilio Swim</Link>
+        </p>
+      </div>
+
+      <div className="prose why-utilio-section">
+        <h2>My Why</h2>
         <p>
           For years, my four kids grew up listening to bedtime stories about the
           adventures of <strong>Boston Mack</strong> and{" "}
@@ -92,7 +114,7 @@ export default function WhyUtilioPage() {
       <section className="why-utilio-cta-grid" aria-labelledby="help-us-publish">
         <h2 id="help-us-publish">Help us publish</h2>
         <div className="why-utilio-cta-cards">
-          {donationLink && (
+          {donationsConfigured && (
             <Card>
               <CardHeader>
                 <CardTitle>Support the book</CardTitle>
@@ -102,17 +124,7 @@ export default function WhyUtilioPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button
-                  render={
-                    <a
-                      href={donationLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  }
-                >
-                  Donate via Stripe
-                </Button>
+                <DonateButtonSlot variant="default" size="default" />
               </CardContent>
             </Card>
           )}

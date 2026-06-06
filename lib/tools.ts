@@ -191,7 +191,7 @@ export const TOOLS: Tool[] = [
     slug: "image-to-text",
     title: "Image to Text (OCR)",
     nav: "OCR",
-    tagline: "Extract text from images and PDFs with Tesseract — 100% in your browser.",
+    tagline: "Extract text from images and PDFs with Tesseract — runs in your browser.",
     icon: LuScanText,
   },
   {
@@ -332,7 +332,7 @@ export const TOOLS: Tool[] = [
     slug: "ai-summarize",
     title: "AI Summarizer",
     nav: "Summarize",
-    tagline: "Summarize long text into bullet points using a local LLM — 100% private.",
+    tagline: "Summarize long text into bullet points using a local LLM via Ollama.",
     icon: LuList,
   },
   {

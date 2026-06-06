@@ -159,6 +159,13 @@ export SWIM_EMAIL_FROM="${SWIM_EMAIL_FROM:-meets@utilio.solutions}"
 export SWIM_EMAIL_FROM_NAME="${SWIM_EMAIL_FROM_NAME:-Utilio Swim}"
 export NEXT_PUBLIC_SWIM_URL="${NEXT_PUBLIC_SWIM_URL:-https://swim.utilio.solutions}"
 export AWS_SES_REGION="${AWS_SES_REGION:-${AWS_REGION:-us-east-1}}"
+export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-}"
+export NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}"
+export NEXT_PUBLIC_STRIPE_PRO_BUY_BUTTON_ID="${NEXT_PUBLIC_STRIPE_PRO_BUY_BUTTON_ID:-}"
+export DONATION_PRODUCT_ID="${DONATION_PRODUCT_ID:-${STRIPE_DONATION_PRODUCT_ID:-}}"
+export STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
+export STRIPE_HAMLET_PRODUCT_ID="${STRIPE_HAMLET_PRODUCT_ID:-}"
+export STRIPE_HAMLET_PRICE_ID="${STRIPE_HAMLET_PRICE_ID:-}"
 python3 - "$APP_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $APP_DIR/.env.local"
 import os, shlex, sys
 
@@ -166,6 +173,11 @@ app_dir = sys.argv[1]  # unused; path is passed on remote argv
 
 def q(key: str) -> str:
     return shlex.quote(os.environ[key])
+
+def add_if_set(key: str, lines: list[str]) -> None:
+    val = os.environ.get(key)
+    if val:
+        lines.append(f"{key}={shlex.quote(val)}")
 
 lines = [
     f"DATABASE_URL={q('DATABASE_URL_ENC')}",
@@ -189,6 +201,16 @@ lines = [
     f"AWS_SECRET_ACCESS_KEY={q('UTILIO_AWS_SECRET')}",
     "AWS_S3_BUCKET=utilio-uploads",
 ]
+for key in (
+    "STRIPE_SECRET_KEY",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_STRIPE_PRO_BUY_BUTTON_ID",
+    "DONATION_PRODUCT_ID",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_HAMLET_PRODUCT_ID",
+    "STRIPE_HAMLET_PRICE_ID",
+):
+    add_if_set(key, lines)
 os.environ.setdefault("NEXT_PUBLIC_SITE_URL", f"https://{os.environ.get('DOMAIN', 'utilio.solutions')}")
 os.environ.setdefault("NEXT_PUBLIC_SITE_NAME", "Utilio")
 os.environ.setdefault("LLM_BASE_URL", "http://localhost:11434/v1")
