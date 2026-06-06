@@ -15,7 +15,7 @@ const sharedAuthCookies = authCookieDomain
   ? {
       sessionToken: { options: { domain: authCookieDomain } },
       callbackUrl: { options: { domain: authCookieDomain } },
-      csrfToken: { options: { domain: authCookieDomain } },
+      // __Host-authjs.csrf-token must not set Domain (browser rejects it).
       pkceCodeVerifier: { options: { domain: authCookieDomain } },
       state: { options: { domain: authCookieDomain } },
     }
