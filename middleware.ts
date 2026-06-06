@@ -24,6 +24,10 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith(base)) {
       return NextResponse.next();
     }
+    // App Router API routes are always mounted at /api/*, not under /swim.
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      return NextResponse.next();
+    }
     const suffix = pathname === "/" ? "" : pathname.replace(/\/$/, "");
     const url = request.nextUrl.clone();
     url.pathname = `${base}${suffix}/`;

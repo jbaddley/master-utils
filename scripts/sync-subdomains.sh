@@ -43,8 +43,9 @@ Reads config/subdomains.json and:
   2. Regenerates /etc/caddy/Caddyfile on the Lightsail instance
 
 Environment:
-  DRY_RUN=1     Preview without AWS or SSH changes
-  DEPLOY_HOST   Override SSH host (default: staticIp from config)
+  DRY_RUN=1            Preview without AWS or SSH changes
+  DEPLOY_HOST          Override SSH host (default: staticIp from config)
+  LIGHTSAIL_SSH_KEY    Path to Lightsail .pem key (set in .env.deploy.local)
 HELP
     ;;
   *)

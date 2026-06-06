@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy master-utils / image-tools to theater-stack Lightsail instance.
+# Deploy master-utils / image-tools to the Lightsail instance in config/subdomains.json.
 #
 # Usage:
 #   set -a && source .env.deploy.local && set +a   # S3 keys (required)
@@ -10,12 +10,15 @@
 # DB_PASS is fetched automatically via your default AWS CLI credentials
 # (just-write-cli). Do NOT use utilio-s3 for Lightsail API calls.
 #
-# SSH uses a short-lived Lightsail certificate from get-instance-access-details
-# (theater-stack-deploy.pem on disk is not required).
+# SSH: set LIGHTSAIL_SSH_KEY in .env.deploy.local, or uses a short-lived
+# Lightsail certificate from get-instance-access-details.
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/deploy-common.sh
+source "$ROOT/scripts/lib/deploy-common.sh"
+deploy_common_load_config "$ROOT"
 
 # Bash `source` breaks on DB passwords with backticks/shell metacharacters.
 load_env_file() {
@@ -41,10 +44,8 @@ PY
 
 load_env_file "$ROOT/.env.production"
 
-HOST="54.152.205.78"
-INSTANCE="theater-stack"
-REGION="us-east-1"
-DOMAIN="utilio.solutions"
+HOST="${DEPLOY_HOST:-$SUBDOMAIN_STATIC_IP}"
+DOMAIN="${SUBDOMAIN_APEX:-utilio.solutions}"
 APP_DIR="/srv/app"
 REPO="https://github.com/jbaddley/master-utils.git"
 
@@ -77,33 +78,8 @@ fetch_db_pass() {
     --output text)"
 }
 
-setup_ssh() {
-  SSH_DIR="$(mktemp -d)"
-  trap 'rm -rf "$SSH_DIR"' EXIT
-  echo "▸ Fetching temporary Lightsail SSH certificate"
-  ACCESS_JSON="$(aws_admin lightsail get-instance-access-details \
-    --instance-name "$INSTANCE" \
-    --region "$REGION" \
-    --protocol ssh \
-    --output json)"
-  python3 - "$SSH_DIR" "$ACCESS_JSON" <<'PY'
-import json, os, stat, sys
-ssh_dir, raw = sys.argv[1], sys.argv[2]
-d = json.loads(raw)["accessDetails"]
-priv = os.path.join(ssh_dir, "tempkey")
-cert = os.path.join(ssh_dir, "tempkey-cert.pub")
-open(priv, "w").write(d["privateKey"])
-open(cert, "w").write(d["certKey"])
-os.chmod(priv, stat.S_IRUSR | stat.S_IWUSR)
-os.chmod(cert, stat.S_IRUSR | stat.S_IWUSR)
-print(d.get("ipAddress") or "")
-PY
-  SSH_KEY="$SSH_DIR/tempkey"
-  SSH=(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no)
-}
-
 fetch_db_pass
-setup_ssh
+deploy_common_setup_ssh
 
 DB_PASS_ENC="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASS")"
 # Lightsail Postgres requires SSL from the app instance (non-SSL → pg_hba "no encryption").
@@ -116,13 +92,35 @@ echo "▸ SSH preflight"
 echo "▸ Bootstrap server (first run only)"
 "${SSH[@]}" "ubuntu@$HOST" bash <<'REMOTE_BOOT'
 set -e
+# OpenClaw blueprint runs Apache on :80/:443 with an IP-only TLS cert — stop it so
+# Caddy can obtain certificates for utilio.solutions and subdomains.
+if systemctl is-active apache2 >/dev/null 2>&1; then
+  sudo systemctl stop apache2
+  sudo systemctl disable apache2
+fi
+if systemctl is-active nginx >/dev/null 2>&1; then
+  sudo systemctl stop nginx
+  sudo systemctl disable nginx
+fi
+if ! command -v caddy >/dev/null; then
+  sudo apt-get install -y apt-transport-https curl gnupg ca-certificates
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+    | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+    | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+  sudo apt-get update
+  sudo apt-get install -y caddy
+  sudo systemctl enable caddy
+fi
 need_node22() {
   command -v node >/dev/null || return 0
   node -p "process.version.slice(1).split('.')[0]" | grep -qv '^22$'
 }
 if need_node22; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-  sudo apt-get install -y nodejs git nginx certbot python3-certbot-nginx
+  sudo apt-get install -y nodejs git
+fi
+if ! command -v pm2 >/dev/null; then
   sudo npm install -g pm2
 fi
 sudo mkdir -p /srv/app
@@ -247,13 +245,13 @@ sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>
 REMOTE_BUILD
 
 echo "▸ Caddy reverse proxy (generated from config/subdomains.json)"
-setup_ssh
 CADDYFILE="$("$ROOT/scripts/generate-caddyfile.sh")"
 printf '%s\n' "$CADDYFILE" | "${SSH[@]}" "ubuntu@$HOST" "sudo tee /etc/caddy/Caddyfile >/dev/null"
 "${SSH[@]}" "ubuntu@$HOST" bash <<'REMOTE_CADDY'
 set -e
 sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+sudo systemctl enable caddy
+sudo systemctl restart caddy
 REMOTE_CADDY
 
 echo ""

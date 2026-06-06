@@ -37,7 +37,11 @@ aws_admin() {
 }
 
 deploy_common_setup_ssh() {
-  if [[ -n "${DEPLOY_SSH_DIR:-}" && -f "${DEPLOY_SSH_KEY:-}" ]]; then
+  local key="${LIGHTSAIL_SSH_KEY:-${DEPLOY_SSH_KEY:-}}"
+  if [[ -n "$key" && -f "$key" ]]; then
+    chmod 600 "$key" 2>/dev/null || true
+    DEPLOY_SSH_KEY="$key"
+    echo "▸ Using SSH key ${DEPLOY_SSH_KEY}"
     SSH=(ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no)
     return 0
   fi

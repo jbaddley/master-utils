@@ -1,13 +1,13 @@
 {
   "apex": "utilio.solutions",
-  "staticIp": "54.152.205.78",
+  "staticIp": "34.213.180.252",
   "dns": {
     "provider": "route53",
     "hostedZoneId": "Z10060471YWL84CRYWZ5C"
   },
   "lightsail": {
-    "instance": "theater-stack",
-    "region": "us-east-1"
+    "instance": "utilio",
+    "region": "us-west-2"
   },
   "subdomains": {
     "media": {

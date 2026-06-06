@@ -21,7 +21,7 @@ source "$ROOT/scripts/lib/deploy-common.sh"
 ACTION="${1:-ensure}"
 deploy_common_load_config "$ROOT"
 
-LIGHTSAIL_DNS_REGION="us-east-1"
+LIGHTSAIL_DNS_REGION="${LIGHTSAIL_REGION:-us-west-2}"
 
 run_aws() {
   if [[ "${DRY_RUN:-}" == "1" ]]; then
@@ -198,6 +198,8 @@ ensure_all() {
   case "$DNS_PROVIDER" in
     route53)
       [[ -n "$DNS_HOSTED_ZONE_ID" ]] || { echo "Missing dns.hostedZoneId in config" >&2; exit 1; }
+      ensure_route53_record "$SUBDOMAIN_APEX"
+      ensure_route53_record "www.${SUBDOMAIN_APEX}"
       for label in $SUBDOMAIN_LABELS; do
         ensure_route53_record "${label}.${SUBDOMAIN_APEX}"
       done
