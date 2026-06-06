@@ -2,8 +2,10 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { sendSwimEmail } from "@/lib/email/swim";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -12,6 +14,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    }),
+    Email({
+      server: {
+        host: "localhost",
+        port: 25,
+        auth: { user: "unused", pass: "unused" },
+      },
+      from: process.env.SWIM_EMAIL_FROM ?? "meets@utilio.solutions",
+      sendVerificationRequest: async ({ identifier, url }) => {
+        await sendSwimEmail({
+          to: identifier,
+          subject: "Sign in to Utilio Swim",
+          text: `Sign in to Utilio Swim: ${url}`,
+          html: `<p><a href="${url}">Sign in to Utilio Swim</a></p>`,
+        });
+      },
     }),
     Credentials({
       credentials: {

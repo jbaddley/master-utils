@@ -8,6 +8,7 @@ const HUB_SLUGS = new Set(["convert-image", "convert-audio", "convert-video"]);
 const EXTRA_PATHS = [
   "",
   "pricing",
+  "why-utilio",
   "history",
   "account",
   "api-docs",

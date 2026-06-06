@@ -155,6 +155,10 @@ export LLM_BASE_URL="${LLM_BASE_URL:-http://localhost:11434/v1}"
 export LLM_API_KEY="${LLM_API_KEY:-ollama}"
 export LLM_DEFAULT_MODEL="${LLM_DEFAULT_MODEL:-llama3.2}"
 export NEXT_PUBLIC_LLM_MODE="${NEXT_PUBLIC_LLM_MODE:-server}"
+export SWIM_EMAIL_FROM="${SWIM_EMAIL_FROM:-meets@utilio.solutions}"
+export SWIM_EMAIL_FROM_NAME="${SWIM_EMAIL_FROM_NAME:-Utilio Swim}"
+export NEXT_PUBLIC_SWIM_URL="${NEXT_PUBLIC_SWIM_URL:-https://swim.utilio.solutions}"
+export AWS_SES_REGION="${AWS_SES_REGION:-${AWS_REGION:-us-east-1}}"
 python3 - "$APP_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $APP_DIR/.env.local"
 import os, shlex, sys
 
@@ -176,6 +180,10 @@ lines = [
     f"LLM_API_KEY={q('LLM_API_KEY')}",
     f"LLM_DEFAULT_MODEL={q('LLM_DEFAULT_MODEL')}",
     f"NEXT_PUBLIC_LLM_MODE={q('NEXT_PUBLIC_LLM_MODE')}",
+    f"SWIM_EMAIL_FROM={q('SWIM_EMAIL_FROM')}",
+    f"SWIM_EMAIL_FROM_NAME={q('SWIM_EMAIL_FROM_NAME')}",
+    f"NEXT_PUBLIC_SWIM_URL={q('NEXT_PUBLIC_SWIM_URL')}",
+    f"AWS_SES_REGION={q('AWS_SES_REGION')}",
     "AWS_REGION=us-east-1",
     f"AWS_ACCESS_KEY_ID={q('UTILIO_AWS_KEY')}",
     f"AWS_SECRET_ACCESS_KEY={q('UTILIO_AWS_SECRET')}",
@@ -187,6 +195,10 @@ os.environ.setdefault("LLM_BASE_URL", "http://localhost:11434/v1")
 os.environ.setdefault("LLM_API_KEY", "ollama")
 os.environ.setdefault("LLM_DEFAULT_MODEL", "llama3.2")
 os.environ.setdefault("NEXT_PUBLIC_LLM_MODE", "server")
+os.environ.setdefault("SWIM_EMAIL_FROM", "meets@utilio.solutions")
+os.environ.setdefault("SWIM_EMAIL_FROM_NAME", "Utilio Swim")
+os.environ.setdefault("NEXT_PUBLIC_SWIM_URL", "https://swim.utilio.solutions")
+os.environ.setdefault("AWS_SES_REGION", os.environ.get("AWS_REGION", "us-east-1"))
 sys.stdout.write("\n".join(lines) + "\n")
 PY
 

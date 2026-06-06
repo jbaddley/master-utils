@@ -7,6 +7,7 @@ export function SiteFooter() {
       <span>·</span>
       <span>Free, in-browser media tools — your files never leave your device.</span>
       <Link href="/">Home</Link>
+      <Link href="/why-utilio">Why Utilio</Link>
       <Link href="/pricing">Pricing</Link>
       <Link href="/api-docs">API Docs</Link>
       <Link href="/compress-image">Compress Image</Link>

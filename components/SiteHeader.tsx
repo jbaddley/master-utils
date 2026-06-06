@@ -3,6 +3,7 @@ import { FavoritesMenu, MainNav } from "@/components/MainNav";
 import { UserMenu } from "@/components/UserMenu";
 import { SiteHeaderShell } from "@/components/SiteHeaderShell";
 import { SearchTriggerButton } from "@/components/SearchTriggerButton";
+import { DonateButton } from "@/components/DonateButton";
 
 export function SiteHeader() {
   return (
@@ -12,6 +13,7 @@ export function SiteHeader() {
       </Link>
       <MainNav />
       <div className="site-header-actions">
+        <DonateButton />
         <FavoritesMenu />
         <SearchTriggerButton />
       </div>

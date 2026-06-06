@@ -13,6 +13,11 @@
     "media": {
       "path": "browse/media",
       "description": "Media tools hub — images, video, and audio utilities"
+    },
+    "swim": {
+      "path": "swim",
+      "prefixAllPaths": true,
+      "description": "Swim meet management and public meet programs"
     }
   }
 }

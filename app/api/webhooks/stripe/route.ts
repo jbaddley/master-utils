@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { isRaisingBostonDonation } from "@/lib/raising-boston";
+
+async function recordRaisingBostonDonation(session: Stripe.Checkout.Session) {
+  if (session.payment_status !== "paid") return;
+
+  const metadata = session.metadata ?? {};
+  if (!isRaisingBostonDonation(metadata)) return;
+
+  const amountCents = session.amount_total;
+  if (!amountCents || amountCents <= 0) return;
+
+  await prisma.raisingBostonDonation.upsert({
+    where: { stripeSessionId: session.id },
+    create: {
+      stripeSessionId: session.id,
+      amountCents,
+      currency: session.currency ?? "usd",
+    },
+    update: {},
+  });
+}
 
 export async function POST(req: NextRequest) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -66,6 +87,11 @@ export async function POST(req: NextRequest) {
         data: { plan: "free" },
       });
     }
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    await recordRaisingBostonDonation(session);
   }
 
   return NextResponse.json({ received: true });

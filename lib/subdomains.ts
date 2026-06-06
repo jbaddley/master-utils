@@ -3,6 +3,7 @@ import subdomainConfig from "@/config/subdomains.json";
 export type SubdomainEntry = {
   path: string;
   description?: string;
+  prefixAllPaths?: boolean;
 };
 
 export const SUBDOMAIN_APEX = subdomainConfig.apex;
@@ -31,6 +32,10 @@ export function getSubdomainLabel(host: string): string | null {
 
 export function getSubdomainPath(label: string): string | null {
   return subdomainMap[label]?.path ?? null;
+}
+
+export function shouldPrefixAllPaths(label: string): boolean {
+  return subdomainMap[label]?.prefixAllPaths === true;
 }
 
 export function listSubdomainRoutes(): Record<string, string> {

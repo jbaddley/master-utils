@@ -1178,6 +1178,48 @@
     @apply text-[#8ef0b5] mt-0.5 shrink-0;
   }
 
+  /* Why Utilio / Raising Boston */
+  .why-utilio-section {
+    @apply mt-10;
+  }
+  .raising-boston-progress {
+    @apply mt-10;
+  }
+  .raising-boston-progress h2,
+  .why-utilio-cta-grid h2 {
+    @apply text-xl font-semibold mb-3;
+  }
+  .raising-boston-progress-summary {
+    @apply my-6 space-y-3;
+  }
+  .raising-boston-progress-stats {
+    @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground;
+  }
+  .raising-boston-progress-stats strong {
+    @apply text-foreground;
+  }
+  .raising-boston-progress-bar {
+    @apply h-3 w-full overflow-hidden rounded-full bg-muted;
+  }
+  .raising-boston-progress-bar-fill {
+    @apply h-full rounded-full bg-primary transition-[width] duration-500;
+  }
+  .raising-boston-recent {
+    @apply mt-6;
+  }
+  .raising-boston-recent h3 {
+    @apply text-sm font-semibold mb-2;
+  }
+  .raising-boston-recent ul {
+    @apply space-y-1 text-sm text-muted-foreground;
+  }
+  .why-utilio-cta-grid {
+    @apply mt-10;
+  }
+  .why-utilio-cta-cards {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+
   /* Batch tool */
   .batch-file-list {
     @apply mt-4 border border-border rounded-xl overflow-hidden;
@@ -1431,4 +1473,170 @@
   .canvas .svg-host svg {
     max-height: 52vh;
   }
+}
+
+/* Swim meet app */
+.swim-app {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+.swim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.swim-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: inherit;
+}
+.swim-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.swim-nav a {
+  text-decoration: none;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+.swim-nav a:hover {
+  color: var(--foreground);
+}
+.swim-nav-user {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.swim-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+.swim-hero {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.swim-hero h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+.swim-lede {
+  color: var(--muted-foreground);
+  max-width: 36rem;
+  margin: 0 auto 1.5rem;
+}
+.swim-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.swim-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.swim-btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.swim-btn-outline {
+  border-color: var(--border);
+  background: transparent;
+  color: inherit;
+}
+.swim-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  background: var(--card);
+}
+.swim-card h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.swim-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 28rem;
+}
+.swim-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.swim-tabs-list {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.swim-tab {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.swim-tab-active {
+  color: var(--foreground);
+  border-bottom-color: var(--primary);
+}
+.swim-grid-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.swim-meet-header {
+  margin-bottom: 1.5rem;
+}
+.swim-meet-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.swim-meet-meta {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+.swim-participant-cards {
+  display: grid;
+  gap: 1rem;
+}
+.swim-participant-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+.swim-participant-card h3 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.swim-entry-line {
+  font-size: 0.875rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.swim-error {
+  color: var(--destructive);
+  font-size: 0.875rem;
+}
+.swim-success {
+  color: #22c55e;
+  font-size: 0.875rem;
 }

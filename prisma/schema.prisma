@@ -21,6 +21,8 @@ model User {
   apiKeys       ApiKey[]
   exports       ExportHistory[]
   qrCodes       QRCode[]
+  swimOrgMembers SwimOrgMember[]
+  swimOrgFollowers SwimOrgFollower[]
 }
 
 model Account {
@@ -100,4 +102,164 @@ model QRScan {
   qrCodeId  String
   scannedAt DateTime @default(now())
   qrCode    QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+}
+
+enum SwimOrgRole {
+  admin
+  manager
+}
+
+enum SwimInviteStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+model SwimOrganization {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  website   String?
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   SwimOrgMember[]
+  invites   SwimOrgInvite[]
+  meets     SwimMeet[]
+  followers SwimOrgFollower[]
+}
+
+model SwimOrgMember {
+  orgId     String
+  userId    String
+  role      SwimOrgRole
+  createdAt DateTime @default(now())
+  org       SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([orgId, userId])
+}
+
+model SwimOrgInvite {
+  id         String           @id @default(cuid())
+  orgId      String
+  email      String
+  role       SwimOrgRole
+  status     SwimInviteStatus @default(pending)
+  token      String           @unique
+  sentAt     DateTime?
+  acceptedAt DateTime?
+  createdAt  DateTime         @default(now())
+  org        SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  @@unique([orgId, email])
+}
+
+model SwimTeam {
+  id    String         @id @default(cuid())
+  code  String         @unique
+  name  String?
+  meets SwimMeetTeam[]
+  swimmers SwimSwimmer[]
+}
+
+model SwimMeet {
+  id          String    @id @default(cuid())
+  orgId       String
+  name        String
+  startsAt    DateTime
+  location    String
+  slug        String    @unique
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  org         SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teams       SwimMeetTeam[]
+  events      SwimEvent[]
+  swimmers    SwimSwimmer[]
+  importLogs  SwimImportLog[]
+}
+
+model SwimMeetTeam {
+  meetId String
+  teamId String
+  meet   SwimMeet @relation(fields: [meetId], references: [id], onDelete: Cascade)
+  team   SwimTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  @@id([meetId, teamId])
+}
+
+model SwimEvent {
+  id            String     @id @default(cuid())
+  meetId        String
+  number        Int
+  gender        String
+  ageGroup      String
+  distanceYards Int
+  stroke        String
+  label         String
+  meet          SwimMeet   @relation(fields: [meetId], references: [id], onDelete: Cascade)
+  heats         SwimHeat[]
+  @@unique([meetId, number])
+}
+
+model SwimHeat {
+  id         String      @id @default(cuid())
+  eventId    String
+  heatNumber Int
+  totalHeats Int
+  event      SwimEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  entries    SwimEntry[]
+  @@unique([eventId, heatNumber])
+}
+
+model SwimSwimmer {
+  id        String      @id @default(cuid())
+  meetId    String
+  lastName  String
+  firstName String
+  age       Int
+  teamId    String
+  meet      SwimMeet    @relation(fields: [meetId], references: [id], onDelete: Cascade)
+  team      SwimTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  entries   SwimEntry[]
+  @@unique([meetId, lastName, firstName, age, teamId])
+}
+
+model SwimEntry {
+  id              String      @id @default(cuid())
+  heatId          String
+  swimmerId       String
+  lane            Int
+  seedTimeDisplay String
+  seedTimeSeconds Float?
+  isAlternate     Boolean     @default(false)
+  heat            SwimHeat    @relation(fields: [heatId], references: [id], onDelete: Cascade)
+  swimmer         SwimSwimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  @@unique([heatId, lane])
+}
+
+model SwimOrgFollower {
+  userId           String
+  orgId            String
+  emailMeetUpdates Boolean @default(true)
+  savedSwimmerIds  Json?
+  createdAt        DateTime @default(now())
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org              SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  @@id([userId, orgId])
+}
+
+model SwimImportLog {
+  id        String   @id @default(cuid())
+  meetId    String
+  rowCount  Int
+  createdAt DateTime @default(now())
+  meet      SwimMeet @relation(fields: [meetId], references: [id], onDelete: Cascade)
+}
+
+model RaisingBostonDonation {
+  id              String   @id @default(cuid())
+  stripeSessionId String   @unique
+  amountCents     Int
+  currency        String   @default("usd")
+  createdAt       DateTime @default(now())
 }
