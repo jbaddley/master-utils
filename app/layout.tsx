@@ -21,6 +21,15 @@ export const metadata: Metadata = {
   },
   description:
     "Privacy-first media utilities for images, audio, video, PDFs, and more. Many tools run in your browser; Pro adds batch processing and power features.",
+  icons: {
+    icon: [
+      { url: "/tuilio-logo-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/tuilio-logo-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/tuilio-logo-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/tuilio-logo-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: { url: "/tuilio-logo-180x180.png", sizes: "180x180", type: "image/png" },
+  },
 };
 
 export default async function RootLayout({

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FavoritesMenu, MainNav } from "@/components/MainNav";
 import { UserMenu } from "@/components/UserMenu";
 import { SiteHeaderShell } from "@/components/SiteHeaderShell";
@@ -31,7 +32,7 @@ export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: b
   return (
     <SiteHeaderShell>
       <Link href="/" className="brand">
-        Image<span className="arrow"> → </span>Tools
+        <Image src="/tuilio-logo.svg" alt="Tuilio" width={32} height={32} priority className="h-8 w-auto" />
       </Link>
       <MainNav />
       <div className="site-header-actions">
