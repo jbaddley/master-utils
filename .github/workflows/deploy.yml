@@ -1,0 +1,48 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS (admin — Lightsail API)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ADMIN_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ADMIN_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Write deploy secrets
+        env:
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+          UTILIO_S3_ACCESS_KEY_ID: ${{ secrets.UTILIO_S3_ACCESS_KEY_ID }}
+          UTILIO_S3_SECRET_ACCESS_KEY: ${{ secrets.UTILIO_S3_SECRET_ACCESS_KEY }}
+          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        run: |
+          printf '%s\n' "$ENV_PRODUCTION" > .env.production
+          cat > .env.deploy.local <<EOF
+          AWS_ACCESS_KEY_ID=${UTILIO_S3_ACCESS_KEY_ID}
+          AWS_SECRET_ACCESS_KEY=${UTILIO_S3_SECRET_ACCESS_KEY}
+          EOF
+          if [ -n "$LIGHTSAIL_SSH_KEY" ]; then
+            printf '%s\n' "$LIGHTSAIL_SSH_KEY" > deploy-key.pem
+            chmod 600 deploy-key.pem
+            echo "LIGHTSAIL_SSH_KEY=${{ github.workspace }}/deploy-key.pem" >> .env.deploy.local
+          fi
+
+      - name: Deploy to Lightsail
+        run: |
+          set -a && source .env.deploy.local && set +a
+          ./scripts/deploy-utilio.sh
