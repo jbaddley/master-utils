@@ -255,26 +255,30 @@ npx prisma generate
 npx prisma migrate deploy
 NODE_OPTIONS="--max-old-space-size=3072" npm run build
 
+swap_dirs() {
+  local live="\$1" staging="\$2"
+  local swap_tmp="\${live}.swap.\$\$"
+  sudo mv "\$live" "\$swap_tmp"
+  sudo mv "\$staging" "\$live"
+  sudo mv "\$swap_tmp" "\$staging"
+  sudo chown -R ubuntu:ubuntu "\$live" "\$staging"
+}
+
 if pm2 describe utilio >/dev/null 2>&1; then
   echo "▸ Atomic swap staging → live, then pm2 reload"
-  SWAP_TMP="\${LIVE}.swap.\$\$"
-  mv "\$LIVE" "\$SWAP_TMP"
-  mv "\$STAGING" "\$LIVE"
-  mv "\$SWAP_TMP" "\$STAGING"
+  swap_dirs "\$LIVE" "\$STAGING"
   cd "\$LIVE"
   pm2 reload utilio --update-env
 else
   echo "▸ First deploy — promoting staging to live"
   if [ -d "\$LIVE" ] && [ ! -e "\$LIVE/.git" ]; then
-    rm -rf "\$LIVE"
+    sudo rm -rf "\$LIVE"
   fi
   if [ ! -d "\$LIVE" ]; then
-    mv "\$STAGING" "\$LIVE"
+    sudo mv "\$STAGING" "\$LIVE"
+    sudo chown -R ubuntu:ubuntu "\$LIVE"
   else
-    SWAP_TMP="\${LIVE}.swap.\$\$"
-    mv "\$LIVE" "\$SWAP_TMP"
-    mv "\$STAGING" "\$LIVE"
-    mv "\$SWAP_TMP" "\$STAGING"
+    swap_dirs "\$LIVE" "\$STAGING"
   fi
   cd "\$LIVE"
   pm2 delete utilio 2>/dev/null || true
