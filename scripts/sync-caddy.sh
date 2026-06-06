@@ -27,8 +27,12 @@ printf '%s\n' "$CADDYFILE" | "${SSH[@]}" "ubuntu@$DEPLOY_HOST" "sudo tee /etc/ca
 "${SSH[@]}" "ubuntu@$DEPLOY_HOST" bash <<'REMOTE'
 set -e
 sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl enable caddy
-sudo systemctl restart caddy
+if systemctl is-active --quiet caddy; then
+  sudo caddy reload --config /etc/caddy/Caddyfile
+else
+  sudo systemctl enable caddy
+  sudo systemctl start caddy
+fi
 REMOTE
 
 echo "▸ Caddy reloaded"

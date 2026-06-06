@@ -12,6 +12,11 @@
 #
 # SSH: set LIGHTSAIL_SSH_KEY in .env.deploy.local, or uses a short-lived
 # Lightsail certificate from get-instance-access-details.
+#
+# Zero-downtime: builds in /srv/app-staging while /srv/app keeps serving,
+# then atomically swaps directories and pm2 reloads (~few seconds). Set
+# DEPLOY_STOP_FOR_BUILD=1 to stop the app during build if the instance is
+# low on memory.
 
 set -euo pipefail
 
@@ -47,6 +52,7 @@ load_env_file "$ROOT/.env.production"
 HOST="${DEPLOY_HOST:-$SUBDOMAIN_STATIC_IP}"
 DOMAIN="${SUBDOMAIN_APEX:-utilio.solutions}"
 APP_DIR="/srv/app"
+STAGING_DIR="/srv/app-staging"
 REPO="https://github.com/jbaddley/master-utils.git"
 
 DB_REGION="us-west-2"
@@ -124,7 +130,7 @@ fi
 if ! command -v pm2 >/dev/null; then
   sudo npm install -g pm2
 fi
-sudo mkdir -p /srv/app
+sudo mkdir -p /srv/app /srv/app-staging
 if [ ! -f /swapfile ]; then
   sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
   sudo chmod 600 /swapfile
@@ -134,19 +140,21 @@ if [ ! -f /swapfile ]; then
 fi
 REMOTE_BOOT
 
-echo "▸ Sync app"
+echo "▸ Sync app to staging"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_SYNC
 set -e
-if [ ! -d $APP_DIR/.git ]; then
-  sudo rm -rf $APP_DIR
-  sudo git clone $REPO $APP_DIR
-  sudo chown -R ubuntu:ubuntu $APP_DIR
+STAGING="$STAGING_DIR"
+REPO="$REPO"
+if [ ! -d "\$STAGING/.git" ]; then
+  sudo rm -rf "\$STAGING"
+  sudo git clone "\$REPO" "\$STAGING"
+  sudo chown -R ubuntu:ubuntu "\$STAGING"
 else
-  cd $APP_DIR && git fetch origin && git reset --hard origin/main
+  cd "\$STAGING" && git fetch origin && git reset --hard origin/main
 fi
 REMOTE_SYNC
 
-echo "▸ Write .env.local"
+echo "▸ Write .env.local (staging)"
 export AUTH_URL AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET UTILIO_AWS_KEY UTILIO_AWS_SECRET
 export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://${DOMAIN}}"
 export NEXT_PUBLIC_SITE_NAME="${NEXT_PUBLIC_SITE_NAME:-Utilio}"
@@ -165,7 +173,7 @@ export DONATION_PRODUCT_ID="${DONATION_PRODUCT_ID:-${STRIPE_DONATION_PRODUCT_ID:
 export STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
 export STRIPE_HAMLET_PRODUCT_ID="${STRIPE_HAMLET_PRODUCT_ID:-}"
 export STRIPE_HAMLET_PRICE_ID="${STRIPE_HAMLET_PRICE_ID:-}"
-python3 - "$APP_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $APP_DIR/.env.local"
+python3 - "$STAGING_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $STAGING_DIR/.env.local"
 import os, shlex, sys
 
 app_dir = sys.argv[1]  # unused; path is passed on remote argv
@@ -223,12 +231,19 @@ os.environ.setdefault("AWS_SES_REGION", os.environ.get("AWS_REGION", "us-east-1"
 sys.stdout.write("\n".join(lines) + "\n")
 PY
 
-echo "▸ Build and migrate (site will 502 until pm2 restarts — ~8–10 min)"
+echo "▸ Build in staging (live app keeps running until swap)"
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
 set -e
-cd $APP_DIR
+STAGING="$STAGING_DIR"
+LIVE="$APP_DIR"
+cd "\$STAGING"
 df -h / | tail -1
-pm2 stop utilio 2>/dev/null || true
+
+if [[ "\${DEPLOY_STOP_FOR_BUILD:-}" == "1" ]]; then
+  echo "▸ DEPLOY_STOP_FOR_BUILD=1 — stopping utilio during build"
+  pm2 stop utilio 2>/dev/null || true
+fi
+
 if [ -d node_modules ]; then
   chmod -R u+w node_modules 2>/dev/null || true
   rm -rf node_modules
@@ -239,8 +254,32 @@ set -a && source .env.local && set +a
 npx prisma generate
 npx prisma migrate deploy
 NODE_OPTIONS="--max-old-space-size=3072" npm run build
-pm2 delete utilio 2>/dev/null || true
-HOSTNAME=0.0.0.0 NODE_ENV=production pm2 start "npm start" --name utilio
+
+if pm2 describe utilio >/dev/null 2>&1; then
+  echo "▸ Atomic swap staging → live, then pm2 reload"
+  SWAP_TMP="\${LIVE}.swap.\$\$"
+  mv "\$LIVE" "\$SWAP_TMP"
+  mv "\$STAGING" "\$LIVE"
+  mv "\$SWAP_TMP" "\$STAGING"
+  cd "\$LIVE"
+  pm2 reload utilio --update-env
+else
+  echo "▸ First deploy — promoting staging to live"
+  if [ -d "\$LIVE" ] && [ ! -e "\$LIVE/.git" ]; then
+    rm -rf "\$LIVE"
+  fi
+  if [ ! -d "\$LIVE" ]; then
+    mv "\$STAGING" "\$LIVE"
+  else
+    SWAP_TMP="\${LIVE}.swap.\$\$"
+    mv "\$LIVE" "\$SWAP_TMP"
+    mv "\$STAGING" "\$LIVE"
+    mv "\$SWAP_TMP" "\$STAGING"
+  fi
+  cd "\$LIVE"
+  pm2 delete utilio 2>/dev/null || true
+  HOSTNAME=0.0.0.0 NODE_ENV=production pm2 start "npm start" --name utilio --cwd "\$LIVE"
+fi
 pm2 save
 sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>/dev/null || true
 REMOTE_BUILD
@@ -252,7 +291,11 @@ printf '%s\n' "$CADDYFILE" | "${SSH[@]}" "ubuntu@$HOST" "sudo tee /etc/caddy/Cad
 set -e
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl enable caddy
-sudo systemctl restart caddy
+if systemctl is-active --quiet caddy; then
+  sudo caddy reload --config /etc/caddy/Caddyfile
+else
+  sudo systemctl start caddy
+fi
 REMOTE_CADDY
 
 echo ""
