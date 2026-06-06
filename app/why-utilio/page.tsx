@@ -3,9 +3,9 @@ import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
 import { RaisingBostonProgress } from "@/components/RaisingBostonProgress";
 import { Button } from "@/components/ui/button";
+import { getDonationLink } from "@/lib/donation";
 import {
   BETA_READ_URL,
-  getDonationLink,
   GOAL_CENTS,
   PROFESSIONALS_URL,
   PUBLISHERS_URL,

@@ -67,10 +67,6 @@ export async function getRaisingBostonProgress(): Promise<RaisingBostonProgress>
   }
 }
 
-export function getDonationLink(): string | undefined {
-  return process.env.NEXT_PUBLIC_STRIPE_DONATION_LINK || undefined;
-}
-
 export function isRaisingBostonDonation(metadata: Record<string, string> | null): boolean {
   if (metadata?.purpose === "raising-boston") return true;
 

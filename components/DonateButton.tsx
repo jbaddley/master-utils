@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { getDonationLink } from "@/lib/raising-boston";
+import { getDonationLink } from "@/lib/donation";
 
 export function DonateButton() {
   const donationLink = getDonationLink();

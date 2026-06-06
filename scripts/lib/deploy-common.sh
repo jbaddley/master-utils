@@ -16,7 +16,7 @@ deploy_common_load_config() {
   eval "$(python3 - "$SUBDOMAIN_CONFIG" <<'PY'
 import json, shlex, sys
 cfg = json.load(open(sys.argv[1]))
-labels = " ".join(shlex.quote(k) for k in cfg.get("subdomains", {}))
+labels = " ".join(cfg.get("subdomains", {}))
 dns = cfg.get("dns", {})
 provider = shlex.quote(dns.get("provider", "route53"))
 zone_id = shlex.quote(dns.get("hostedZoneId", ""))
@@ -26,7 +26,7 @@ print("export DNS_PROVIDER=" + provider)
 print("export DNS_HOSTED_ZONE_ID=" + zone_id)
 print("export LIGHTSAIL_INSTANCE=" + shlex.quote(cfg["lightsail"]["instance"]))
 print("export LIGHTSAIL_REGION=" + shlex.quote(cfg["lightsail"]["region"]))
-print("export SUBDOMAIN_LABELS=" + labels)
+print("export SUBDOMAIN_LABELS=" + shlex.quote(labels))
 PY
 )"
   DEPLOY_HOST="${DEPLOY_HOST:-$SUBDOMAIN_STATIC_IP}"
