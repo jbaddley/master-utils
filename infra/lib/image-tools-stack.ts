@@ -41,7 +41,7 @@ export class ImageToolsStack extends cdk.Stack {
     // Ollama EC2: only reachable from within VPC on port 11434
     const ollamaSg = new ec2.SecurityGroup(this, "OllamaSg", {
       vpc,
-      description: "Ollama GPU server — internal VPC only",
+      description: "Ollama GPU server - internal VPC only",
       allowAllOutbound: true,
     });
 
@@ -53,7 +53,7 @@ export class ImageToolsStack extends cdk.Stack {
     });
 
     // Allow ECS → Ollama on 11434
-    ollamaSg.addIngressRule(ecsSg, ec2.Port.tcp(11434), "ECS tasks → Ollama");
+    ollamaSg.addIngressRule(ecsSg, ec2.Port.tcp(11434), "ECS tasks to Ollama");
 
     // ── EC2 GPU — Ollama ────────────────────────────────────────────────────
     const ollamaRole = new iam.Role(this, "OllamaRole", {
@@ -203,12 +203,12 @@ export class ImageToolsStack extends cdk.Stack {
     // ── ALB ─────────────────────────────────────────────────────────────────
     const albSg = new ec2.SecurityGroup(this, "AlbSg", {
       vpc,
-      description: "ALB — allow inbound HTTP/HTTPS",
+      description: "ALB - allow inbound HTTP/HTTPS",
       allowAllOutbound: true,
     });
     albSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80),  "HTTP");
     albSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), "HTTPS");
-    ecsSg.addIngressRule(albSg, ec2.Port.tcp(3000), "ALB → Next.js");
+    ecsSg.addIngressRule(albSg, ec2.Port.tcp(3000), "ALB to Next.js");
 
     const alb = new elbv2.ApplicationLoadBalancer(this, "Alb", {
       vpc,
@@ -314,19 +314,19 @@ export class ImageToolsStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, "OllamaPrivateDns", {
       value:       ollamaPrivateDns,
-      description: "Ollama EC2 private DNS — set as LLM_BASE_URL host",
+      description: "Ollama EC2 private DNS - set as LLM_BASE_URL host",
     });
 
     new cdk.CfnOutput(this, "AppSecretsArn", {
       value:       appSecrets.secretArn,
-      description: "Secrets Manager ARN — update LLM_API_KEY etc. here",
+      description: "Secrets Manager ARN - update LLM_API_KEY etc. here",
     });
 
     // Suppress cfn_nag rules for demo purposes
     if (!props.certArn) {
       const cfnListener = httpListener.node.defaultChild as cdk.CfnResource;
       cfnListener.addMetadata("cfn_nag", {
-        rules_to_suppress: [{ id: "W56", reason: "No cert provided — HTTP only for dev" }],
+        rules_to_suppress: [{ id: "W56", reason: "No cert provided - HTTP only for dev" }],
       });
     }
   }
