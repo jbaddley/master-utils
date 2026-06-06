@@ -58,7 +58,8 @@ DB_NAME="dbmaster"
 UTILIO_AWS_KEY="${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID in .env.deploy.local (utilio-s3)}"
 UTILIO_AWS_SECRET="${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY in .env.deploy.local}"
 AUTH_SECRET="${AUTH_SECRET:-${NEXTAUTH_SECRET:-$(openssl rand -base64 32)}}"
-AUTH_URL="${AUTH_URL:-${NEXTAUTH_URL:-https://${DOMAIN}}}"
+# Omit AUTH_URL in production so Auth.js infers the host per subdomain (trustHost).
+AUTH_URL="${AUTH_URL:-${NEXTAUTH_URL:-}}"
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
 GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 
@@ -146,7 +147,8 @@ fi
 REMOTE_SYNC
 
 echo "▸ Write .env.local"
-export AUTH_URL AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET UTILIO_AWS_KEY UTILIO_AWS_SECRET
+export AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET UTILIO_AWS_KEY UTILIO_AWS_SECRET
+export AUTH_URL
 export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://${DOMAIN}}"
 export NEXT_PUBLIC_SITE_NAME="${NEXT_PUBLIC_SITE_NAME:-Utilio}"
 export LLM_BASE_URL="${LLM_BASE_URL:-http://localhost:11434/v1}"
@@ -180,7 +182,6 @@ def add_if_set(key: str, lines: list[str]) -> None:
 lines = [
     f"DATABASE_URL={q('DATABASE_URL_ENC')}",
     f"AUTH_SECRET={q('AUTH_SECRET')}",
-    f"AUTH_URL={q('AUTH_URL')}",
     "AUTH_TRUST_HOST=true",
     f"NEXT_PUBLIC_SITE_URL={q('NEXT_PUBLIC_SITE_URL')}",
     f"NEXT_PUBLIC_SITE_NAME={q('NEXT_PUBLIC_SITE_NAME')}",
@@ -199,6 +200,7 @@ lines = [
     f"AWS_SECRET_ACCESS_KEY={q('UTILIO_AWS_SECRET')}",
     "AWS_S3_BUCKET=utilio-uploads",
 ]
+add_if_set("AUTH_URL", lines)
 for key in (
     "STRIPE_SECRET_KEY",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",

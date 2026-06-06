@@ -6,10 +6,21 @@ import Email from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendSwimEmail } from "@/lib/email/swim";
+import { SUBDOMAIN_APEX } from "@/lib/subdomains";
+
+const authCookieDomain =
+  process.env.NODE_ENV === "production" ? `.${SUBDOMAIN_APEX}` : undefined;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   adapter: PrismaAdapter(prisma),
+  ...(authCookieDomain
+    ? {
+        cookies: {
+          sessionToken: { options: { domain: authCookieDomain } },
+        },
+      }
+    : {}),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
