@@ -14,6 +14,8 @@ import { DataTable } from "./components/DataTable";
 import type { ColumnMapping, FieldKey } from "@/lib/swim/column-mapper";
 import { FIELD_TO_CANONICAL } from "@/lib/swim/column-mapper";
 import type { SwimProgramRow } from "@/lib/swim/parse-meet-program";
+import { toDatetimeLocalValue } from "@/lib/swim-nav";
+import { useSwimHref } from "@/hooks/useSwimHref";
 
 type FlatEntry = {
   id: string;
@@ -50,13 +52,13 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   });
   const [detailsForm, setDetailsForm] = useState({
     name: meet.name,
-    startsAt: meet.startsAt.toISOString().slice(0, 16),
+    startsAt: toDatetimeLocalValue(meet.startsAt),
     location: meet.location,
     slug: meet.slug,
   });
 
   const isAdmin = role === "admin";
-  const baseUrl = typeof window !== "undefined" ? `${window.location.origin}/swim` : "/swim";
+  const { href, absoluteUrl } = useSwimHref();
 
   const loadMeet = useCallback(async () => {
     const res = await fetch(`/api/swim/meets/${meet.id}`);
@@ -69,11 +71,11 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
 
   useEffect(() => {
     if (meet.publishedAt) {
-      const url = `${baseUrl}/m/${meet.slug}/`;
+      const url = absoluteUrl(`/swim/m/${meet.slug}/`);
       setPublicUrl(url);
       void QRCode.toDataURL(url, { width: 256, margin: 2 }).then(setQrDataUrl);
     }
-  }, [meet.publishedAt, meet.slug, baseUrl]);
+  }, [meet.publishedAt, meet.slug, absoluteUrl]);
 
   const entryColumns: ColumnDef<FlatEntry>[] = [
     { accessorKey: "lastName", header: "Last Name" },
@@ -223,7 +225,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   return (
     <div>
       <div className="swim-meet-header">
-        <Link href={`/swim/manage/org/${orgId}/`} className="swim-meet-meta">← {meet.name}</Link>
+        <Link href={href(`/swim/manage/org/${orgId}/`)} className="swim-meet-meta">← {meet.name}</Link>
         <h1>{meet.name}</h1>
         <p className="swim-meet-meta">
           {new Date(meet.startsAt).toLocaleString()} · {meet.location}

@@ -42,6 +42,38 @@ export function swimPublicHref(internalHref: string, isSubdomain: boolean): stri
   return stripped === "/" ? "/" : stripped.endsWith("/") ? stripped : `${stripped}/`;
 }
 
+/** Public meet program URL (internal path /swim/m/:slug/). */
+export function swimMeetPublicHref(slug: string, isSubdomain: boolean): string {
+  return swimPublicHref(`/swim/m/${slug}/`, isSubdomain);
+}
+
+/** Server redirect / Link href from internal /swim/* path (preserves query string). */
+export function swimRedirectPath(internalPath: string, host: string): string {
+  const isSubdomain = getSubdomainLabel(host) === "swim";
+  if (!isSubdomain) return internalPath;
+
+  const qIndex = internalPath.indexOf("?");
+  const path = qIndex === -1 ? internalPath : internalPath.slice(0, qIndex);
+  let query = qIndex === -1 ? "" : internalPath.slice(qIndex + 1);
+
+  if (query) {
+    const params = new URLSearchParams(query);
+    const callback = params.get("callbackUrl");
+    if (callback?.startsWith("/swim")) {
+      params.set("callbackUrl", swimPublicHref(callback, true));
+    }
+    query = params.toString();
+  }
+
+  const publicPath = swimPublicHref(path, true);
+  return query ? `${publicPath}?${query}` : publicPath;
+}
+
+export function toDatetimeLocalValue(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
+}
+
 export function isSwimNavLinkActive(
   pathname: string,
   link: SwimNavLink,

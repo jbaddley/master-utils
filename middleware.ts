@@ -47,8 +47,12 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (shouldPrefixAllPaths(label)) {
-    if (pathname.startsWith(base)) {
-      return passThrough(request);
+    // swim.utilio.solutions/swim/... → /... (browser URLs omit /swim prefix)
+    if (pathname === base || pathname.startsWith(`${base}/`)) {
+      const publicPath = pathname === base ? "/" : pathname.slice(base.length) || "/";
+      const url = request.nextUrl.clone();
+      url.pathname = publicPath.endsWith("/") ? publicPath : `${publicPath}/`;
+      return NextResponse.redirect(url);
     }
     // App Router API routes are always mounted at /api/*, not under /swim.
     if (pathname === "/api" || pathname.startsWith("/api/")) {

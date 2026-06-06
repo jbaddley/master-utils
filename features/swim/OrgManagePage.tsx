@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "./components/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useSwimHref } from "@/hooks/useSwimHref";
 
 type Props = {
   org: SwimOrganization;
@@ -31,7 +32,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
   const [meetForm, setMeetForm] = useState({ name: "", startsAt: "", location: org.location });
 
   const isAdmin = role === "admin";
-  const baseUrl = typeof window !== "undefined" ? `${window.location.origin}/swim` : "/swim";
+  const { href, absoluteUrl } = useSwimHref();
 
   async function createMeet(e: FormEvent) {
     e.preventDefault();
@@ -46,7 +47,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
       setError(data.error);
       return;
     }
-    router.push(`/swim/manage/org/${org.id}/meets/${data.meet.id}/`);
+    router.push(href(`/swim/manage/org/${org.id}/meets/${data.meet.id}/`));
   }
 
   async function sendInvites(e: FormEvent) {
@@ -101,7 +102,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigator.clipboard.writeText(`${baseUrl}/invite/${row.original.token}/`)}
+          onClick={() => navigator.clipboard.writeText(absoluteUrl(`/swim/invite/${row.original.token}/`))}
         >
           Copy link
         </Button>
@@ -175,7 +176,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
               <ul style={{ listStyle: "none", padding: 0 }}>
                 {meets.map((m) => (
                   <li key={m.id} style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
-                    <Link href={`/swim/manage/org/${org.id}/meets/${m.id}/`} style={{ fontWeight: 500 }}>
+                    <Link href={href(`/swim/manage/org/${org.id}/meets/${m.id}/`)} style={{ fontWeight: 500 }}>
                       {m.name}
                     </Link>
                     <div className="swim-meet-meta">

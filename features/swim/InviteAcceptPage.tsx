@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { useSwimHref } from "@/hooks/useSwimHref";
 
 export default function InviteAcceptPage({ token }: { token: string }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { href } = useSwimHref();
   const [invite, setInvite] = useState<{ email: string; role: string; orgName: string } | null>(null);
   const [error, setError] = useState("");
 
@@ -29,14 +30,14 @@ export default function InviteAcceptPage({ token }: { token: string }) {
       setError(data.error);
       return;
     }
-    router.push(`/swim/manage/org/${data.orgId}/`);
+    router.push(href(`/swim/manage/org/${data.orgId}/`));
   }
 
   if (error && !invite) {
     return (
       <div className="swim-card" style={{ maxWidth: 420, margin: "2rem auto" }}>
         <p className="swim-error">{error}</p>
-        <Link href="/swim/">Home</Link>
+        <Link href={href("/swim/")}>Home</Link>
       </div>
     );
   }
@@ -64,14 +65,16 @@ export default function InviteAcceptPage({ token }: { token: string }) {
             className="mt-3"
             onClick={() =>
               signIn(undefined, {
-                callbackUrl: `/swim/invite/${token}/`,
+                callbackUrl: href(`/swim/invite/${token}/`),
               })
             }
           >
             Sign in
           </Button>
           <p style={{ marginTop: "0.75rem" }}>
-            <Link href={`/swim/login/?callbackUrl=/swim/invite/${token}/`}>Create account or use magic link</Link>
+            <Link href={href(`/swim/login/?callbackUrl=${encodeURIComponent(href(`/swim/invite/${token}/`))}`)}>
+              Create account or use magic link
+            </Link>
           </p>
         </>
       )}

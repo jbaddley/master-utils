@@ -12,8 +12,15 @@ import {
   type SwimNavLink,
 } from "@/lib/swim-nav";
 
-function visibleSwimLinks(session: ReturnType<typeof useSession>["data"]): SwimNavLink[] {
-  return SWIM_NAV_LINKS.filter((link) => link.id !== "login" || !session?.user);
+function visibleSwimLinks(
+  session: ReturnType<typeof useSession>["data"],
+  hasOrgs: boolean | null,
+): SwimNavLink[] {
+  return SWIM_NAV_LINKS.filter((link) => {
+    if (link.id === "login" && session?.user) return false;
+    if (link.id === "manage" && session?.user && hasOrgs === false) return false;
+    return true;
+  });
 }
 
 function SwimNavLinks({
@@ -126,8 +133,29 @@ export function SwimNav({ isSubdomain }: { isSubdomain: boolean }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasOrgs, setHasOrgs] = useState<boolean | null>(null);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
-  const links = visibleSwimLinks(session);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setHasOrgs(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/swim/orgs")
+      .then((res) => (res.ok ? res.json() : { orgs: [] }))
+      .then((data: { orgs: unknown[] }) => {
+        if (!cancelled) setHasOrgs(data.orgs.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasOrgs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user]);
+
+  const links = visibleSwimLinks(session, hasOrgs);
 
   return (
     <>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { SwimOrgRole } from "@prisma/client";
+import { useSwimHref } from "@/hooks/useSwimHref";
 
 type Org = {
   id: string;
@@ -20,6 +21,7 @@ type Org = {
 
 export default function ManageDashboard({ orgs }: { orgs: Org[] }) {
   const router = useRouter();
+  const { href } = useSwimHref();
   const [showCreate, setShowCreate] = useState(orgs.length === 0);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
@@ -39,7 +41,7 @@ export default function ManageDashboard({ orgs }: { orgs: Org[] }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/swim/manage/org/${data.org.id}/`);
+      router.push(href(`/swim/manage/org/${data.org.id}/`));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
@@ -83,7 +85,7 @@ export default function ManageDashboard({ orgs }: { orgs: Org[] }) {
       </div>
       <div className="swim-grid-2">
         {orgs.map((org) => (
-          <Link key={org.id} href={`/swim/manage/org/${org.id}/`} className="swim-card" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link key={org.id} href={href(`/swim/manage/org/${org.id}/`)} className="swim-card" style={{ textDecoration: "none", color: "inherit" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
               <h2>{org.name}</h2>
               <Badge variant="secondary">{org.role}</Badge>
