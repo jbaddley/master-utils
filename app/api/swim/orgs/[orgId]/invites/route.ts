@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SwimOrgRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireOrgAdmin, jsonAuthError } from "@/lib/swim/authz";
+import {
+  requireOrgMember,
+  canInviteRole,
+  ORG_INVITE_OPERATIONAL_ROLES,
+  jsonAuthError,
+} from "@/lib/swim/authz";
 import { generateInviteToken } from "@/lib/swim/slug";
 import { sendSwimEmail, swimInviteEmail } from "@/lib/email/swim";
 
 type Params = { params: Promise<{ orgId: string }> };
+
+const ALL_ROLES: SwimOrgRole[] = ["admin", "manager", "director", "coach", "guardian", "student"];
 
 function parseEmails(text: string): string[] {
   return [...new Set(
@@ -18,7 +26,7 @@ function parseEmails(text: string): string[] {
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { orgId } = await params;
-    await requireOrgAdmin(orgId);
+    await requireOrgMember(orgId, ORG_INVITE_OPERATIONAL_ROLES);
     const invites = await prisma.swimOrgInvite.findMany({
       where: { orgId },
       orderBy: { createdAt: "desc" },
@@ -32,10 +40,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { orgId } = await params;
-    const { user } = await requireOrgAdmin(orgId);
+    const { member } = await requireOrgMember(orgId, ORG_INVITE_OPERATIONAL_ROLES);
     const body = (await req.json()) as {
       emails?: string;
-      role?: "admin" | "manager";
+      role?: SwimOrgRole;
       sendEmail?: boolean;
     };
 
@@ -44,6 +52,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "No valid emails" }, { status: 400 });
     }
     const role = body.role ?? "manager";
+
+    if (!ALL_ROLES.includes(role) || !canInviteRole(member.role, role)) {
+      return NextResponse.json({ error: "Cannot invite with this role" }, { status: 403 });
+    }
 
     const org = await prisma.swimOrganization.findUnique({ where: { id: orgId } });
     if (!org) return NextResponse.json({ error: "Not found" }, { status: 404 });

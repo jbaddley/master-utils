@@ -1,11 +1,11 @@
-import type { CanonicalHeader } from "./parse-meet-program";
-
 export type FieldKey =
   | "lastName"
   | "firstName"
   | "age"
   | "teamCode"
   | "eventLabel"
+  | "eventNumber"
+  | "eventTitle"
   | "heatLabel"
   | "lane"
   | "seedTimeDisplay";
@@ -16,17 +16,21 @@ export const FIELD_ALIASES: Record<FieldKey, string[]> = {
   age: ["age", "swimmer age"],
   teamCode: ["team", "team code", "teamcode", "club", "team abbr"],
   eventLabel: ["event", "event name", "event description", "event label"],
-  heatLabel: ["heat", "heat assignment", "heat label"],
+  eventNumber: ["event number", "event #", "event no", "evt num"],
+  eventTitle: ["event title", "event name only", "title"],
+  heatLabel: ["heat", "heat assignment", "heat label", "heat number"],
   lane: ["lane", "lane number", "ln"],
   seedTimeDisplay: ["seed time", "seedtime", "seed", "entry time", "time"],
 };
 
-export const FIELD_TO_CANONICAL: Record<FieldKey, CanonicalHeader> = {
+export const FIELD_TO_CANONICAL: Record<FieldKey, string> = {
   lastName: "Last Name",
   firstName: "First Name",
   age: "Age",
   teamCode: "Team",
   eventLabel: "Event",
+  eventNumber: "Event Number",
+  eventTitle: "Event Title",
   heatLabel: "Heat",
   lane: "Lane",
   seedTimeDisplay: "Seed Time",

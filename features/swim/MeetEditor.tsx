@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import QRCode from "qrcode";
 import type { SwimMeet, SwimOrgRole } from "@prisma/client";
@@ -20,7 +21,7 @@ type FlatEntry = {
   id: string;
   lastName: string;
   firstName: string;
-  age: number;
+  age: number | null;
   team: string;
   event: string;
   heat: string;
@@ -46,6 +47,7 @@ const EDIT_ENTRY_FIELD_LABELS = {
 } as const;
 
 export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<"entries" | "import" | "publish" | "details">("entries");
   const [meet, setMeet] = useState(initialMeet);
   const [entries, setEntries] = useState<FlatEntry[]>([]);
@@ -63,6 +65,12 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   });
 
   const isAdmin = role === "admin";
+  const isDirector = role === "director";
+  const canManageEntries = ["admin", "manager", "director"].includes(role);
+  const canImport = isAdmin || isDirector;
+  const canPublish = isAdmin || isDirector;
+  const canEditDetails = canManageEntries;
+  const canDeleteMeet = isAdmin || isDirector;
   const { href, absoluteUrl } = useSwimHref();
 
   const loadMeet = useCallback(async () => {
@@ -100,16 +108,20 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
     { accessorKey: "heat", header: "Heat" },
     { accessorKey: "lane", header: "Lane" },
     { accessorKey: "seedTime", header: "Seed Time" },
-    {
-      id: "actions",
-      header: "",
-      cell: ({ row }) => (
-        <div style={{ display: "flex", gap: 4 }}>
-          <Button variant="outline" size="sm" onClick={() => setEditEntry(row.original)}>Edit</Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteEntry(row.original.id)}>Delete</Button>
-        </div>
-      ),
-    },
+    ...(canManageEntries
+      ? [
+          {
+            id: "actions",
+            header: "",
+            cell: ({ row }: { row: { original: FlatEntry } }) => (
+              <div style={{ display: "flex", gap: 4 }}>
+                <Button variant="outline" size="sm" onClick={() => setEditEntry(row.original)}>Edit</Button>
+                <Button variant="destructive" size="sm" onClick={() => deleteEntry(row.original.id)}>Delete</Button>
+              </div>
+            ),
+          } as ColumnDef<FlatEntry>,
+        ]
+      : []),
   ];
 
   async function deleteEntry(id: string) {
@@ -163,6 +175,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
 
 
   async function publishMeet() {
+    if (!window.confirm("Publish this meet? Followers will be notified and the public link will become live.")) return;
     const res = await fetch(`/api/swim/meets/${meet.id}/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -172,6 +185,37 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
     setMeet(data.meet);
     setPublicUrl(data.publicUrl);
     void QRCode.toDataURL(data.publicUrl, { width: 256, margin: 2 }).then(setQrDataUrl);
+  }
+
+  async function unpublishMeet() {
+    if (
+      !window.confirm(
+        "Unpublish this meet? The public link will stop working and followers will no longer see a live meet.",
+      )
+    ) {
+      return;
+    }
+    const res = await fetch(`/api/swim/meets/${meet.id}/unpublish`, { method: "POST" });
+    const data = await res.json();
+    if (res.ok) {
+      setMeet(data.meet);
+      setPublicUrl("");
+      setQrDataUrl("");
+    }
+  }
+
+  async function deleteMeet() {
+    if (
+      !window.confirm(
+        "Delete this meet permanently? All events, heats, participants, and import history will be removed. This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    const res = await fetch(`/api/swim/meets/${meet.id}`, { method: "DELETE" });
+    if (res.ok) {
+      router.push(href(`/swim/manage/org/${orgId}/`));
+    }
   }
 
   async function saveDetails(e: FormEvent) {
@@ -200,7 +244,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
       </div>
 
       <div className="swim-tabs-list">
-        {(["entries", "import", "details", "publish"] as const).map((t) => (
+        {(["entries", ...(canImport ? ["import"] as const : []), ...(canEditDetails ? ["details"] as const : []), ...(canPublish ? ["publish"] as const : [])] as const).map((t) => (
           <button key={t} type="button" className={`swim-tab ${tab === t ? "swim-tab-active" : ""}`} onClick={() => setTab(t)}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -209,6 +253,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
 
       {tab === "entries" && (
         <div className="space-y-4">
+          {canManageEntries && (
           <div className="swim-card">
             <h2>Add entry</h2>
             <form onSubmit={(e) => saveEntry(e)} className="swim-grid-2">
@@ -221,7 +266,8 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
               <Button type="submit">Add entry</Button>
             </form>
           </div>
-          {editEntry && (
+          )}
+          {editEntry && canManageEntries && (
             <div className="swim-card">
               <h2>Edit entry</h2>
               <form onSubmit={(e) => saveEntry(e, editEntry)} className="swim-grid-2">
@@ -253,14 +299,14 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
         </div>
       )}
 
-      {tab === "import" && isAdmin && (
+      {tab === "import" && canImport && (
         <div className="swim-card">
           <h2>Import CSV</h2>
           <CsvImporter meetId={meet.id} onImported={loadMeet} />
         </div>
       )}
 
-      {tab === "details" && (
+      {tab === "details" && canEditDetails && (
         <div className="swim-card">
           <h2>Meet details</h2>
           <form onSubmit={saveDetails} className="swim-form">
@@ -273,13 +319,31 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
               />
             </div>
             <div className="swim-form-row"><Label>Location</Label><Input value={detailsForm.location} onChange={(e) => setDetailsForm({ ...detailsForm, location: e.target.value })} /></div>
-            <div className="swim-form-row"><Label>Slug</Label><Input value={detailsForm.slug} onChange={(e) => setDetailsForm({ ...detailsForm, slug: e.target.value })} /></div>
+            <div className="swim-form-row">
+              <Label>Slug</Label>
+              <Input
+                value={detailsForm.slug}
+                onChange={(e) => setDetailsForm({ ...detailsForm, slug: e.target.value })}
+                disabled={!!meet.publishedAt}
+              />
+              {meet.publishedAt && (
+                <p className="text-sm text-muted-foreground">Slug is locked after publish.</p>
+              )}
+            </div>
             <Button type="submit">Save</Button>
           </form>
+          {canDeleteMeet && (
+            <div className="mt-6 pt-6 border-t border-border">
+              <h3 className="text-sm font-medium text-destructive mb-2">Danger zone</h3>
+              <Button variant="destructive" type="button" onClick={() => void deleteMeet()}>
+                Delete meet
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
-      {tab === "publish" && isAdmin && (
+      {tab === "publish" && canPublish && (
         <div className="swim-card space-y-3">
           <h2>Publish meet</h2>
           {!meet.publishedAt ? (
@@ -296,6 +360,9 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
                   <a href={qrDataUrl} download={`${meet.slug}-qr.png`} className="swim-btn swim-btn-outline">Download QR</a>
                 </div>
               )}
+              <Button variant="destructive" onClick={() => void unpublishMeet()}>
+                Unpublish
+              </Button>
             </>
           )}
         </div>

@@ -25,6 +25,9 @@ model User {
   qrCodes       QRCode[]
   swimOrgMembers SwimOrgMember[]
   swimOrgFollowers SwimOrgFollower[]
+  swimStudentProfile SwimStudent?
+  guardianStudents SwimGuardianStudent[] @relation("GuardianUser")
+  coachCohorts SwimCohort[] @relation("CoachUser")
 }
 
 model Account {
@@ -109,6 +112,10 @@ model QRScan {
 enum SwimOrgRole {
   admin
   manager
+  director
+  coach
+  guardian
+  student
 }
 
 enum SwimInviteStatus {
@@ -130,6 +137,9 @@ model SwimOrganization {
   invites   SwimOrgInvite[]
   meets     SwimMeet[]
   followers SwimOrgFollower[]
+  students  SwimStudent[]
+  cohorts   SwimCohort[]
+  guardianStudents SwimGuardianStudent[]
 }
 
 model SwimOrgMember {
@@ -157,11 +167,11 @@ model SwimOrgInvite {
 }
 
 model SwimTeam {
-  id    String         @id @default(cuid())
-  code  String         @unique
-  name  String?
-  meets SwimMeetTeam[]
-  swimmers SwimSwimmer[]
+  id           String            @id @default(cuid())
+  code         String            @unique
+  name         String?
+  meets        SwimMeetTeam[]
+  participants SwimParticipant[]
 }
 
 model SwimMeet {
@@ -177,7 +187,6 @@ model SwimMeet {
   org         SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   teams       SwimMeetTeam[]
   events      SwimEvent[]
-  swimmers    SwimSwimmer[]
   importLogs  SwimImportLog[]
 }
 
@@ -190,60 +199,93 @@ model SwimMeetTeam {
 }
 
 model SwimEvent {
-  id            String     @id @default(cuid())
-  meetId        String
-  number        Int
-  gender        String
-  ageGroup      String
-  distanceYards Int
-  stroke        String
-  label         String
-  meet          SwimMeet   @relation(fields: [meetId], references: [id], onDelete: Cascade)
-  heats         SwimHeat[]
+  id     String     @id @default(cuid())
+  meetId String
+  number Int
+  title  String
+  meet   SwimMeet   @relation(fields: [meetId], references: [id], onDelete: Cascade)
+  heats  SwimHeat[]
   @@unique([meetId, number])
 }
 
 model SwimHeat {
-  id         String      @id @default(cuid())
-  eventId    String
-  heatNumber Int
-  totalHeats Int
-  event      SwimEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  entries    SwimEntry[]
-  @@unique([eventId, heatNumber])
+  id           String            @id @default(cuid())
+  eventId      String
+  number       Int
+  event        SwimEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participants SwimParticipant[]
+  @@unique([eventId, number])
 }
 
-model SwimSwimmer {
-  id        String      @id @default(cuid())
-  meetId    String
-  lastName  String
+model SwimStudent {
+  id        String   @id @default(cuid())
+  orgId     String
   firstName String
-  age       Int
-  teamId    String
-  meet      SwimMeet    @relation(fields: [meetId], references: [id], onDelete: Cascade)
-  team      SwimTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  entries   SwimEntry[]
-  @@unique([meetId, lastName, firstName, age, teamId])
+  lastName  String
+  age       Int?
+  userId    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  org       SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  participants SwimParticipant[]
+  guardianLinks SwimGuardianStudent[]
+  cohortMembers SwimCohortMember[]
+  @@unique([orgId, firstName, lastName])
 }
 
-model SwimEntry {
+model SwimParticipant {
   id              String      @id @default(cuid())
   heatId          String
-  swimmerId       String
+  studentId       String
+  teamId          String?
   lane            Int
   seedTimeDisplay String
   seedTimeSeconds Float?
   isAlternate     Boolean     @default(false)
   heat            SwimHeat    @relation(fields: [heatId], references: [id], onDelete: Cascade)
-  swimmer         SwimSwimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  student         SwimStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  team            SwimTeam?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
   @@unique([heatId, lane])
+}
+
+model SwimGuardianStudent {
+  orgId          String
+  guardianUserId String
+  studentId      String
+  createdAt      DateTime @default(now())
+  org            SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  guardian       User             @relation("GuardianUser", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  student        SwimStudent      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@id([guardianUserId, studentId])
+}
+
+model SwimCohort {
+  id          String   @id @default(cuid())
+  orgId       String
+  coachUserId String
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  org         SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  coach       User             @relation("CoachUser", fields: [coachUserId], references: [id], onDelete: Cascade)
+  members     SwimCohortMember[]
+}
+
+model SwimCohortMember {
+  cohortId  String
+  studentId String
+  createdAt DateTime @default(now())
+  cohort    SwimCohort  @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  student   SwimStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@id([cohortId, studentId])
 }
 
 model SwimOrgFollower {
   userId           String
   orgId            String
   emailMeetUpdates Boolean @default(true)
-  savedSwimmerIds  Json?
+  savedStudentIds  Json?
   createdAt        DateTime @default(now())
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   org              SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)

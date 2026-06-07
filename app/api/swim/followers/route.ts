@@ -21,11 +21,14 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       orgId?: string;
       emailMeetUpdates?: boolean;
+      savedStudentIds?: string[];
       savedSwimmerIds?: string[];
     };
     if (!body.orgId) {
       return NextResponse.json({ error: "orgId required" }, { status: 400 });
     }
+
+    const savedStudentIds = body.savedStudentIds ?? body.savedSwimmerIds;
 
     const follower = await prisma.swimOrgFollower.upsert({
       where: { userId_orgId: { userId: user.id, orgId: body.orgId } },
@@ -33,11 +36,11 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         orgId: body.orgId,
         emailMeetUpdates: body.emailMeetUpdates ?? true,
-        savedSwimmerIds: body.savedSwimmerIds ?? [],
+        savedStudentIds: savedStudentIds ?? [],
       },
       update: {
         ...(body.emailMeetUpdates !== undefined ? { emailMeetUpdates: body.emailMeetUpdates } : {}),
-        ...(body.savedSwimmerIds ? { savedSwimmerIds: body.savedSwimmerIds } : {}),
+        ...(savedStudentIds ? { savedStudentIds } : {}),
       },
     });
     return NextResponse.json({ follower });

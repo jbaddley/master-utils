@@ -1,20 +1,45 @@
 import Link from "next/link";
+import { canonical } from "@/lib/seo";
 import { SITE_TAGLINE } from "@/lib/utilio-messaging";
 
-export function SiteFooter() {
+const FOOTER_LINKS = [
+  { label: "Home", path: "" },
+  { label: "About Me", path: "why-utilio" },
+  { label: "Pricing", path: "pricing" },
+  { label: "API Docs", path: "api-docs" },
+  { label: "Compress Image", path: "compress-image" },
+  { label: "Convert Audio", path: "convert-audio" },
+  { label: "PDF Tools", path: "pdf-tools" },
+  { label: "QR Code Generator", path: "qr-code-generator" },
+] as const;
+
+export function SiteFooter({ isSwimSubdomain = false }: { isSwimSubdomain?: boolean }) {
   return (
     <footer className="site-footer">
       <span>© {new Date().getFullYear()} Utilio</span>
       <span>·</span>
       <span>{SITE_TAGLINE}</span>
-      <Link href="/">Home</Link>
-      <Link href="/why-utilio">About Me</Link>
-      <Link href="/pricing">Pricing</Link>
-      <Link href="/api-docs">API Docs</Link>
-      <Link href="/compress-image">Compress Image</Link>
-      <Link href="/convert-audio">Convert Audio</Link>
-      <Link href="/pdf-tools">PDF Tools</Link>
-      <Link href="/qr-code-generator">QR Code Generator</Link>
+      {FOOTER_LINKS.map(({ label, path }) => {
+        if (isSwimSubdomain) {
+          return (
+            <a
+              key={label}
+              href={canonical(path)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {label}
+            </a>
+          );
+        }
+
+        const href = path ? `/${path}` : "/";
+        return (
+          <Link key={label} href={href}>
+            {label}
+          </Link>
+        );
+      })}
     </footer>
   );
 }

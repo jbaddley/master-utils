@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOrgMember, requireOrgAdmin, jsonAuthError } from "@/lib/swim/authz";
+import { requireOrgMember, MEET_EDITOR_ROLES, jsonAuthError } from "@/lib/swim/authz";
 import { generateMeetSlug } from "@/lib/swim/slug";
 
 type Params = { params: Promise<{ orgId: string }> };
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { orgId } = await params;
-    await requireOrgAdmin(orgId);
+    await requireOrgMember(orgId, MEET_EDITOR_ROLES);
     const body = (await req.json()) as {
       name?: string;
       startsAt?: string;

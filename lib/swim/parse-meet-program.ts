@@ -20,16 +20,11 @@ export type CanonicalHeader = (typeof CANONICAL_HEADERS)[number];
 
 export type ParsedEvent = {
   number: number;
-  gender: string;
-  ageGroup: string;
-  distanceYards: number;
-  stroke: string;
-  label: string;
+  title: string;
 };
 
 export type ParsedHeat = {
-  heatNumber: number;
-  totalHeats: number;
+  number: number;
   isAlternate: boolean;
   label: string;
 };
@@ -65,30 +60,52 @@ const EVENT_RE =
 
 const HEAT_RE = /^Heat\s+(\d+)\s+of\s+(\d+)(?:\s*\(alt\))?$/i;
 
+const HEAT_SIMPLE_RE = /^(\d+)(?:\s*\(alt\))?$/i;
+
 export function parseEventLabel(label: string): ParsedEvent | null {
   const trimmed = label.trim();
   const match = trimmed.match(EVENT_RE);
-  if (!match) return null;
-  return {
-    number: parseInt(match[1], 10),
-    gender: match[2],
-    ageGroup: match[3].trim(),
-    distanceYards: parseInt(match[4], 10),
-    stroke: match[5].trim(),
-    label: trimmed,
-  };
+  if (!match) {
+    const numMatch = trimmed.match(/^(\d+)\s*[:\-]?\s*(.+)$/);
+    if (numMatch) {
+      return {
+        number: parseInt(numMatch[1]!, 10),
+        title: numMatch[2]!.trim(),
+      };
+    }
+    if (trimmed) {
+      return { number: 0, title: trimmed };
+    }
+    return null;
+  }
+  const number = parseInt(match[1]!, 10);
+  const title = `${match[2]} ${match[3]} ${match[4]} Yard ${match[5]}`.trim();
+  return { number, title };
 }
 
 export function parseHeatLabel(label: string): ParsedHeat | null {
   const trimmed = label.trim();
   const match = trimmed.match(HEAT_RE);
-  if (!match) return null;
-  return {
-    heatNumber: parseInt(match[1], 10),
-    totalHeats: parseInt(match[2], 10),
-    isAlternate: /\(\s*alt\s*\)/i.test(trimmed),
-    label: trimmed,
-  };
+  if (match) {
+    return {
+      number: parseInt(match[1]!, 10),
+      isAlternate: /\(\s*alt\s*\)/i.test(trimmed),
+      label: trimmed,
+    };
+  }
+  const simple = trimmed.match(HEAT_SIMPLE_RE);
+  if (simple) {
+    return {
+      number: parseInt(simple[1]!, 10),
+      isAlternate: /\(\s*alt\s*\)/i.test(trimmed),
+      label: trimmed,
+    };
+  }
+  const numOnly = parseInt(trimmed, 10);
+  if (!Number.isNaN(numOnly)) {
+    return { number: numOnly, isAlternate: false, label: trimmed };
+  }
+  return null;
 }
 
 export function parseSeedTime(display: string): ParsedSeedTime {
@@ -98,7 +115,7 @@ export function parseSeedTime(display: string): ParsedSeedTime {
   }
   if (/^\d+:\d+(?:\.\d+)?$/.test(trimmed)) {
     const [mins, secs] = trimmed.split(":");
-    const seconds = parseInt(mins, 10) * 60 + parseFloat(secs);
+    const seconds = parseInt(mins!, 10) * 60 + parseFloat(secs!);
     return { display: trimmed, seconds };
   }
   const num = parseFloat(trimmed);
@@ -118,6 +135,8 @@ export function parseSwimProgramRow(
   const ageStr = raw["Age"]?.trim() ?? "";
   const teamCode = raw["Team"]?.trim() ?? "";
   const eventLabel = raw["Event"]?.trim() ?? "";
+  const eventNumberStr = raw["Event Number"]?.trim() ?? "";
+  const eventTitleStr = raw["Event Title"]?.trim() ?? "";
   const heatLabel = raw["Heat"]?.trim() ?? "";
   const laneStr = raw["Lane"]?.trim() ?? "";
   const seedTimeDisplay = raw["Seed Time"]?.trim() ?? "NT";
@@ -136,9 +155,19 @@ export function parseSwimProgramRow(
     issues.push({ row: rowIndex, field: "Lane", message: "Invalid lane" });
   }
 
-  const event = parseEventLabel(eventLabel);
-  if (!event && eventLabel) {
-    issues.push({ row: rowIndex, field: "Event", message: "Unparseable event" });
+  let event: ParsedEvent | null = null;
+  if (eventNumberStr) {
+    const num = parseInt(eventNumberStr, 10);
+    if (Number.isNaN(num)) {
+      issues.push({ row: rowIndex, field: "Event Number", message: "Invalid event number" });
+    } else {
+      event = { number: num, title: eventTitleStr || eventLabel || `Event ${num}` };
+    }
+  } else {
+    event = parseEventLabel(eventLabel);
+    if (!event && eventLabel) {
+      issues.push({ row: rowIndex, field: "Event", message: "Unparseable event" });
+    }
   }
 
   const heat = parseHeatLabel(heatLabel);
@@ -158,7 +187,7 @@ export function parseSwimProgramRow(
       firstName,
       age,
       teamCode,
-      eventLabel,
+      eventLabel: eventLabel || (event ? `Event ${event.number}: ${event.title}` : ""),
       heatLabel,
       lane,
       seedTimeDisplay: seed.display,

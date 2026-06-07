@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMeetAccess, jsonAuthError } from "@/lib/swim/authz";
-import { parseMeetProgramCsv, type SwimProgramRow } from "@/lib/swim/parse-meet-program";
+import { requireMeetAccess, jsonAuthError, SwimAuthError } from "@/lib/swim/authz";
+import {
+  parseMeetProgramCsv,
+  parseEventLabel,
+  parseHeatLabel,
+  type SwimProgramRow,
+} from "@/lib/swim/parse-meet-program";
 import { normalizeProgramRows, rollbackLastImport } from "@/lib/swim/normalize";
 
 type Params = { params: Promise<{ meetId: string }> };
 
+/** Re-parse event/heat from labels when client-sent rows omit nested objects. */
+function hydrateProgramRows(rows: SwimProgramRow[]): SwimProgramRow[] {
+  return rows.map((row) => ({
+    ...row,
+    event: row.event ?? parseEventLabel(row.eventLabel) ?? undefined,
+    heat: row.heat ?? parseHeatLabel(row.heatLabel) ?? undefined,
+  }));
+}
+
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { meetId } = await params;
-    await requireMeetAccess(meetId, true);
+    const { meet } = await requireMeetAccess(meetId, true);
 
     const contentType = req.headers.get("content-type") ?? "";
     let csvText = "";
@@ -32,8 +46,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     const preview = url.searchParams.get("preview") === "true";
 
     if (rows) {
-      if (preview) return NextResponse.json({ rows, issues: [] });
-      const result = await normalizeProgramRows(meetId, rows);
+      if (preview) return NextResponse.json({ rows: hydrateProgramRows(rows), issues: [] });
+      const result = await normalizeProgramRows(meetId, meet.orgId, hydrateProgramRows(rows));
       return NextResponse.json(result);
     }
 
@@ -51,10 +65,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "No valid rows", issues: parsed.issues }, { status: 400 });
     }
 
-    const result = await normalizeProgramRows(meetId, parsed.rows);
+    const result = await normalizeProgramRows(meetId, meet.orgId, parsed.rows);
     return NextResponse.json({ ...result, issues: parsed.issues });
   } catch (err) {
-    return jsonAuthError(err);
+    if (err instanceof SwimAuthError) {
+      return jsonAuthError(err);
+    }
+    console.error("CSV import failed:", err);
+    const message = err instanceof Error ? err.message : "Import failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

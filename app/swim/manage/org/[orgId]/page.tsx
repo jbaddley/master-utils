@@ -23,6 +23,10 @@ export default async function Page({ params }: Params) {
   });
   if (!member) redirect(swimRedirectPath("/swim/manage/", host));
 
+  if (member.role === "guardian") {
+    redirect(swimRedirectPath(`/swim/manage/org/${orgId}/my-students/`, host));
+  }
+
   const meets = await prisma.swimMeet.findMany({
     where: { orgId },
     orderBy: { startsAt: "desc" },

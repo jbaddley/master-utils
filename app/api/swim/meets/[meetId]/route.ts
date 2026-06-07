@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireMeetAccess, jsonAuthError } from "@/lib/swim/authz";
+import { requireMeetAccess, requireMeetViewAccess, jsonAuthError } from "@/lib/swim/authz";
 import { getFlatEntriesForMeet } from "@/lib/swim/normalize";
 import { debouncedMeetNotification } from "@/lib/email/swim";
 
@@ -9,8 +9,8 @@ type Params = { params: Promise<{ meetId: string }> };
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { meetId } = await params;
-    const { meet } = await requireMeetAccess(meetId);
-    const entries = await getFlatEntriesForMeet(meetId);
+    const { meet, visibleStudentIds } = await requireMeetViewAccess(meetId);
+    const entries = await getFlatEntriesForMeet(meetId, visibleStudentIds);
     const teams = await prisma.swimMeetTeam.findMany({
       where: { meetId },
       include: { team: true },
@@ -32,13 +32,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       slug?: string;
     };
 
+    if (
+      meet.publishedAt &&
+      body.slug &&
+      body.slug.trim() !== meet.slug
+    ) {
+      return NextResponse.json(
+        { error: "Slug cannot be changed after the meet is published" },
+        { status: 400 },
+      );
+    }
+
     const updated = await prisma.swimMeet.update({
       where: { id: meetId },
       data: {
         ...(body.name ? { name: body.name.trim() } : {}),
         ...(body.startsAt ? { startsAt: new Date(body.startsAt) } : {}),
         ...(body.location ? { location: body.location.trim() } : {}),
-        ...(body.slug ? { slug: body.slug.trim() } : {}),
+        ...(!meet.publishedAt && body.slug ? { slug: body.slug.trim() } : {}),
       },
     });
 

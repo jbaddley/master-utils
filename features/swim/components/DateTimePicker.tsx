@@ -62,65 +62,65 @@ export function DateTimePicker({ value, onChange, id, className, required }: Pro
   }
 
   const displayLabel = selected ? formatMeetDateTime(selected) : "Pick date & time";
+  const hourLabel = HOURS.find((h) => h.value === String(hour24))?.label ?? "Hour";
+  const minuteLabel = `:${String(minute).padStart(2, "0")}`;
 
   return (
-    <div className={cn("flex flex-col gap-2 sm:flex-row sm:items-center", className)}>
-      <Popover>
-        <PopoverTrigger
-          id={id}
-          render={
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal sm:min-w-[220px]",
-                !selected && "text-muted-foreground",
-              )}
-              aria-required={required}
-            >
-              <CalendarIcon data-icon="inline-start" />
-              {displayLabel}
-            </Button>
-          }
+    <Popover>
+      <PopoverTrigger
+        id={id}
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !selected && "text-muted-foreground",
+              className,
+            )}
+            aria-required={required}
+          >
+            <CalendarIcon data-icon="inline-start" />
+            {displayLabel}
+          </Button>
+        }
+      />
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          captionLayout="dropdown"
+          selected={selected ?? undefined}
+          onSelect={updateDate}
+          defaultMonth={selected ?? undefined}
         />
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            captionLayout="dropdown"
-            selected={selected ?? undefined}
-            onSelect={updateDate}
-            defaultMonth={selected ?? undefined}
-          />
-        </PopoverContent>
-      </Popover>
+        <div className="flex items-center gap-2 border-t border-border p-3">
+          <Select value={String(hour24)} onValueChange={(v) => v != null && updateHour(v)}>
+            <SelectTrigger className="min-w-0 flex-1" aria-label="Hour">
+              <SelectValue placeholder="Hour">{hourLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              {HOURS.map((hour) => (
+                <SelectItem key={hour.value} value={hour.value}>
+                  {hour.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="flex items-center gap-2">
-        <Select value={String(hour24)} onValueChange={(v) => v != null && updateHour(v)}>
-          <SelectTrigger className="w-full min-w-[120px]" aria-label="Hour">
-            <SelectValue placeholder="Hour" />
-          </SelectTrigger>
-          <SelectContent>
-            {HOURS.map((hour) => (
-              <SelectItem key={hour.value} value={hour.value}>
-                {hour.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={String(minute)} onValueChange={(v) => v != null && updateMinute(v)}>
-          <SelectTrigger className="w-[88px]" aria-label="Minute">
-            <SelectValue placeholder="Min" />
-          </SelectTrigger>
-          <SelectContent>
-            {MINUTES.map((m) => (
-              <SelectItem key={m} value={String(m)}>
-                :{String(m).padStart(2, "0")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+          <Select value={String(minute)} onValueChange={(v) => v != null && updateMinute(v)}>
+            <SelectTrigger className="w-[88px] shrink-0" aria-label="Minute">
+              <SelectValue placeholder="Min">{minuteLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              {MINUTES.map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  :{String(m).padStart(2, "0")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

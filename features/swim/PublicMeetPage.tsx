@@ -15,33 +15,33 @@ type FlatEntry = {
   id: string;
   lastName: string;
   firstName: string;
-  age: number;
+  age: number | null;
   team: string;
   event: string;
   heat: string;
   lane: number;
   seedTime: string;
-  swimmerId: string;
+  studentId: string;
 };
 
-type Swimmer = { id: string; label: string; age: number; team: string };
+type StudentOption = { id: string; label: string; age: number | null; team: string };
 
 type MeetData = {
   meet: { id: string; name: string; startsAt: string; location: string; slug: string };
   org: { id: string; name: string; website: string | null };
   entries: FlatEntry[];
-  swimmers: Swimmer[];
+  students: StudentOption[];
 };
 
 // ── Swimmer picker modal ────────────────────────────────────────────────────
 
-function SwimmerPickerModal({
-  swimmers,
+function StudentPickerModal({
+  students,
   selected,
   onChange,
   onClose,
 }: {
-  swimmers: Swimmer[];
+  students: StudentOption[];
   selected: string[];
   onChange: (ids: string[]) => void;
   onClose: () => void;
@@ -57,12 +57,12 @@ function SwimmerPickerModal({
   }, [onClose]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return swimmers;
+    if (!query.trim()) return students;
     const q = query.toLowerCase();
-    return swimmers.filter(
+    return students.filter(
       (s) => s.label.toLowerCase().includes(q) || s.team.toLowerCase().includes(q),
     );
-  }, [swimmers, query]);
+  }, [students, query]);
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((s) => selected.includes(s.id));
 
@@ -79,9 +79,9 @@ function SwimmerPickerModal({
   return (
     <>
       <div className="swim-modal-backdrop" onClick={onClose} aria-hidden />
-      <div className="swim-modal" role="dialog" aria-modal="true" aria-label="Select swimmers">
+      <div className="swim-modal" role="dialog" aria-modal="true" aria-label="Select students">
         <div className="swim-modal-header">
-          <h2 className="swim-modal-title">Select swimmers</h2>
+          <h2 className="swim-modal-title">Select students</h2>
           <button type="button" className="swim-modal-close" onClick={onClose} aria-label="Close">
             <LuX aria-hidden />
           </button>
@@ -100,10 +100,10 @@ function SwimmerPickerModal({
 
         <div className="swim-modal-body">
           {filtered.length === 0 ? (
-            <p className="swim-modal-empty">No swimmers match &ldquo;{query}&rdquo;</p>
+            <p className="swim-modal-empty">No students match &ldquo;{query}&rdquo;</p>
           ) : (
             <>
-              {swimmers.length > 3 && (
+              {students.length > 3 && (
                 <label className="swim-modal-item swim-modal-item--select-all">
                   <Checkbox
                     checked={allFilteredSelected}
@@ -155,7 +155,7 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
   const { data: session } = useSession();
   const [data, setData] = useState<MeetData | null>(null);
   const [error, setError] = useState("");
-  const [selectedSwimmers, setSelectedSwimmers] = useState<string[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [view, setView] = useState<"table" | "participants">("table");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -188,9 +188,9 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
 
   const filteredEntries = useMemo(() => {
     if (!data) return [];
-    if (selectedSwimmers.length === 0) return data.entries;
-    return data.entries.filter((e) => selectedSwimmers.includes(e.swimmerId));
-  }, [data, selectedSwimmers]);
+    if (selectedStudents.length === 0) return data.entries;
+    return data.entries.filter((e) => selectedStudents.includes(e.studentId));
+  }, [data, selectedStudents]);
 
   async function followOrg() {
     if (!session?.user || !data) {
@@ -203,7 +203,7 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         orgId: data.org.id,
-        savedSwimmerIds: selectedSwimmers,
+        savedStudentIds: selectedStudents,
         emailMeetUpdates: true,
       }),
     });
@@ -229,7 +229,7 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
     );
   }
 
-  const selectedSwimmerObjects = data.swimmers.filter((s) => selectedSwimmers.includes(s.id));
+  const selectedStudentObjects = data.students.filter((s) => selectedStudents.includes(s.id));
 
   return (
     <div>
@@ -256,32 +256,32 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
             onClick={() => setPickerOpen(true)}
           >
             <LuUsers aria-hidden />
-            {selectedSwimmers.length > 0
-              ? `${selectedSwimmers.length} swimmer${selectedSwimmers.length === 1 ? "" : "s"} selected`
-              : "Filter by swimmer"}
+            {selectedStudents.length > 0
+              ? `${selectedStudents.length} student${selectedStudents.length === 1 ? "" : "s"} selected`
+              : "Filter by student"}
             <LuChevronDown aria-hidden className="swim-picker-trigger-chevron" />
           </button>
 
           {/* Selected swimmer chips */}
-          {selectedSwimmerObjects.map((s) => (
+          {selectedStudentObjects.map((s) => (
             <span key={s.id} className="swim-chip">
               {s.label}
               <button
                 type="button"
                 aria-label={`Remove ${s.label}`}
                 className="swim-chip-remove"
-                onClick={() => setSelectedSwimmers((prev) => prev.filter((id) => id !== s.id))}
+                onClick={() => setSelectedStudents((prev) => prev.filter((id) => id !== s.id))}
               >
                 <LuX aria-hidden />
               </button>
             </span>
           ))}
 
-          {selectedSwimmers.length > 1 && (
+          {selectedStudents.length > 1 && (
             <button
               type="button"
               className="swim-clear-all"
-              onClick={() => setSelectedSwimmers([])}
+              onClick={() => setSelectedStudents([])}
             >
               Clear all
             </button>
@@ -315,7 +315,7 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
             onClick={() => setView("table")}
           >
             Table view
-            {selectedSwimmers.length > 0 && view === "table" && (
+            {selectedStudents.length > 0 && view === "table" && (
               <span className="swim-view-tab-badge">{filteredEntries.length}</span>
             )}
           </button>
@@ -323,14 +323,14 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
             type="button"
             role="tab"
             aria-selected={view === "participants"}
-            className={`swim-view-tab${view === "participants" ? " swim-view-tab--active" : ""}${selectedSwimmers.length === 0 ? " swim-view-tab--disabled" : ""}`}
-            onClick={() => selectedSwimmers.length > 0 && setView("participants")}
-            aria-disabled={selectedSwimmers.length === 0}
-            title={selectedSwimmers.length === 0 ? "Select at least one swimmer first" : undefined}
+            className={`swim-view-tab${view === "participants" ? " swim-view-tab--active" : ""}${selectedStudents.length === 0 ? " swim-view-tab--disabled" : ""}`}
+            onClick={() => selectedStudents.length > 0 && setView("participants")}
+            aria-disabled={selectedStudents.length === 0}
+            title={selectedStudents.length === 0 ? "Select at least one student first" : undefined}
           >
             Participant cards
-            {selectedSwimmers.length > 0 && (
-              <span className="swim-view-tab-badge">{selectedSwimmers.length}</span>
+            {selectedStudents.length > 0 && (
+              <span className="swim-view-tab-badge">{selectedStudents.length}</span>
             )}
           </button>
         </div>
@@ -344,13 +344,13 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
           />
         ) : (
           <div className="swim-participant-cards">
-            {selectedSwimmerObjects.map((swimmer) => {
-              const rows = data.entries.filter((e) => e.swimmerId === swimmer.id);
+            {selectedStudentObjects.map((student) => {
+              const rows = data.entries.filter((e) => e.studentId === student.id);
               return (
-                <div key={swimmer.id} className="swim-participant-card">
+                <div key={student.id} className="swim-participant-card">
                   <div className="swim-participant-card-header">
-                    <h3>{swimmer.label}</h3>
-                    <span className="swim-participant-card-meta">{swimmer.age} · {swimmer.team}</span>
+                    <h3>{student.label}</h3>
+                    <span className="swim-participant-card-meta">{student.age ?? "—"} · {student.team}</span>
                   </div>
                   <div className="swim-participant-events">
                     {rows.length === 0 ? (
@@ -374,10 +374,10 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
 
       {/* Swimmer picker modal */}
       {pickerOpen && (
-        <SwimmerPickerModal
-          swimmers={data.swimmers}
-          selected={selectedSwimmers}
-          onChange={setSelectedSwimmers}
+        <StudentPickerModal
+          students={data.students}
+          selected={selectedStudents}
+          onChange={setSelectedStudents}
           onClose={closePicker}
         />
       )}

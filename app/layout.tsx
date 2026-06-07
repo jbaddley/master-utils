@@ -50,7 +50,7 @@ export default async function RootLayout({
                 <FavoritesProvider>
                   <SiteHeader isSwimSubdomain={isSwimSubdomain} />
                   {children}
-                  <SiteFooter />
+                  <SiteFooter isSwimSubdomain={isSwimSubdomain} />
                   <AuthModal />
                   <SubscribeModal />
                   <CommandPalette />

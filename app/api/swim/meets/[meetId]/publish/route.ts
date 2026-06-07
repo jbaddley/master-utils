@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { id: meetId },
       data: {
         publishedAt: new Date(),
-        ...(body.slug ? { slug: body.slug.trim() } : {}),
+        ...(!wasPublished && body.slug ? { slug: body.slug.trim() } : {}),
       },
     });
 

@@ -52,7 +52,7 @@ type MapResult = {
 type Step = "idle" | "previewing" | "mapping" | "ready" | "importing" | "success" | "rolledback";
 
 const ALL_FIELDS: FieldKey[] = [
-  "lastName", "firstName", "age", "teamCode", "eventLabel", "heatLabel", "lane", "seedTimeDisplay",
+  "lastName", "firstName", "age", "teamCode", "eventLabel", "eventNumber", "eventTitle", "heatLabel", "lane", "seedTimeDisplay",
 ];
 
 const SKIP_VALUE = "__skip__";
@@ -405,16 +405,43 @@ export function CsvImporter({ meetId, onImported }: { meetId: string; onImported
     setStep("importing");
     setError("");
     try {
-      const body = step === "ready" && preview?.rows
-        ? { rows: preview.rows }
-        : { text: csvText };
+      const body =
+        step === "ready" && preview?.rows
+          ? { rows: preview.rows }
+          : { text: csvText };
       const res = await fetch(`/api/swim/meets/${meetId}/import/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      setImportedCount(data.entries ?? 0);
+      let data: {
+        entries?: number;
+        participants?: number;
+        error?: string;
+        errors?: string[];
+      };
+      try {
+        data = await res.json();
+      } catch {
+        setError("Import failed. Please try again.");
+        setStep("ready");
+        return;
+      }
+      if (!res.ok) {
+        setError(data.error ?? "Import failed. Please try again.");
+        setStep("ready");
+        return;
+      }
+      const count = data.entries ?? data.participants ?? 0;
+      if (count === 0) {
+        const detail = data.errors?.length
+          ? data.errors.slice(0, 2).join(" ")
+          : "No entries were imported.";
+        setError(detail);
+        setStep("ready");
+        return;
+      }
+      setImportedCount(count);
       setStep("success");
       onImported();
     } catch {

@@ -15,11 +15,11 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const entries = await getFlatEntriesForMeet(meet.id);
-  const swimmers = [...new Map(
+  const students = [...new Map(
     entries.map((e) => [
-      e.swimmerId,
+      e.studentId,
       {
-        id: e.swimmerId,
+        id: e.studentId,
         label: `${e.firstName} ${e.lastName}`,
         age: e.age,
         team: e.team,
@@ -27,5 +27,5 @@ export async function GET(_req: Request, { params }: Params) {
     ]),
   ).values()];
 
-  return NextResponse.json({ meet, org: meet.org, entries, swimmers });
+  return NextResponse.json({ meet, org: meet.org, entries, students });
 }

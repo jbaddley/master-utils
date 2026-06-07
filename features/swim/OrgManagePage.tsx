@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "./components/DataTable";
 import { DateTimePicker } from "./components/DateTimePicker";
+import StudentsManagePanel from "./StudentsManagePanel";
+import CohortsManagePanel from "./CohortsManagePanel";
 import type { ColumnDef } from "@tanstack/react-table";
 import { datetimeLocalToUtcIso, formatMeetDateTime } from "@/lib/swim/datetime";
 import { useSwimHref } from "@/hooks/useSwimHref";
@@ -23,17 +25,26 @@ type Props = {
   invites: SwimOrgInvite[];
 };
 
+const ALL_ROLES: SwimOrgRole[] = ["admin", "manager", "director", "coach", "guardian", "student"];
+const INVITE_ROLES_ADMIN: SwimOrgRole[] = ALL_ROLES;
+const INVITE_ROLES_DIRECTOR: SwimOrgRole[] = ["coach", "guardian", "student"];
+
 export default function OrgManagePage({ org, role, meets: initialMeets, invites: initialInvites }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<"meets" | "invites">("meets");
+  const [tab, setTab] = useState<"meets" | "invites" | "students" | "cohorts">("meets");
   const [meets, setMeets] = useState(initialMeets);
   const [invites, setInvites] = useState(initialInvites);
   const [inviteEmails, setInviteEmails] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "manager">("manager");
+  const [inviteRole, setInviteRole] = useState<SwimOrgRole>("manager");
   const [error, setError] = useState("");
   const [meetForm, setMeetForm] = useState({ name: "", startsAt: "", location: org.location });
 
   const isAdmin = role === "admin";
+  const isDirector = role === "director";
+  const canManageMeets = isAdmin || isDirector || role === "manager";
+  const canInvite = isAdmin || isDirector;
+  const canManageStudents = ["admin", "manager", "director", "coach"].includes(role);
+  const inviteRoleOptions = isAdmin ? INVITE_ROLES_ADMIN : INVITE_ROLES_DIRECTOR;
   const { href, absoluteUrl } = useSwimHref();
 
   async function createMeet(e: FormEvent) {
@@ -74,7 +85,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
     setInvites(j.invites);
   }
 
-  async function updateInviteRole(id: string, newRole: "admin" | "manager") {
+  async function updateInviteRole(id: string, newRole: SwimOrgRole) {
     await fetch(`/api/swim/orgs/${org.id}/invites/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -117,16 +128,17 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
       id: "actions",
       header: "",
       cell: ({ row }) =>
-        isAdmin && row.original.status === "pending" ? (
+        canInvite && row.original.status === "pending" ? (
           <div style={{ display: "flex", gap: 4 }}>
             <Select
               value={row.original.role}
-              onValueChange={(v) => updateInviteRole(row.original.id, v as "admin" | "manager")}
+              onValueChange={(v) => updateInviteRole(row.original.id, v as SwimOrgRole)}
             >
-              <SelectTrigger className="h-7 w-24"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-7 w-28"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">admin</SelectItem>
-                <SelectItem value="manager">manager</SelectItem>
+                {inviteRoleOptions.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button variant="destructive" size="sm" onClick={() => revokeInvite(row.original.id)}>Revoke</Button>
@@ -144,7 +156,13 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
 
       <div className="swim-tabs-list">
         <button type="button" className={`swim-tab ${tab === "meets" ? "swim-tab-active" : ""}`} onClick={() => setTab("meets")}>Meets</button>
-        {isAdmin && (
+        {canManageStudents && (
+          <button type="button" className={`swim-tab ${tab === "students" ? "swim-tab-active" : ""}`} onClick={() => setTab("students")}>Students</button>
+        )}
+        {(role === "coach" || isAdmin || isDirector) && (
+          <button type="button" className={`swim-tab ${tab === "cohorts" ? "swim-tab-active" : ""}`} onClick={() => setTab("cohorts")}>Cohorts</button>
+        )}
+        {canInvite && (
           <button type="button" className={`swim-tab ${tab === "invites" ? "swim-tab-active" : ""}`} onClick={() => setTab("invites")}>Invites</button>
         )}
       </div>
@@ -153,7 +171,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
 
       {tab === "meets" && (
         <div className="swim-grid-2">
-          {isAdmin && (
+          {canManageMeets && (
             <div className="swim-card">
               <h2>Create meet</h2>
               <form onSubmit={createMeet} className="swim-form">
@@ -177,7 +195,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
               </form>
             </div>
           )}
-          <div className="swim-card" style={{ gridColumn: isAdmin ? undefined : "1 / -1" }}>
+          <div className="swim-card" style={{ gridColumn: canManageMeets ? undefined : "1 / -1" }}>
             <h2>Meets</h2>
             {meets.length === 0 ? (
               <p className="swim-meet-meta">No meets yet.</p>
@@ -200,20 +218,29 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
         </div>
       )}
 
-      {tab === "invites" && isAdmin && (
+      {tab === "students" && canManageStudents && (
+        <StudentsManagePanel orgId={org.id} role={role} />
+      )}
+
+      {tab === "cohorts" && (
+        <CohortsManagePanel orgId={org.id} role={role} />
+      )}
+
+      {tab === "invites" && canInvite && (
         <div className="space-y-4">
           <div className="swim-card">
             <h2>Invite members</h2>
             <p className="swim-meet-meta">Paste emails separated by commas or new lines.</p>
             <form onSubmit={sendInvites} className="swim-form" style={{ maxWidth: "100%" }}>
-              <Textarea value={inviteEmails} onChange={(e) => setInviteEmails(e.target.value)} rows={4} placeholder="coach@example.com, timer@example.com" />
+              <Textarea value={inviteEmails} onChange={(e) => setInviteEmails(e.target.value)} rows={4} placeholder="coach@example.com, parent@example.com" />
               <div className="swim-form-row">
                 <Label>Default role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "manager")}>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as SwimOrgRole)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
+                    {inviteRoleOptions.map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

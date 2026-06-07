@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SwimOrgRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireOrgAdmin, jsonAuthError } from "@/lib/swim/authz";
+import { requireOrgMember, ORG_INVITE_OPERATIONAL_ROLES, jsonAuthError } from "@/lib/swim/authz";
 
 type Params = { params: Promise<{ orgId: string; inviteId: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { orgId, inviteId } = await params;
-    await requireOrgAdmin(orgId);
+    await requireOrgMember(orgId, ORG_INVITE_OPERATIONAL_ROLES);
     const body = (await req.json()) as {
-      role?: "admin" | "manager";
+      role?: SwimOrgRole;
       status?: "revoked";
     };
 
