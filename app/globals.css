@@ -2575,3 +2575,74 @@
   flex-wrap: wrap;
   justify-content: center;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Swim — mobile responsive overrides (≤ 640 px)
+══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Spacing */
+  .swim-hero { padding: 2rem 1rem; }
+  .swim-main { padding: 1rem; }
+  .swim-card { padding: 1rem; }
+
+  /* Single-column grid */
+  .swim-grid-2 { grid-template-columns: 1fr; }
+
+  /* Horizontally scrollable tabs — preserves the border-bottom underline
+     indicator which relies on margin-bottom: -1px in a single-row flex */
+  .swim-tabs-list,
+  .swim-view-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .swim-tabs-list::-webkit-scrollbar,
+  .swim-view-tabs::-webkit-scrollbar { display: none; }
+  .swim-view-tab { white-space: nowrap; }
+
+  /* Hero CTA buttons wrap to avoid overflow */
+  .swim-actions { flex-wrap: wrap; }
+
+  /* Filter bar: stack vertically so chips don't compete with save button */
+  .swim-filter-bar { flex-direction: column; align-items: flex-start; }
+  .swim-filter-bar-right { width: 100%; }
+  .swim-save-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.625rem 0.75rem;
+    min-height: 44px;
+  }
+
+  /* Larger touch targets */
+  .swim-tab { padding: 0.625rem 0.875rem; }
+  .swim-modal-close { width: 44px; height: 44px; }
+
+  /* chip-remove: padding enlarges hit area, negative margin cancels layout shift */
+  .swim-chip-remove {
+    padding: 14px;
+    margin: -14px;
+    flex-shrink: 0;
+  }
+
+  /* Tighten entry-line gap on narrow participant cards */
+  .swim-entry-line { gap: 0.5rem; }
+
+  /* Back link: padding enlarges tap target without changing visual position */
+  .swim-back-link { display: inline-block; padding: 0.5rem 0; margin: -0.5rem 0; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Swim — extra-narrow overrides (≤ 480 px)
+══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .swim-hero h1 { font-size: 1.6rem; }
+  .swim-meet-header h1 { font-size: 1.25rem; }
+  .swim-main { padding: 0.75rem; }
+  .swim-card { padding: 0.75rem; }
+
+  /* Chip label truncation so long names don't overflow the viewport */
+  .swim-chip { max-width: calc(100vw - 4rem); }
+
+  /* Modal fills nearly the full screen width on very narrow phones */
+  .swim-modal { width: calc(100vw - 1rem); }
+}

@@ -191,7 +191,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   return (
     <div>
       <div className="swim-meet-header">
-        <Link href={href(`/swim/manage/org/${orgId}/`)} className="swim-meet-meta">← {meet.name}</Link>
+        <Link href={href(`/swim/manage/org/${orgId}/`)} className="swim-meet-meta swim-back-link">← {meet.name}</Link>
         <h1>{meet.name}</h1>
         <p className="swim-meet-meta">
           {formatMeetDateTime(meet.startsAt)} · {meet.location}
@@ -291,7 +291,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
               <Button variant="outline" onClick={() => navigator.clipboard.writeText(publicUrl)}>Copy link</Button>
               {qrDataUrl && (
                 <div>
-                  <img src={qrDataUrl} alt="QR code" width={256} height={256} />
+                  <img src={qrDataUrl} alt="QR code" width={256} height={256} style={{ maxWidth: "100%", height: "auto" }} />
                   <br />
                   <a href={qrDataUrl} download={`${meet.slug}-qr.png`} className="swim-btn swim-btn-outline">Download QR</a>
                 </div>
