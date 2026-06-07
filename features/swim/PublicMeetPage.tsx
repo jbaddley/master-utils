@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/features/swim/components/DataTable";
+import { formatMeetDateTime } from "@/lib/swim/datetime";
 
 type FlatEntry = {
   id: string;
@@ -242,7 +243,7 @@ export default function PublicMeetPage({ slug }: { slug: string }) {
         </p>
         <h1>{data.meet.name}</h1>
         <p className="swim-meet-meta">
-          {new Date(data.meet.startsAt).toLocaleString()} · {data.meet.location}
+          {formatMeetDateTime(data.meet.startsAt)} · {data.meet.location}
         </p>
       </div>
 

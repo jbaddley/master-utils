@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "./components/DataTable";
+import { DateTimePicker } from "./components/DateTimePicker";
 import type { ColumnDef } from "@tanstack/react-table";
+import { datetimeLocalToUtcIso, formatMeetDateTime } from "@/lib/swim/datetime";
 import { useSwimHref } from "@/hooks/useSwimHref";
 
 type Props = {
@@ -40,7 +42,10 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
     const res = await fetch(`/api/swim/orgs/${org.id}/meets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(meetForm),
+      body: JSON.stringify({
+        ...meetForm,
+        startsAt: datetimeLocalToUtcIso(meetForm.startsAt),
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -158,7 +163,11 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
                 </div>
                 <div className="swim-form-row">
                   <Label>Date & time</Label>
-                  <Input type="datetime-local" value={meetForm.startsAt} onChange={(e) => setMeetForm({ ...meetForm, startsAt: e.target.value })} required />
+                  <DateTimePicker
+                    value={meetForm.startsAt}
+                    onChange={(startsAt) => setMeetForm({ ...meetForm, startsAt })}
+                    required
+                  />
                 </div>
                 <div className="swim-form-row">
                   <Label>Location</Label>
@@ -180,7 +189,7 @@ export default function OrgManagePage({ org, role, meets: initialMeets, invites:
                       {m.name}
                     </Link>
                     <div className="swim-meet-meta">
-                      {new Date(m.startsAt).toLocaleString()} · {m.location}
+                      {formatMeetDateTime(m.startsAt)} · {m.location}
                       {m.publishedAt && <Badge style={{ marginLeft: 8 }}>Published</Badge>}
                     </div>
                   </li>

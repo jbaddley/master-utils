@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "./components/DataTable";
 import { CsvImporter } from "./components/CsvImporter";
+import { DateTimePicker } from "./components/DateTimePicker";
 import { FIELD_TO_CANONICAL } from "@/lib/swim/column-mapper";
-import { toDatetimeLocalValue } from "@/lib/swim-nav";
+import { datetimeLocalToUtcIso, formatMeetDateTime, toDatetimeLocalValue } from "@/lib/swim/datetime";
 import { useSwimHref } from "@/hooks/useSwimHref";
 
 type FlatEntry = {
@@ -70,6 +71,15 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
     if (data.entries) setEntries(data.entries);
     if (data.meet) setMeet(data.meet);
   }, [meet.id]);
+
+  useEffect(() => {
+    setDetailsForm({
+      name: meet.name,
+      startsAt: toDatetimeLocalValue(meet.startsAt),
+      location: meet.location,
+      slug: meet.slug,
+    });
+  }, [meet.id, meet.name, meet.startsAt, meet.location, meet.slug]);
 
   useEffect(() => { void loadMeet(); }, [loadMeet]);
 
@@ -169,7 +179,10 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
     const res = await fetch(`/api/swim/meets/${meet.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(detailsForm),
+      body: JSON.stringify({
+        ...detailsForm,
+        startsAt: datetimeLocalToUtcIso(detailsForm.startsAt),
+      }),
     });
     const data = await res.json();
     setMeet(data.meet);
@@ -181,7 +194,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
         <Link href={href(`/swim/manage/org/${orgId}/`)} className="swim-meet-meta">← {meet.name}</Link>
         <h1>{meet.name}</h1>
         <p className="swim-meet-meta">
-          {new Date(meet.startsAt).toLocaleString()} · {meet.location}
+          {formatMeetDateTime(meet.startsAt)} · {meet.location}
           {meet.publishedAt && <Badge style={{ marginLeft: 8 }}>Published</Badge>}
         </p>
       </div>
@@ -252,7 +265,13 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
           <h2>Meet details</h2>
           <form onSubmit={saveDetails} className="swim-form">
             <div className="swim-form-row"><Label>Name</Label><Input value={detailsForm.name} onChange={(e) => setDetailsForm({ ...detailsForm, name: e.target.value })} /></div>
-            <div className="swim-form-row"><Label>Date</Label><Input type="datetime-local" value={detailsForm.startsAt} onChange={(e) => setDetailsForm({ ...detailsForm, startsAt: e.target.value })} /></div>
+            <div className="swim-form-row">
+              <Label>Date & time</Label>
+              <DateTimePicker
+                value={detailsForm.startsAt}
+                onChange={(startsAt) => setDetailsForm({ ...detailsForm, startsAt })}
+              />
+            </div>
             <div className="swim-form-row"><Label>Location</Label><Input value={detailsForm.location} onChange={(e) => setDetailsForm({ ...detailsForm, location: e.target.value })} /></div>
             <div className="swim-form-row"><Label>Slug</Label><Input value={detailsForm.slug} onChange={(e) => setDetailsForm({ ...detailsForm, slug: e.target.value })} /></div>
             <Button type="submit">Save</Button>

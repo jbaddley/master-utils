@@ -44,5 +44,9 @@ jobs:
 
       - name: Deploy to Lightsail
         run: |
+          # Preserve admin creds from configure-aws-credentials; .env.deploy.local
+          # overwrites AWS_ACCESS_KEY_ID with utilio-s3 keys for the app runtime.
+          export AWS_ADMIN_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+          export AWS_ADMIN_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
           set -a && source .env.deploy.local && set +a
           ./scripts/deploy-utilio.sh

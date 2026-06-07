@@ -33,7 +33,15 @@ PY
 }
 
 aws_admin() {
-  env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN aws "$@"
+  # CI saves admin creds to AWS_ADMIN_* before sourcing .env.deploy.local (utilio-s3).
+  # Locally, unset utilio-s3 env vars and use the default ~/.aws profile instead.
+  if [[ -n "${AWS_ADMIN_ACCESS_KEY_ID:-}" ]]; then
+    AWS_ACCESS_KEY_ID="$AWS_ADMIN_ACCESS_KEY_ID" \
+    AWS_SECRET_ACCESS_KEY="$AWS_ADMIN_SECRET_ACCESS_KEY" \
+    aws "$@"
+  else
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN aws "$@"
+  fi
 }
 
 deploy_common_setup_ssh() {
