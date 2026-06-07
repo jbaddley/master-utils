@@ -69,10 +69,7 @@ export function swimRedirectPath(internalPath: string, host: string): string {
   return query ? `${publicPath}?${query}` : publicPath;
 }
 
-export function toDatetimeLocalValue(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
-}
+export { toDatetimeLocalValue } from "@/lib/swim/datetime";
 
 export function isSwimNavLinkActive(
   pathname: string,
