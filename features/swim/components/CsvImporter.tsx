@@ -17,8 +17,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   LuFileUp,
   LuFileText,
-  LuCheckCircle2,
-  LuAlertTriangle,
+  LuCircleCheck,
+  LuTriangleAlert,
   LuLoader,
   LuChevronDown,
   LuChevronUp,
@@ -111,14 +111,14 @@ function SummaryBadge({
   if (issues === 0) {
     return (
       <div className="csv-summary csv-summary--ok">
-        <LuCheckCircle2 aria-hidden />
+        <LuCircleCheck aria-hidden />
         <strong>{count} entries</strong> ready to import
       </div>
     );
   }
   return (
     <div className="csv-summary csv-summary--warn">
-      <LuAlertTriangle aria-hidden />
+      <LuTriangleAlert aria-hidden />
       <strong>{count} entries</strong> ready · <strong>{issues}</strong> row{issues === 1 ? "" : "s"} skipped
     </div>
   );
@@ -131,7 +131,7 @@ function IssuesList({ issues }: { issues: { row: number; message: string }[] }) 
   return (
     <div className="csv-issues">
       <div className="csv-issues-header">
-        <LuAlertTriangle aria-hidden />
+        <LuTriangleAlert aria-hidden />
         <span>{issues.length} row{issues.length === 1 ? "" : "s"} had problems and will be skipped</span>
         {issues.length > 3 && (
           <button type="button" className="csv-issues-toggle" onClick={() => setExpanded((v) => !v)}>
@@ -221,7 +221,7 @@ function MappingTable({
       </div>
       {unmappedRequired.length > 0 && (
         <p className="csv-mapping-warn">
-          <LuAlertTriangle aria-hidden />
+          <LuTriangleAlert aria-hidden />
           Still unmapped: {unmappedRequired.map((f) => FIELD_TO_CANONICAL[f]).join(", ")}
         </p>
       )}
@@ -434,7 +434,7 @@ export function CsvImporter({ meetId, onImported }: { meetId: string; onImported
   if (step === "success") {
     return (
       <div className="csv-success">
-        <div className="csv-success-icon"><LuCheckCircle2 aria-hidden /></div>
+        <div className="csv-success-icon"><LuCircleCheck aria-hidden /></div>
         <h3 className="csv-success-title">Import complete</h3>
         <p className="csv-success-body">{importedCount} entries added to this meet.</p>
         <div className="csv-success-actions">
@@ -465,7 +465,7 @@ export function CsvImporter({ meetId, onImported }: { meetId: string; onImported
         <>
           {error && (
             <div className="csv-error-banner">
-              <LuAlertTriangle aria-hidden />
+              <LuTriangleAlert aria-hidden />
               {error}
               <button type="button" onClick={() => setError("")} aria-label="Dismiss"><LuX aria-hidden /></button>
             </div>
@@ -586,7 +586,7 @@ export function CsvImporter({ meetId, onImported }: { meetId: string; onImported
 
           {error && (
             <div className="csv-error-banner">
-              <LuAlertTriangle aria-hidden />
+              <LuTriangleAlert aria-hidden />
               {error}
             </div>
           )}
