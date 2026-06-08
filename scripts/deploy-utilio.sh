@@ -146,7 +146,10 @@ if [ ! -d "\$STAGING/.git" ]; then
   sudo git clone "\$REPO" "\$STAGING"
   sudo chown -R ubuntu:ubuntu "\$STAGING"
 else
-  cd "\$STAGING" && git fetch origin && git reset --hard origin/main
+  cd "\$STAGING"
+  rm -f .git/refs/remotes/origin/main.lock 2>/dev/null || true
+  git fetch --all --prune origin
+  git reset --hard origin/main
 fi
 REMOTE_SYNC
 
