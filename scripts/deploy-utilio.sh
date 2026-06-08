@@ -14,9 +14,9 @@
 # Lightsail certificate from get-instance-access-details.
 #
 # Zero-downtime: builds in /srv/app-staging while /srv/app keeps serving,
-# then atomically swaps directories and pm2 reloads (~few seconds). Set
-# DEPLOY_STOP_FOR_BUILD=1 to stop the app during build if the instance is
-# low on memory.
+# then atomically swaps directories and pm2 reloads (~few seconds). The build
+# runs in a background nohup job so SSH drops during npm ci do not abort deploy.
+# Set DEPLOY_STOP_FOR_BUILD=0 to keep the app running during build (needs more RAM).
 
 set -euo pipefail
 
@@ -227,62 +227,75 @@ os.environ.setdefault("AWS_SES_REGION", os.environ.get("AWS_REGION", "us-east-1"
 sys.stdout.write("\n".join(lines) + "\n")
 PY
 
-echo "▸ Build in staging (live app keeps running until swap)"
-"${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_BUILD
+echo "▸ Build in staging (background job — survives SSH drops)"
+REMOTE_BUILD_SCRIPT="$ROOT/scripts/lib/deploy-remote-build.sh"
+"${SCP[@]}" "$REMOTE_BUILD_SCRIPT" "ubuntu@$HOST:/tmp/utilio-deploy-build.sh"
+
+DEPLOY_STOP_FOR_BUILD="${DEPLOY_STOP_FOR_BUILD:-1}"
+export DEPLOY_STOP_FOR_BUILD
+
+"${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_START
 set -e
-STAGING="$STAGING_DIR"
-LIVE="$APP_DIR"
-cd "\$STAGING"
-df -h / | tail -1
-
-if [[ "\${DEPLOY_STOP_FOR_BUILD:-}" == "1" ]]; then
-  echo "▸ DEPLOY_STOP_FOR_BUILD=1 — stopping utilio during build"
-  pm2 stop utilio 2>/dev/null || true
+if [ -f /tmp/utilio-deploy.pid ] && kill -0 "\$(cat /tmp/utilio-deploy.pid)" 2>/dev/null; then
+  echo "A deploy build is already running (pid \$(cat /tmp/utilio-deploy.pid)). Aborting."
+  exit 1
 fi
+chmod +x /tmp/utilio-deploy-build.sh
+nohup env STAGING="$STAGING_DIR" LIVE="$APP_DIR" DEPLOY_STOP_FOR_BUILD="$DEPLOY_STOP_FOR_BUILD" \
+  bash /tmp/utilio-deploy-build.sh > /tmp/utilio-deploy.log 2>&1 &
+echo \$! > /tmp/utilio-deploy.pid
+echo "Build started (pid \$(cat /tmp/utilio-deploy.pid))"
+REMOTE_START
 
-if [ -d node_modules ]; then
-  chmod -R u+w node_modules 2>/dev/null || true
-  rm -rf node_modules
+POLL_INTERVAL="${DEPLOY_POLL_INTERVAL:-20}"
+BUILD_TIMEOUT="${DEPLOY_BUILD_TIMEOUT:-2400}"
+elapsed=0
+
+while (( elapsed < BUILD_TIMEOUT )); do
+  read -r build_status <<< "$("${SSH[@]}" "ubuntu@$HOST" bash <<'POLL'
+set +e
+if [ ! -f /tmp/utilio-deploy.pid ]; then
+  echo missing
+  exit 0
 fi
-rm -rf .next
-npm ci --include=dev
-set -a && source .env.local && set +a
-npx prisma generate
-npx prisma migrate deploy
-NODE_OPTIONS="--max-old-space-size=3072" npm run build
-
-swap_dirs() {
-  local live="\$1" staging="\$2"
-  local swap_tmp="\${live}.swap.\$\$"
-  sudo mv "\$live" "\$swap_tmp"
-  sudo mv "\$staging" "\$live"
-  sudo mv "\$swap_tmp" "\$staging"
-  sudo chown -R ubuntu:ubuntu "\$live" "\$staging"
-}
-
-if pm2 describe utilio >/dev/null 2>&1; then
-  echo "▸ Atomic swap staging → live, then pm2 reload"
-  swap_dirs "\$LIVE" "\$STAGING"
-  cd "\$LIVE"
-  pm2 reload utilio --update-env
-else
-  echo "▸ First deploy — promoting staging to live"
-  if [ -d "\$LIVE" ] && [ ! -e "\$LIVE/.git" ]; then
-    sudo rm -rf "\$LIVE"
-  fi
-  if [ ! -d "\$LIVE" ]; then
-    sudo mv "\$STAGING" "\$LIVE"
-    sudo chown -R ubuntu:ubuntu "\$LIVE"
-  else
-    swap_dirs "\$LIVE" "\$STAGING"
-  fi
-  cd "\$LIVE"
-  pm2 delete utilio 2>/dev/null || true
-  HOSTNAME=0.0.0.0 NODE_ENV=production pm2 start "npm start" --name utilio --cwd "\$LIVE"
+pid=$(cat /tmp/utilio-deploy.pid)
+if kill -0 "$pid" 2>/dev/null; then
+  echo running
+  exit 0
 fi
-pm2 save
-sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu 2>/dev/null || true
-REMOTE_BUILD
+if grep -q UTILIO_DEPLOY_OK /tmp/utilio-deploy.log 2>/dev/null; then
+  echo success
+  exit 0
+fi
+echo failed
+POLL
+)"
+
+  case "$build_status" in
+    running)
+      echo "▸ Build in progress (${elapsed}s)…"
+      "${SSH[@]}" "ubuntu@$HOST" "tail -8 /tmp/utilio-deploy.log 2>/dev/null || true"
+      sleep "$POLL_INTERVAL"
+      elapsed=$((elapsed + POLL_INTERVAL))
+      ;;
+    success)
+      echo "▸ Build complete"
+      "${SSH[@]}" "ubuntu@$HOST" "tail -20 /tmp/utilio-deploy.log"
+      break
+      ;;
+    *)
+      echo "▸ Build failed — last log lines:"
+      "${SSH[@]}" "ubuntu@$HOST" "tail -100 /tmp/utilio-deploy.log 2>/dev/null || true"
+      exit 1
+      ;;
+  esac
+done
+
+if (( elapsed >= BUILD_TIMEOUT )); then
+  echo "▸ Build timed out after ${BUILD_TIMEOUT}s"
+  "${SSH[@]}" "ubuntu@$HOST" "tail -50 /tmp/utilio-deploy.log 2>/dev/null || true"
+  exit 1
+fi
 
 echo "▸ Caddy reverse proxy (generated from config/subdomains.json)"
 CADDYFILE="$("$ROOT/scripts/generate-caddyfile.sh")"

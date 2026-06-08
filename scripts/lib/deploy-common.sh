@@ -50,7 +50,14 @@ deploy_common_setup_ssh() {
     chmod 600 "$key" 2>/dev/null || true
     DEPLOY_SSH_KEY="$key"
     echo "▸ Using SSH key ${DEPLOY_SSH_KEY}"
-    SSH=(ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no)
+    local ssh_opts=(
+      -o StrictHostKeyChecking=no
+      -o ServerAliveInterval=30
+      -o ServerAliveCountMax=120
+      -o TCPKeepAlive=yes
+    )
+    SSH=(ssh -i "$DEPLOY_SSH_KEY" "${ssh_opts[@]}")
+    SCP=(scp -i "$DEPLOY_SSH_KEY" "${ssh_opts[@]}")
     return 0
   fi
 
@@ -76,5 +83,6 @@ os.chmod(priv, stat.S_IRUSR | stat.S_IWUSR)
 os.chmod(cert, stat.S_IRUSR | stat.S_IWUSR)
 print(d.get("ipAddress") or "")
 PY
-  SSH=(ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no)
+  SSH=(ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=120 -o TCPKeepAlive=yes)
+  SCP=(scp -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=120 -o TCPKeepAlive=yes)
 }
