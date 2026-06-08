@@ -1614,6 +1614,57 @@
   font-size: 0.9rem;
   margin-top: 0.25rem;
 }
+.swim-event-order-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.swim-event-order-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.swim-event-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.swim-event-order-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  background: var(--background);
+  cursor: grab;
+}
+.swim-event-order-item-dragging {
+  opacity: 0.55;
+}
+.swim-event-order-item-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.swim-event-order-grip {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1;
+  user-select: none;
+}
+.swim-event-order-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.swim-event-order-unsaved {
+  margin-top: 1rem;
+  color: var(--primary);
+}
 .swim-participant-cards {
   display: grid;
   gap: 1rem;

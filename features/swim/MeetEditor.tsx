@@ -15,6 +15,7 @@ import { CsvImporter } from "./components/CsvImporter";
 import { DateTimePicker } from "./components/DateTimePicker";
 import { FIELD_TO_CANONICAL } from "@/lib/swim/column-mapper";
 import { datetimeLocalToUtcIso, formatMeetDateTime, toDatetimeLocalValue } from "@/lib/swim/datetime";
+import { MEET_EVENT_ORDER_ROLES } from "@/lib/swim/roles";
 import { useSwimHref } from "@/hooks/useSwimHref";
 
 type FlatEntry = {
@@ -67,6 +68,7 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
   const isAdmin = role === "admin";
   const isDirector = role === "director";
   const canManageEntries = ["admin", "manager", "director"].includes(role);
+  const canOrderEvents = MEET_EVENT_ORDER_ROLES.includes(role);
   const canImport = isAdmin || isDirector;
   const canPublish = isAdmin || isDirector;
   const canEditDetails = canManageEntries;
@@ -241,6 +243,13 @@ export default function MeetEditor({ orgId, role, meet: initialMeet }: Props) {
           {formatMeetDateTime(meet.startsAt)} · {meet.location}
           {meet.publishedAt && <Badge style={{ marginLeft: 8 }}>Published</Badge>}
         </p>
+        {canOrderEvents && (
+          <p style={{ marginTop: 12 }}>
+            <Link href={href(`/swim/manage/org/${orgId}/meets/${meet.id}/events/`)} className="swim-btn swim-btn-outline">
+              Event order
+            </Link>
+          </p>
+        )}
       </div>
 
       <div className="swim-tabs-list">

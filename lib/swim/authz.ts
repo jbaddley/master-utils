@@ -6,6 +6,24 @@ import {
   getGuardianStudentIds,
   getStudentIdForUser,
 } from "./students";
+import {
+  MEET_ADMIN_ROLES,
+  MEET_EDITOR_ROLES,
+  MEET_EVENT_ORDER_ROLES,
+  ORG_ADMIN_ROLES,
+  ORG_INVITE_ADMIN_ROLES,
+  ORG_INVITE_OPERATIONAL_ROLES,
+} from "./roles";
+
+export {
+  MEET_ADMIN_ROLES,
+  MEET_EDITOR_ROLES,
+  MEET_EVENT_ORDER_ROLES,
+  ORG_ADMIN_ROLES,
+  ORG_INVITE_ADMIN_ROLES,
+  ORG_INVITE_OPERATIONAL_ROLES,
+  STUDENT_MANAGER_ROLES,
+} from "./roles";
 
 export class SwimAuthError extends Error {
   constructor(
@@ -15,13 +33,6 @@ export class SwimAuthError extends Error {
     super(message);
   }
 }
-
-export const MEET_EDITOR_ROLES: SwimOrgRole[] = ["admin", "manager", "director"];
-export const MEET_ADMIN_ROLES: SwimOrgRole[] = ["admin", "director"];
-export const ORG_ADMIN_ROLES: SwimOrgRole[] = ["admin"];
-export const ORG_INVITE_ADMIN_ROLES: SwimOrgRole[] = ["admin"];
-export const ORG_INVITE_OPERATIONAL_ROLES: SwimOrgRole[] = ["admin", "director"];
-export const STUDENT_MANAGER_ROLES: SwimOrgRole[] = ["admin", "manager", "director", "coach"];
 
 export async function requireSwimSession() {
   const session = await auth();
@@ -84,6 +95,19 @@ export async function requireMeetAccess(meetId: string, adminOnly = false) {
 
   const allowedRoles = adminOnly ? MEET_ADMIN_ROLES : MEET_EDITOR_ROLES;
   const { user, member } = await requireOrgMember(meet.orgId, allowedRoles);
+  return { user, member, meet };
+}
+
+export async function requireMeetEventOrderAccess(meetId: string) {
+  const meet = await prisma.swimMeet.findUnique({
+    where: { id: meetId },
+    include: { org: true },
+  });
+  if (!meet) {
+    throw new SwimAuthError("Meet not found", 404);
+  }
+
+  const { user, member } = await requireOrgMember(meet.orgId, MEET_EVENT_ORDER_ROLES);
   return { user, member, meet };
 }
 
