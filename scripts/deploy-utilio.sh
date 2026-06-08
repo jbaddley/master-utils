@@ -240,9 +240,10 @@ export DEPLOY_STOP_FOR_BUILD
 "${SSH[@]}" "ubuntu@$HOST" bash <<REMOTE_START
 set -e
 if [ -f /tmp/utilio-deploy.pid ] && kill -0 "\$(cat /tmp/utilio-deploy.pid)" 2>/dev/null; then
-  echo "A deploy build is already running (pid \$(cat /tmp/utilio-deploy.pid)). Aborting."
-  exit 1
+  echo "Build already running (pid \$(cat /tmp/utilio-deploy.pid)) — will poll existing job"
+  exit 0
 fi
+rm -f /tmp/utilio-deploy.pid
 chmod +x /tmp/utilio-deploy-build.sh
 nohup env STAGING="$STAGING_DIR" LIVE="$APP_DIR" DEPLOY_STOP_FOR_BUILD="$DEPLOY_STOP_FOR_BUILD" \
   bash /tmp/utilio-deploy-build.sh > /tmp/utilio-deploy.log 2>&1 &
