@@ -148,7 +148,7 @@ if [ ! -d "\$STAGING/.git" ]; then
 else
   cd "\$STAGING"
   rm -f .git/refs/remotes/origin/main.lock 2>/dev/null || true
-  git fetch --all --prune origin
+  git fetch origin --prune
   git reset --hard origin/main
 fi
 REMOTE_SYNC
