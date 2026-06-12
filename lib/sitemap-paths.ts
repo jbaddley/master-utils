@@ -2,7 +2,7 @@ import { CONVERSION_SLUGS } from "@/lib/media-conversions";
 import { PLATFORM_PAGES } from "@/lib/platform-pages";
 import { TOOLS } from "@/lib/tools";
 
-const HUB_SLUGS = new Set(["convert-image", "audio-studio", "convert-audio", "convert-video"]);
+const HUB_SLUGS = new Set(["image-studio", "audio-studio", "convert-image", "convert-audio", "convert-video"]);
 
 /** Pages not in TOOLS, conversions, or platform presets (workflows, aliases, account). */
 const EXTRA_PATHS = [

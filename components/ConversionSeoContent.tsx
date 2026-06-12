@@ -45,7 +45,7 @@ export function ConversionSeoContent({ conversion }: { conversion: MediaConversi
 
       <h3>{MEDIA_TITLES[conversion.media]}</h3>
       <p>
-        Use the <Link href={`/${hub}/`}>full {conversion.media} converter</Link> to switch formats freely, or jump to a
+        Use the <Link href={`/${hub}/`}>full {conversion.media === "image" ? "Image Studio" : conversion.media === "audio" ? "Audio Studio" : `${conversion.media} converter`}</Link> to switch formats freely, or jump to a
         popular conversion:
       </p>
       <ul className="conversion-link-list conversion-link-list--cols">

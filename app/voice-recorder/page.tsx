@@ -26,7 +26,7 @@ export default function Page() {
       faqs={[
         {
           q: "What format is the recording saved in?",
-          a: "Recordings are saved as WebM/Opus, which is the native browser recording format. It is supported by most modern editors and players. Use the Audio Converter to convert to MP3 or WAV if needed.",
+          a: "Recordings are saved as WebM/Opus, which is the native browser recording format. It is supported by most modern editors and players. Use Audio Studio to convert to MP3 or WAV, trim, and normalize.",
         },
         {
           q: "Does the recording get uploaded?",
@@ -42,10 +42,8 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/convert-audio", label: "Convert recording to MP3" },
-        { href: "/trim-audio", label: "Trim your recording" },
-        { href: "/normalize-audio", label: "Normalize volume" },
-        { href: "/remove-silence-from-audio", label: "Remove silence" },
+        { href: "/audio-studio", label: "Audio Studio" },
+        { href: "/voice-recorder", label: "Voice Recorder" },
       ]}
       showAds
     >

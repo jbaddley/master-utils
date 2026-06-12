@@ -42,7 +42,7 @@ export default function Page() {
       ]}
       related={[
         { href: "/image-studio", label: "Image Studio" },
-        { href: "/png-to-jpg", label: "Convert image" },
+        { href: "/image-studio", label: "Image Studio" },
         { href: "/svg-to-image", label: "SVG to Image" },
       ]}
     >

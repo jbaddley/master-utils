@@ -28,6 +28,7 @@ import {
   type MediaKind,
 } from "@/lib/media-conversions";
 import { WORKFLOWS } from "@/lib/workflows";
+import { resolveToolHref } from "@/lib/studio-links";
 
 export type ToolCategory =
   | "image"
@@ -66,13 +67,13 @@ export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
   {
     id: "image",
     label: "Image",
-    description: "Compress, resize, crop, convert, and enhance images.",
+    description: "Edit, compress, resize, crop, and convert in Image Studio.",
     icon: LuImage,
   },
   {
     id: "format-conversions",
     label: "Format Conversions",
-    description: "Convert images in one tool — output formats depend on input.",
+    description: "Convert between formats in Image Studio — output depends on input.",
     icon: LuArrowRightLeft,
   },
   {
@@ -594,5 +595,5 @@ export function searchTools(query: string): CatalogEntry[] {
 }
 
 export function getCatalogHref(slug: string): string {
-  return `/${slug}/`;
+  return resolveToolHref(slug);
 }

@@ -41,7 +41,7 @@ export default function Page() {
         { href: "/trim-video", label: "Trim video" },
         { href: "/compress-video", label: "Compress video" },
         { href: "/mute-video", label: "Mute video" },
-        { href: "/video-to-mp3", label: "Video to MP3" },
+        { href: "/audio-studio", label: "Audio Studio" },
         { href: "/mp4-to-webm", label: "MP4 to WebM" },
         { href: "/webm-to-mp4", label: "WebM to MP4" },
       ]}

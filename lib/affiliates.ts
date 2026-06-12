@@ -1,3 +1,5 @@
+import { resolveAffiliateSlug } from "@/lib/studio-links";
+
 export type AffiliateLink = {
   label: string;
   description: string;
@@ -6,6 +8,20 @@ export type AffiliateLink = {
 };
 
 const AFFILIATES: Record<string, AffiliateLink[]> = {
+  "image-studio": [
+    {
+      label: "Canva",
+      description: "Design social posts and graphics using your edited images.",
+      href: "https://www.canva.com/",
+      cta: "Try Canva free →",
+    },
+    {
+      label: "Shopify",
+      description: "Upload optimized product images to your Shopify store.",
+      href: "https://www.shopify.com/",
+      cta: "Start free trial →",
+    },
+  ],
   "compress-image": [
     {
       label: "Canva",
@@ -271,5 +287,5 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
 };
 
 export function getAffiliates(toolSlug: string): AffiliateLink[] {
-  return AFFILIATES[toolSlug] ?? [];
+  return AFFILIATES[resolveAffiliateSlug(toolSlug)] ?? [];
 }

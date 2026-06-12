@@ -99,11 +99,7 @@ export default async function Page({
               { href: "/image-studio", label: "Image Studio" },
             ]
           : info.media === "audio"
-            ? [
-                { href: "/convert-audio", label: "Audio converter" },
-                { href: "/trim-audio", label: "Trim audio" },
-                { href: "/video-to-mp3", label: "Video to MP3" },
-              ]
+            ? [{ href: "/audio-studio", label: "Audio Studio" }]
             : [
                 { href: "/convert-video", label: "Video converter" },
                 { href: "/compress-video", label: "Compress video" },

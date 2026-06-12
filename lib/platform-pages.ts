@@ -47,7 +47,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
     ],
     related: [
       { href: "/image-studio", label: "Image Studio" },
-      { href: "/png-to-jpg", label: "Convert image" },
+      { href: "/png-to-jpg", label: "PNG to JPG" },
     ],
   },
   {

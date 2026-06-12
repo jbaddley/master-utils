@@ -31,12 +31,12 @@ export default function Page() {
         },
         {
           q: "Need audio only?",
-          a: "Use the Audio Converter to extract MP3, WAV, or other audio from video files.",
+          a: "Use Audio Studio to extract MP3, WAV, or other audio from video files.",
         },
       ]}
       related={[
         { href: "/mp4-to-webm", label: "MP4 to WebM" },
-        { href: "/convert-audio", label: "Audio converter" },
+        { href: "/audio-studio", label: "Audio Studio" },
         { href: "/compress-video", label: "Compress video" },
       ]}
     >

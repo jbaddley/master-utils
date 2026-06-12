@@ -147,7 +147,11 @@ export default function AudioRecorderTool() {
             </button>
           </div>
           <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
-            Saved as WebM/Opus — most players and editors support this format. Use the <a href="/convert-audio" style={{ color: "var(--primary)" }}>audio converter</a> to convert to MP3 or WAV.
+            Saved as WebM/Opus — most players and editors support this format. Use{" "}
+            <a href="/audio-studio/" style={{ color: "var(--primary)" }}>
+              Audio Studio
+            </a>{" "}
+            to convert to MP3 or WAV.
           </p>
         </div>
       )}

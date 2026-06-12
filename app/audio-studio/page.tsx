@@ -47,7 +47,6 @@ export default function Page() {
       ]}
       related={[
         { href: "/voice-recorder", label: "Voice Recorder" },
-        { href: "/video-to-mp3", label: "Video to MP3" },
         { href: "/mp4-to-mp3", label: "MP4 to MP3" },
         { href: "/convert-video", label: "Video Converter" },
       ]}

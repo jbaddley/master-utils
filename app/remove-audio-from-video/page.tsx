@@ -43,7 +43,7 @@ export default function Page() {
       related={[
         { href: "/trim-video", label: "Trim video" },
         { href: "/video-thumbnail-generator", label: "Video thumbnail generator" },
-        { href: "/video-to-mp3", label: "Video to MP3" },
+        { href: "/audio-studio", label: "Audio Studio" },
       ]}
       showAds
     >

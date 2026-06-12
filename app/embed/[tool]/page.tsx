@@ -1,24 +1,20 @@
 import { notFound } from "next/navigation";
-import CompressTool from "@/features/compress/CompressTool";
-import CropResizeTool from "@/features/resize/CropResizeTool";
 import ConvertTool from "@/features/convert/ConvertTool";
 import AudioConverterTool from "@/features/audio/AudioConverterTool";
 import VideoConverterTool from "@/features/video/VideoConverterTool";
-import FaviconTool from "@/features/favicon/FaviconTool";
+import ImageStudio from "@/features/studio/ImageStudio";
+import AudioStudio from "@/features/studio/AudioStudio";
 import SvgTool from "@/features/svg/SvgTool";
-import BackgroundTool from "@/features/background/BackgroundTool";
 import { CONVERSION_SLUGS, getMediaConversion } from "@/lib/media-conversions";
+import { isAudioStudioSlug, isImageStudioSlug } from "@/lib/studio-links";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
   return [
-    "compress-image",
-    "resize-image",
-    "crop-image",
-    "favicon-generator",
+    "image-studio",
+    "audio-studio",
     "image-to-svg",
-    "remove-background",
     "convert-image",
     "convert-audio",
     "convert-video",
@@ -32,6 +28,13 @@ export default async function EmbedPage({
   params: Promise<{ tool: string }>;
 }) {
   const { tool } = await params;
+
+  if (tool === "image-studio" || isImageStudioSlug(tool)) {
+    return <ImageStudio />;
+  }
+  if (tool === "audio-studio" || isAudioStudioSlug(tool)) {
+    return <AudioStudio />;
+  }
 
   const conv = getMediaConversion(tool);
   if (conv) {
@@ -58,21 +61,12 @@ export default async function EmbedPage({
   }
 
   switch (tool) {
-    case "compress-image":
-      return <CompressTool />;
-    case "resize-image":
-    case "crop-image":
-      return <CropResizeTool />;
-    case "favicon-generator":
-      return <FaviconTool />;
     case "image-to-svg":
       return <SvgTool />;
-    case "remove-background":
-      return <BackgroundTool />;
     case "convert-image":
-      return <ConvertTool />;
+      return <ImageStudio />;
     case "convert-audio":
-      return <AudioConverterTool />;
+      return <AudioStudio />;
     case "convert-video":
       return <VideoConverterTool />;
     default:

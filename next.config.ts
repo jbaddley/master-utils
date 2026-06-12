@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/crop-image",
-        destination: "/resize-image/",
+        destination: "/image-studio/",
         permanent: true,
       },
       {
@@ -27,12 +27,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/strip-metadata",
-        destination: "/remove-exif/",
+        destination: "/image-studio/",
         permanent: true,
       },
       {
         source: "/blackout-tool",
-        destination: "/redact-image/",
+        destination: "/image-studio/",
         permanent: true,
       },
     ];

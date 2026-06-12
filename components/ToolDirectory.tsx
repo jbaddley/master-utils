@@ -5,6 +5,10 @@ import Link from "next/link";
 import { LuChevronDown } from "react-icons/lu";
 import { NAV_GROUPS } from "@/lib/nav-groups";
 import {
+  AUDIO_STUDIO_PATH,
+  IMAGE_STUDIO_PATH,
+} from "@/lib/studio-links";
+import {
   TOOL_CATEGORIES,
   TOOL_CATALOG,
   getCatalogHref,
@@ -152,7 +156,7 @@ export function ToolDirectory() {
                 </div>
               )}
               <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
-                <Link href="/image-studio/">Convert &amp; edit any image in Image Studio →</Link>
+                <Link href={`${IMAGE_STUDIO_PATH}/`}>Convert &amp; edit any image in Image Studio →</Link>
               </p>
             </CollapsibleSection>
           );
@@ -167,13 +171,21 @@ export function ToolDirectory() {
                 .slice(0, 8);
 
         return (
-          <CategorySection
-            key={cat.id}
-            categoryId={cat.id}
-            title={cat.label}
-            description={cat.description}
-            entries={entries}
-          />
+          <div key={cat.id}>
+            <CategorySection
+              categoryId={cat.id}
+              title={cat.label}
+              description={cat.description}
+              entries={entries}
+            />
+            {cat.id === "audio" && (
+              <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
+                <Link href={`${AUDIO_STUDIO_PATH}/`}>
+                  Trim, fade, mix lanes &amp; export in Audio Studio →
+                </Link>
+              </p>
+            )}
+          </div>
         );
       })}
     </div>
