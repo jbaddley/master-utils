@@ -6,12 +6,18 @@ import { FavoritesMenu, MainNav } from "@/components/MainNav";
 import { UserMenu } from "@/components/UserMenu";
 import { SiteHeaderShell } from "@/components/SiteHeaderShell";
 import { SearchTriggerButton } from "@/components/SearchTriggerButton";
-import { DonateButtonSlot } from "@/components/DonateButtonSlot";
+import { DonateButton } from "@/components/DonateButton";
 import { SwimNav, SwimUserMenu } from "@/components/SwimNav";
 import { swimPublicHref } from "@/lib/swim-nav";
 import { useSwimApp } from "@/hooks/useSwimApp";
 
-export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: boolean }) {
+export function SiteHeaderNav({
+  isSwimSubdomain = false,
+  hasDonation = false,
+}: {
+  isSwimSubdomain?: boolean;
+  hasDonation?: boolean;
+}) {
   const { isSwim, isSubdomain } = useSwimApp(isSwimSubdomain);
 
   if (isSwim) {
@@ -22,7 +28,7 @@ export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: b
         </Link>
         <SwimNav isSubdomain={isSubdomain} />
         <div className="site-header-actions">
-          <DonateButtonSlot />
+          {hasDonation && <DonateButton />}
           <SwimUserMenu />
         </div>
       </SiteHeaderShell>
@@ -36,7 +42,7 @@ export function SiteHeaderNav({ isSwimSubdomain = false }: { isSwimSubdomain?: b
       </Link>
       <MainNav />
       <div className="site-header-actions">
-        <DonateButtonSlot />
+        {hasDonation && <DonateButton />}
         <FavoritesMenu />
         <SearchTriggerButton />
       </div>

@@ -202,7 +202,7 @@ export function getConversionsForMedia(media: MediaKind): MediaConversionInfo[] 
 }
 
 export function getHubSlug(media: MediaKind): string {
-  return media === "image" ? "convert-image" : media === "audio" ? "convert-audio" : "convert-video";
+  return media === "image" ? "convert-image" : media === "audio" ? "audio-studio" : "convert-video";
 }
 
 /** Shown in nav menus alongside converter hubs (SEO pages stay in sitemap/search). */

@@ -1,2 +1,5 @@
 import { permanentRedirect } from "next/navigation";
-export default function Page() { permanentRedirect("/remove-background"); }
+
+export default function Page() {
+  permanentRedirect("/image-studio");
+}

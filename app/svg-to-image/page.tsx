@@ -42,9 +42,7 @@ export default function Page() {
       ]}
       related={[
         { href: "/image-to-svg/", label: "Image to SVG" },
-        { href: "/convert-image/", label: "Convert image format" },
-        { href: "/compress-image/", label: "Compress image" },
-        { href: "/resize-image/", label: "Crop & resize image" },
+        { href: "/image-studio", label: "Image Studio" },
       ]}
     >
       <SvgToImageTool />

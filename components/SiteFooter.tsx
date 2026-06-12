@@ -7,8 +7,8 @@ const FOOTER_LINKS = [
   { label: "About Me", path: "why-utilio" },
   { label: "Pricing", path: "pricing" },
   { label: "API Docs", path: "api-docs" },
-  { label: "Compress Image", path: "compress-image" },
-  { label: "Convert Audio", path: "convert-audio" },
+  { label: "Image Studio", path: "image-studio" },
+  { label: "Audio Studio", path: "audio-studio" },
   { label: "PDF Tools", path: "pdf-tools" },
   { label: "QR Code Generator", path: "qr-code-generator" },
 ] as const;

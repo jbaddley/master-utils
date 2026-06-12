@@ -43,7 +43,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/remove-background", label: "Remove background" },
+        { href: "/image-studio", label: "Image Studio" },
         { href: "/image-to-svg", label: "Image to SVG" },
         { href: "/pattern-generator", label: "Pattern Generator" },
       ]}

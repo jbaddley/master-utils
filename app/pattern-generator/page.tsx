@@ -45,7 +45,7 @@ export default function Page() {
       related={[
         { href: "/color-toolbox", label: "Color Toolbox" },
         { href: "/image-to-svg", label: "Image to SVG" },
-        { href: "/favicon-generator", label: "Favicon Generator" },
+        { href: "/image-studio", label: "Image Studio" },
       ]}
     >
       <PatternGeneratorTool />

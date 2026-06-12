@@ -53,8 +53,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
       },
     ],
     related: [
-      { href: "/resize-image", label: "Crop & resize image" },
-      { href: "/compress-image", label: "Compress image" },
+      { href: "/image-studio", label: "Image Studio" },
       { href: "/workflow/instagram-post", label: "Instagram Post workflow" },
     ],
   },
@@ -90,8 +89,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     ],
     related: [
       { href: "/resize-image-for-instagram", label: "Resize for Instagram" },
-      { href: "/resize-image", label: "Crop & resize image" },
-      { href: "/compress-image", label: "Compress image" },
+      { href: "/image-studio", label: "Image Studio" },
       { href: "/workflow/shopify-product", label: "Shopify Product workflow" },
     ],
   },
@@ -127,8 +125,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     ],
     related: [
       { href: "/compress-image-for-shopify", label: "Compress for Shopify" },
-      { href: "/resize-image", label: "Crop & resize image" },
-      { href: "/compress-image", label: "Compress image" },
+      { href: "/image-studio", label: "Image Studio" },
       { href: "/workflow/instagram-post", label: "Instagram Post workflow" },
     ],
   },
@@ -163,8 +160,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
       },
     ],
     related: [
-      { href: "/favicon-generator", label: "Favicon Generator" },
-      { href: "/resize-image", label: "Crop & resize image" },
+      { href: "/image-studio", label: "Image Studio" },
       { href: "/image-to-svg", label: "Image to SVG" },
       { href: "/workflow/podcast-cover-art", label: "Podcast Cover Art workflow" },
     ],
@@ -202,7 +198,7 @@ const WORKFLOW_META: Record<string, WorkflowMeta> = {
     related: [
       { href: "/resize-image-for-youtube-thumbnail", label: "Resize for YouTube Thumbnail" },
       { href: "/resize-image-for-youtube", label: "Resize for YouTube" },
-      { href: "/compress-image", label: "Compress image" },
+      { href: "/image-studio", label: "Image Studio" },
       { href: "/workflow/instagram-post", label: "Instagram Post workflow" },
     ],
   },

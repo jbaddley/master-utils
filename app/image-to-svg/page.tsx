@@ -41,9 +41,9 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/compress-image", label: "Compress image" },
+        { href: "/image-studio", label: "Image Studio" },
         { href: "/png-to-jpg", label: "Convert image" },
-        { href: "/resize-image", label: "Crop & resize image" },
+        { href: "/svg-to-image", label: "SVG to Image" },
       ]}
     >
       <SvgTool />

@@ -96,9 +96,7 @@ export default async function Page({
       related={
         info.media === "image"
           ? [
-              { href: "/convert-image", label: "Image converter" },
-              { href: "/compress-image", label: "Compress image" },
-              { href: "/resize-image", label: "Crop & resize" },
+              { href: "/image-studio", label: "Image Studio" },
             ]
           : info.media === "audio"
             ? [

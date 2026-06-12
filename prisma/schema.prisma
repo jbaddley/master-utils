@@ -7,27 +7,28 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
+  id                   String                @id @default(cuid())
   name                 String?
-  email                String    @unique
+  email                String                @unique
   emailVerified        DateTime?
   image                String?
   password             String?
-  plan                 String    @default("free")
-  stripeCustomerId     String?   @unique
+  plan                 String                @default("free")
+  stripeCustomerId     String?               @unique
   stripeSubscriptionId String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  apiKeys       ApiKey[]
-  exports       ExportHistory[]
-  qrCodes       QRCode[]
-  swimOrgMembers SwimOrgMember[]
-  swimOrgFollowers SwimOrgFollower[]
-  swimStudentProfile SwimStudent?
-  guardianStudents SwimGuardianStudent[] @relation("GuardianUser")
-  coachCohorts SwimCohort[] @relation("CoachUser")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  apiKeys              ApiKey[]
+  exports              ExportHistory[]
+  qrCodes              QRCode[]
+  swimOrgMembers       SwimOrgMember[]
+  swimOrgFollowers     SwimOrgFollower[]
+  swimStudentProfile   SwimStudent?
+  guardianStudents     SwimGuardianStudent[] @relation("GuardianUser")
+  coachCohorts         SwimCohort[]          @relation("CoachUser")
+  preferences          UserPreference[]
 }
 
 model Account {
@@ -45,6 +46,7 @@ model Account {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@id([provider, providerAccountId])
 }
 
@@ -61,6 +63,7 @@ model VerificationToken {
   identifier String
   token      String
   expires    DateTime
+
   @@id([identifier, token])
 }
 
@@ -88,17 +91,17 @@ model ExportHistory {
 }
 
 model QRCode {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
-  code        String    @unique
-  label       String    @default("")
+  code        String   @unique
+  label       String   @default("")
   destination String
-  active      Boolean   @default(true)
-  darkColor   String    @default("#000000")
-  lightColor  String    @default("#ffffff")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  active      Boolean  @default(true)
+  darkColor   String   @default("#000000")
+  lightColor  String   @default("#ffffff")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   scans       QRScan[]
 }
 
@@ -126,19 +129,19 @@ enum SwimInviteStatus {
 }
 
 model SwimOrganization {
-  id        String   @id @default(cuid())
-  name      String
-  location  String
-  website   String?
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  members   SwimOrgMember[]
-  invites   SwimOrgInvite[]
-  meets     SwimMeet[]
-  followers SwimOrgFollower[]
-  students  SwimStudent[]
-  cohorts   SwimCohort[]
+  id               String                @id @default(cuid())
+  name             String
+  location         String
+  website          String?
+  slug             String                @unique
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  members          SwimOrgMember[]
+  invites          SwimOrgInvite[]
+  meets            SwimMeet[]
+  followers        SwimOrgFollower[]
+  students         SwimStudent[]
+  cohorts          SwimCohort[]
   guardianStudents SwimGuardianStudent[]
 }
 
@@ -146,9 +149,10 @@ model SwimOrgMember {
   orgId     String
   userId    String
   role      SwimOrgRole
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
   org       SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@id([orgId, userId])
 }
 
@@ -163,6 +167,7 @@ model SwimOrgInvite {
   acceptedAt DateTime?
   createdAt  DateTime         @default(now())
   org        SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
   @@unique([orgId, email])
 }
 
@@ -175,15 +180,15 @@ model SwimTeam {
 }
 
 model SwimMeet {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   orgId       String
   name        String
   startsAt    DateTime
   location    String
-  slug        String    @unique
+  slug        String           @unique
   publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   org         SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   teams       SwimMeetTeam[]
   events      SwimEvent[]
@@ -195,6 +200,7 @@ model SwimMeetTeam {
   teamId String
   meet   SwimMeet @relation(fields: [meetId], references: [id], onDelete: Cascade)
   team   SwimTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
   @@id([meetId, teamId])
 }
 
@@ -205,6 +211,7 @@ model SwimEvent {
   title  String
   meet   SwimMeet   @relation(fields: [meetId], references: [id], onDelete: Cascade)
   heats  SwimHeat[]
+
   @@unique([meetId, number])
 }
 
@@ -214,23 +221,25 @@ model SwimHeat {
   number       Int
   event        SwimEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   participants SwimParticipant[]
+
   @@unique([eventId, number])
 }
 
 model SwimStudent {
-  id        String   @id @default(cuid())
-  orgId     String
-  firstName String
-  lastName  String
-  age       Int?
-  userId    String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  org       SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  participants SwimParticipant[]
+  id            String                @id @default(cuid())
+  orgId         String
+  firstName     String
+  lastName      String
+  age           Int?
+  userId        String?               @unique
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  org           SwimOrganization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user          User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  participants  SwimParticipant[]
   guardianLinks SwimGuardianStudent[]
   cohortMembers SwimCohortMember[]
+
   @@unique([orgId, firstName, lastName])
 }
 
@@ -246,6 +255,7 @@ model SwimParticipant {
   heat            SwimHeat    @relation(fields: [heatId], references: [id], onDelete: Cascade)
   student         SwimStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
   team            SwimTeam?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
   @@unique([heatId, lane])
 }
 
@@ -253,42 +263,45 @@ model SwimGuardianStudent {
   orgId          String
   guardianUserId String
   studentId      String
-  createdAt      DateTime @default(now())
+  createdAt      DateTime         @default(now())
   org            SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   guardian       User             @relation("GuardianUser", fields: [guardianUserId], references: [id], onDelete: Cascade)
   student        SwimStudent      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@id([guardianUserId, studentId])
 }
 
 model SwimCohort {
-  id          String   @id @default(cuid())
+  id          String             @id @default(cuid())
   orgId       String
   coachUserId String
   name        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  org         SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  coach       User             @relation("CoachUser", fields: [coachUserId], references: [id], onDelete: Cascade)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  org         SwimOrganization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  coach       User               @relation("CoachUser", fields: [coachUserId], references: [id], onDelete: Cascade)
   members     SwimCohortMember[]
 }
 
 model SwimCohortMember {
   cohortId  String
   studentId String
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
   cohort    SwimCohort  @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   student   SwimStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@id([cohortId, studentId])
 }
 
 model SwimOrgFollower {
   userId           String
   orgId            String
-  emailMeetUpdates Boolean @default(true)
+  emailMeetUpdates Boolean          @default(true)
   savedStudentIds  Json?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime         @default(now())
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   org              SwimOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
   @@id([userId, orgId])
 }
 
@@ -317,4 +330,14 @@ model ManagedPaymentPurchase {
   customerEmail   String?
   paymentStatus   String
   createdAt       DateTime @default(now())
+}
+
+model UserPreference {
+  userId    String
+  key       String
+  value     Json
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
 }

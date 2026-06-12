@@ -1,13 +1,18 @@
-/** Draw an image "contained" (no distortion) onto a transparent square. */
-export function renderSquare(img: HTMLImageElement, size: number): HTMLCanvasElement {
+/** Draw an image or canvas "contained" (no distortion) onto a transparent square. */
+export function renderSquare(
+  img: HTMLImageElement | HTMLCanvasElement,
+  size: number,
+): HTMLCanvasElement {
+  const sw = img instanceof HTMLImageElement ? img.naturalWidth : img.width;
+  const sh = img instanceof HTMLImageElement ? img.naturalHeight : img.height;
   const c = document.createElement("canvas");
   c.width = size;
   c.height = size;
   const ctx = c.getContext("2d");
   if (!ctx) throw new Error("Could not get a 2D canvas context.");
-  const scale = Math.min(size / img.naturalWidth, size / img.naturalHeight);
-  const w = img.naturalWidth * scale;
-  const h = img.naturalHeight * scale;
+  const scale = Math.min(size / sw, size / sh);
+  const w = sw * scale;
+  const h = sh * scale;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);

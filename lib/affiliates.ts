@@ -80,6 +80,20 @@ const AFFILIATES: Record<string, AffiliateLink[]> = {
       cta: "Remove background →",
     },
   ],
+  "audio-studio": [
+    {
+      label: "Descript",
+      description: "Edit your audio and video like a document with AI-powered transcription.",
+      href: "https://www.descript.com/",
+      cta: "Try Descript free →",
+    },
+    {
+      label: "Adobe Audition",
+      description: "Professional audio editing, noise reduction, and mastering.",
+      href: "https://www.adobe.com/products/audition.html",
+      cta: "Try Adobe Audition →",
+    },
+  ],
   "convert-audio": [
     {
       label: "Descript",

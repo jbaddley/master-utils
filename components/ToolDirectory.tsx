@@ -152,7 +152,7 @@ export function ToolDirectory() {
                 </div>
               )}
               <p className="tool-directory-more" style={{ marginTop: "0.75rem" }}>
-                <Link href="/convert-image/">All image format conversions →</Link>
+                <Link href="/image-studio/">Convert &amp; edit any image in Image Studio →</Link>
               </p>
             </CollapsibleSection>
           );

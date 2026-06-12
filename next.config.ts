@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/audio-converter",
-        destination: "/convert-audio/",
+        destination: "/audio-studio/",
         permanent: true,
       },
       {

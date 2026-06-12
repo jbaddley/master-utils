@@ -37,7 +37,7 @@ export default function Page() {
         },
       ]}
       related={[
-        { href: "/compress-image", label: "Compress single image" },
+        { href: "/image-studio", label: "Image Studio" },
         { href: "/batch-resize", label: "Batch resize" },
         { href: "/png-to-webp", label: "PNG to WebP" },
       ]}
