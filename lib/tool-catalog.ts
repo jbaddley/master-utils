@@ -73,19 +73,22 @@ export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
   {
     id: "format-conversions",
     label: "Format Conversions",
-    description: "Convert between formats in Image Studio — output depends on input.",
+    description:
+      "Convert between formats in Image Studio — output depends on input.",
     icon: LuArrowRightLeft,
   },
   {
     id: "video",
     label: "Video",
-    description: "Convert video in one tool, then trim, compress, or extract frames.",
+    description:
+      "Convert video in one tool, then trim, compress, or extract frames.",
     icon: LuVideo,
   },
   {
     id: "audio",
     label: "Audio",
-    description: "Edit audio in one studio — trim, fade, mix lanes, normalize, and export.",
+    description:
+      "Edit audio in one studio — trim, fade, mix lanes, normalize, and export.",
     icon: LuMusic,
   },
   {
@@ -121,13 +124,15 @@ export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
   {
     id: "security",
     label: "Security & Privacy",
-    description: "Strip metadata, redact images, generate passwords, and inspect URLs.",
+    description:
+      "Strip metadata, redact images, generate passwords, and inspect URLs.",
     icon: LuShield,
   },
   {
     id: "local-ai",
     label: "Local AI",
-    description: "Run open-source LLMs locally — chat, summarize, rewrite, translate, code, and more.",
+    description:
+      "Run open-source LLMs locally — chat, summarize, rewrite, translate, code, and more.",
     icon: LuBrain,
   },
 ];
@@ -155,20 +160,27 @@ const CATEGORY_BY_TOOL_SLUG: Record<string, ToolCategory> = {
   "csv-to-json": "data",
   "json-to-csv": "data",
   "base64-encoder": "data",
+  "text-case-converter": "data",
+  "code-formatter": "data",
+  "social-media-character-counter": "data",
+  "diff-checker": "data",
   "password-generator": "security",
   "uuid-generator": "security",
   "url-encoder": "security",
   "url-unshortener": "security",
   "url-parser": "security",
+  "color-toolbox": "image",
+  "pattern-generator": "image",
+  "reorder-pdf": "document",
   // Local AI
-  "ai-chat":     "local-ai",
-  "ai-summarize":"local-ai",
-  "ai-rewrite":  "local-ai",
-  "ai-translate":"local-ai",
-  "ai-code":     "local-ai",
-  "ai-extract":  "local-ai",
-  "ai-qa":       "local-ai",
-  "ai-grammar":  "local-ai",
+  "ai-chat": "local-ai",
+  "ai-summarize": "local-ai",
+  "ai-rewrite": "local-ai",
+  "ai-translate": "local-ai",
+  "ai-code": "local-ai",
+  "ai-extract": "local-ai",
+  "ai-qa": "local-ai",
+  "ai-grammar": "local-ai",
 };
 
 const ORPHAN_ENTRIES: CatalogEntry[] = [
@@ -348,8 +360,8 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     slug: "ai-artistic-qr-code-generator",
     title: "AI Artistic QR Code",
     tagline: "Generate stylized QR codes with AI artwork.",
-    category: "ai",
-    icon: LuSparkles,
+    category: "qr",
+    icon: LuQrCode,
     keywords: ["artistic", "qr", "ai"],
   },
   // AI
@@ -382,16 +394,16 @@ const ORPHAN_ENTRIES: CatalogEntry[] = [
     slug: "prepare-podcast-cover-art",
     title: "Prepare Podcast Cover Art",
     tagline: "Resize to 3000×3000 and compress as WebP for podcast platforms.",
-    category: "workflows",
-    icon: LuWorkflow,
+    category: "audio",
+    icon: LuMusic,
     keywords: ["podcast", "cover", "spotify"],
   },
   {
     slug: "optimize-shopify-product-images",
     title: "Optimize Shopify Product Images",
     tagline: "Resize and compress product photos for Shopify listings.",
-    category: "workflows",
-    icon: LuWorkflow,
+    category: "image",
+    icon: LuImage,
     keywords: ["shopify", "product", "ecommerce"],
   },
   {
@@ -445,15 +457,29 @@ function buildCatalog(): CatalogEntry[] {
   for (const conv of MEDIA_CONVERSIONS) {
     if (bySlug.has(conv.slug)) continue;
     const category =
-      conv.media === "image" ? "format-conversions" : conv.media === "audio" ? "audio" : "video";
-    const icon = conv.media === "image" ? LuArrowRightLeft : conv.media === "audio" ? LuMusic : LuVideo;
+      conv.media === "image"
+        ? "format-conversions"
+        : conv.media === "audio"
+          ? "audio"
+          : "video";
+    const icon =
+      conv.media === "image"
+        ? LuArrowRightLeft
+        : conv.media === "audio"
+          ? LuMusic
+          : LuVideo;
     bySlug.set(conv.slug, {
       slug: conv.slug,
       title: `${conv.fromLabel} to ${conv.toLabel}`,
       tagline: `Convert ${conv.fromLabel} to ${conv.toLabel} in your browser — private, no upload.`,
       category,
       icon,
-      keywords: [conv.fromKey, conv.toKey, conv.fromLabel.toLowerCase(), conv.toLabel.toLowerCase()],
+      keywords: [
+        conv.fromKey,
+        conv.toKey,
+        conv.fromLabel.toLowerCase(),
+        conv.toLabel.toLowerCase(),
+      ],
       inNav: NAV_CONVERSION_SLUGS.has(conv.slug),
       featured: false,
     });
@@ -463,10 +489,14 @@ function buildCatalog(): CatalogEntry[] {
     bySlug.set(page.slug, {
       slug: page.slug,
       title: page.h1,
-      tagline: page.lede.length > 120 ? `${page.lede.slice(0, 117)}…` : page.lede,
+      tagline:
+        page.lede.length > 120 ? `${page.lede.slice(0, 117)}…` : page.lede,
       category: "platform-presets",
       icon: page.tool === "resize" ? LuScaling : LuArchive,
-      keywords: [page.tool, ...page.slug.split("-").filter((w) => w.length > 3)],
+      keywords: [
+        page.tool,
+        ...page.slug.split("-").filter((w) => w.length > 3),
+      ],
     });
   }
 
@@ -508,7 +538,10 @@ export function getToolsByCategory(category: ToolCategory): CatalogEntry[] {
   );
 }
 
-const HUB_BY_MEDIA: Record<"format-conversions" | "audio" | "video", MediaKind> = {
+const HUB_BY_MEDIA: Record<
+  "format-conversions" | "audio" | "video",
+  MediaKind
+> = {
   "format-conversions": "image",
   audio: "audio",
   video: "video",
@@ -538,9 +571,9 @@ export function getMenuToolsByCategory(category: ToolCategory): CatalogEntry[] {
     return items;
   }
 
-  return TOOL_CATALOG.filter((e) => e.category === category && e.inNav !== false).sort((a, b) =>
-    a.title.localeCompare(b.title),
-  );
+  return TOOL_CATALOG.filter(
+    (e) => e.category === category && e.inNav !== false,
+  ).sort((a, b) => a.title.localeCompare(b.title));
 }
 
 /** Count for category pills (menu-visible items). */
@@ -548,10 +581,14 @@ export function getMenuCategoryCount(category: ToolCategory): number {
   return getMenuToolsByCategory(category).length;
 }
 
-export function getFeaturedByCategory(): Partial<Record<ToolCategory, CatalogEntry[]>> {
+export function getFeaturedByCategory(): Partial<
+  Record<ToolCategory, CatalogEntry[]>
+> {
   const result: Partial<Record<ToolCategory, CatalogEntry[]>> = {};
   for (const cat of TOOL_CATEGORIES) {
-    const featured = TOOL_CATALOG.filter((e) => e.category === cat.id && e.featured);
+    const featured = TOOL_CATALOG.filter(
+      (e) => e.category === cat.id && e.featured,
+    );
     if (featured.length > 0) {
       result[cat.id] = featured;
     }
@@ -590,7 +627,9 @@ export function searchTools(query: string): CatalogEntry[] {
   }).filter((x): x is { entry: CatalogEntry; score: number } => x !== null);
 
   return scored
-    .sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title))
+    .sort(
+      (a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title),
+    )
     .map((x) => x.entry);
 }
 

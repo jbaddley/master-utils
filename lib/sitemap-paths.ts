@@ -2,7 +2,16 @@ import { CONVERSION_SLUGS } from "@/lib/media-conversions";
 import { PLATFORM_PAGES } from "@/lib/platform-pages";
 import { TOOLS } from "@/lib/tools";
 
-const HUB_SLUGS = new Set(["image-studio", "audio-studio", "convert-image", "convert-audio", "convert-video"]);
+const HUB_SLUGS = new Set([
+  "image-studio",
+  "audio-studio",
+  "video-studio",
+  "document-tools",
+  "dev-tools",
+  "convert-image",
+  "convert-audio",
+  "convert-video",
+]);
 
 /** Pages not in TOOLS, conversions, or platform presets (workflows, aliases, account). */
 const EXTRA_PATHS = [
@@ -12,7 +21,10 @@ const EXTRA_PATHS = [
   "history",
   "account",
   "api-docs",
+  "dev-tools",
+  "document-tools",
   "embed",
+  "video-studio",
   "workflow",
   "workflow/podcast-cover-art",
   "workflow/instagram-post",
@@ -26,10 +38,6 @@ const EXTRA_PATHS = [
   "strip-metadata",
   "blackout-tool",
   "audio-pitch-and-speed",
-  "browse/media",
-  "browse/documents",
-  "browse/ai",
-  "browse/utilities",
 ] as const;
 
 export type SitemapPath = {

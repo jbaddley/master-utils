@@ -23,15 +23,17 @@ export function ToolPage(props: {
   steps: string[];
   faqs: QA[];
   children: ReactNode;
+  afterTool?: ReactNode;
   body?: ReactNode;
   related?: RelatedLink[];
   showAds?: boolean;
   privacyNote?: string;
+  wide?: boolean;
 }) {
   const ads = props.showAds !== false;
   const url = canonical(props.slug);
   return (
-    <main className="page">
+    <main className={props.wide ? "page page--wide" : "page"}>
       <div className="page-hero">
         <div className="page-hero-title-row">
           <h1>{props.h1}</h1>
@@ -41,6 +43,8 @@ export function ToolPage(props: {
       </div>
 
       {props.children}
+
+      {props.afterTool}
 
       <div className="prose">
         <h2>How to {props.h1.replace(/^./, (c) => c.toLowerCase())}</h2>
@@ -54,9 +58,7 @@ export function ToolPage(props: {
 
         {ads && <AdSlot variant="rectangle" />}
 
-        <p className="privacy">
-          {props.privacyNote ?? DEFAULT_PRIVACY_NOTE}
-        </p>
+        <p className="privacy">{props.privacyNote ?? DEFAULT_PRIVACY_NOTE}</p>
 
         {props.related && props.related.length > 0 && (
           <>

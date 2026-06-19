@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import AudioStudio from "@/features/studio/AudioStudio";
 import { ToolPage } from "@/components/ToolPage";
+import {
+  OtherUtilityHubs,
+  UtilityHubSections,
+} from "@/components/UtilityHubPage";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -13,6 +17,7 @@ export const metadata: Metadata = buildMetadata({
 export default function Page() {
   return (
     <ToolPage
+      wide
       slug="audio-studio"
       h1="Audio Studio"
       appName="Audio Studio"
@@ -50,6 +55,19 @@ export default function Page() {
         { href: "/mp4-to-mp3", label: "MP4 to MP3" },
         { href: "/convert-video", label: "Video Converter" },
       ]}
+      afterTool={
+        <div className="utility-hub-after-tool">
+          <div className="tool-directory-header">
+            <h2 className="tool-directory-title">Audio utility categories</h2>
+          </div>
+          <p className="tool-directory-desc">
+            Audio Studio is the best place to chain edits. Use these links when
+            you need a focused recorder, converter, or audio cleanup path.
+          </p>
+          <UtilityHubSections groupId="audio-studio" />
+          <OtherUtilityHubs currentGroupId="audio-studio" />
+        </div>
+      }
     >
       <AudioStudio />
     </ToolPage>

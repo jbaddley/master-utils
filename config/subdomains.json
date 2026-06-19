@@ -11,8 +11,8 @@
   },
   "subdomains": {
     "media": {
-      "path": "browse/media",
-      "description": "Media tools hub — images, video, and audio utilities"
+      "path": "image-studio",
+      "description": "Image Studio — browser-based image editing and conversion"
     },
     "swim": {
       "path": "swim",

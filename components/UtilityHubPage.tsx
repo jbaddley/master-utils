@@ -1,37 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ToolSearch } from "@/components/ToolSearch";
 import {
-  NAV_GROUPS,
   getNavGroup,
   getNavGroupSections,
+  NAV_GROUPS,
   type NavGroupId,
 } from "@/lib/nav-groups";
 import { getCatalogHref } from "@/lib/tool-catalog";
 
-type Props = { params: Promise<{ group: string }> };
-
-export function generateStaticParams() {
-  return NAV_GROUPS.map((g) => ({ group: g.id }));
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { group: groupId } = await params;
-  const group = getNavGroup(groupId);
-  if (!group) return {};
-  return {
-    title: `${group.label} Tools`,
-    description: group.description,
-  };
-}
-
-export default async function BrowseGroupPage({ params }: Props) {
-  const { group: groupId } = await params;
-  const group = getNavGroup(groupId);
-  if (!group) notFound();
-
-  const sections = getNavGroupSections(groupId as NavGroupId);
+export function UtilityHubPage({ groupId }: { groupId: NavGroupId }) {
+  const group = getNavGroup(groupId)!;
   const Icon = group.icon;
 
   return (
@@ -40,19 +18,33 @@ export default async function BrowseGroupPage({ params }: Props) {
         <div className="browse-hero-icon-wrap">
           <Icon className="browse-hero-icon" aria-hidden />
         </div>
-        <h1>{group.label} tools</h1>
+        <h1>{group.label}</h1>
         <p className="lede">{group.description}</p>
+        <div className="utility-primary">
+          <Link href={group.primaryHref} className="utility-primary-link">
+            {group.primaryLabel}
+          </Link>
+          <p>{group.primaryDescription}</p>
+        </div>
         <div className="browse-search">
-          <ToolSearch
-            variant="hero"
-            placeholder="Search in this category… e.g. compress, trim, pdf"
-          />
+          <ToolSearch variant="hero" placeholder={group.searchPlaceholder} />
         </div>
         <p className="browse-search-hint">
           Press <kbd>⌘K</kbd> anywhere to search all tools
         </p>
       </div>
 
+      <UtilityHubSections groupId={groupId} />
+      <OtherUtilityHubs currentGroupId={groupId} />
+    </main>
+  );
+}
+
+export function UtilityHubSections({ groupId }: { groupId: NavGroupId }) {
+  const sections = getNavGroupSections(groupId);
+
+  return (
+    <>
       {sections.map((section) => (
         <section
           key={section.id}
@@ -82,17 +74,25 @@ export default async function BrowseGroupPage({ params }: Props) {
           </div>
         </section>
       ))}
+    </>
+  );
+}
 
-      <div className="browse-other">
-        <h2 className="text-lg font-semibold mb-3">Other categories</h2>
-        <div className="category-pills">
-          {NAV_GROUPS.filter((g) => g.id !== group.id).map((g) => (
-            <Link key={g.id} href={g.href} className="category-pill">
-              {g.label}
-            </Link>
-          ))}
-        </div>
+export function OtherUtilityHubs({
+  currentGroupId,
+}: {
+  currentGroupId: NavGroupId;
+}) {
+  return (
+    <div className="browse-other">
+      <h2 className="text-lg font-semibold mb-3">Other utility categories</h2>
+      <div className="category-pills">
+        {NAV_GROUPS.filter((g) => g.id !== currentGroupId).map((g) => (
+          <Link key={g.id} href={g.href} className="category-pill">
+            {g.label}
+          </Link>
+        ))}
       </div>
-    </main>
+    </div>
   );
 }

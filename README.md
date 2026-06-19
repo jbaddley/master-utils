@@ -70,7 +70,7 @@ pnpm dev
 
 Open **http://localhost:3742** (dev runs on port **3742**, not 3000).
 
-Subdomain routing (`swim.*`, `media.*`) only applies to the production apex domain. Locally, use path-based routes (e.g. `/swim`, `/browse/media`).
+Subdomain routing (`swim.*`, `media.*`) only applies to the production apex domain. Locally, use path-based routes (e.g. `/swim`, `/image-studio`).
 
 ### Useful commands
 

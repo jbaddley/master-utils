@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import ImageStudio from "@/features/studio/ImageStudio";
 import { ToolPage } from "@/components/ToolPage";
+import {
+  OtherUtilityHubs,
+  UtilityHubSections,
+} from "@/components/UtilityHubPage";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -13,6 +17,7 @@ export const metadata: Metadata = buildMetadata({
 export default function Page() {
   return (
     <ToolPage
+      wide
       slug="image-studio"
       h1="Image Studio"
       appName="Image Studio"
@@ -52,6 +57,19 @@ export default function Page() {
         { href: "/image-to-pdf", label: "Image to PDF" },
         { href: "/workflow", label: "Workflow Templates" },
       ]}
+      afterTool={
+        <div className="utility-hub-after-tool">
+          <div className="tool-directory-header">
+            <h2 className="tool-directory-title">Image utility categories</h2>
+          </div>
+          <p className="tool-directory-desc">
+            Image Studio is the best place to chain edits. Use these category
+            links when you need a specific preset, workflow, or AI helper.
+          </p>
+          <UtilityHubSections groupId="image-studio" />
+          <OtherUtilityHubs currentGroupId="image-studio" />
+        </div>
+      }
     >
       <ImageStudio />
     </ToolPage>

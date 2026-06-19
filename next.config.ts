@@ -35,6 +35,31 @@ const nextConfig: NextConfig = {
         destination: "/image-studio/",
         permanent: true,
       },
+      {
+        source: "/browse/media",
+        destination: "/image-studio/",
+        permanent: true,
+      },
+      {
+        source: "/browse/documents",
+        destination: "/document-tools/",
+        permanent: true,
+      },
+      {
+        source: "/browse/ai",
+        destination: "/dev-tools/",
+        permanent: true,
+      },
+      {
+        source: "/browse/utilities",
+        destination: "/dev-tools/",
+        permanent: true,
+      },
+      {
+        source: "/browse/:path*",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
   async headers() {
@@ -44,7 +69,7 @@ const nextConfig: NextConfig = {
         // when NEXT_PUBLIC_LLM_MODE=client (deployed app + local Ollama scenario).
         source: "/:path((?:ai-)[^/]+)/",
         headers: [
-          { key: "Cross-Origin-Opener-Policy",  value: "same-origin" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
         ],
       },
@@ -52,7 +77,7 @@ const nextConfig: NextConfig = {
         // All other routes: strict COEP required for ffmpeg.wasm / SharedArrayBuffer
         source: "/((?!ai-).*)",
         headers: [
-          { key: "Cross-Origin-Opener-Policy",  value: "same-origin" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },

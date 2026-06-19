@@ -1,55 +1,108 @@
 import type { IconType } from "react-icons";
-import { LuFileText, LuImage, LuLayoutGrid, LuSparkles } from "react-icons/lu";
+import {
+  LuBraces,
+  LuFileText,
+  LuImage,
+  LuMusic,
+  LuVideo,
+} from "react-icons/lu";
 import {
   TOOL_CATALOG,
   TOOL_CATEGORIES,
+  getMenuToolsByCategory,
   type CatalogEntry,
   type ToolCategory,
 } from "@/lib/tool-catalog";
+import { resolveToolHref } from "@/lib/studio-links";
 
-export type NavGroupId = "media" | "documents" | "ai" | "utilities";
+export type NavGroupId =
+  | "image-studio"
+  | "audio-studio"
+  | "video-studio"
+  | "document-tools"
+  | "dev-tools";
 
 export type NavGroup = {
   id: NavGroupId;
   label: string;
   description: string;
   href: string;
+  primaryHref: string;
   icon: IconType;
   categories: ToolCategory[];
+  searchPlaceholder: string;
+  primaryLabel: string;
+  primaryDescription: string;
 };
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: "media",
-    label: "Media",
-    description: "Images, video, and audio — convert, compress, resize, and edit in your browser.",
-    href: "/browse/media/",
+    id: "image-studio",
+    label: "Image Studio",
+    description:
+      "Edit, compress, resize, convert, and enhance images — all in your browser.",
+    href: "/image-studio/",
+    primaryHref: "/image-studio/",
     icon: LuImage,
-    categories: ["image", "format-conversions", "video", "audio", "platform-presets"],
+    categories: ["image", "format-conversions", "platform-presets", "ai"],
+    searchPlaceholder: "Search image tools... e.g. crop, compress, instagram",
+    primaryLabel: "Open Image Studio",
+    primaryDescription:
+      "Best for chaining image operations: crop, resize, convert, compress, redact, remove background, and export once.",
   },
   {
-    id: "documents",
-    label: "Documents",
-    description: "PDF tools, OCR, and developer utilities for text and data.",
-    href: "/browse/documents/",
+    id: "audio-studio",
+    label: "Audio Studio",
+    description:
+      "Trim, fade, merge, normalize, and convert audio in one studio.",
+    href: "/audio-studio/",
+    primaryHref: "/audio-studio/",
+    icon: LuMusic,
+    categories: ["audio"],
+    searchPlaceholder: "Search audio tools... e.g. trim, normalize, mp3",
+    primaryLabel: "Open Audio Studio",
+    primaryDescription:
+      "Best for chaining audio operations: trim, fade, normalize, mix lanes, change speed or pitch, and export once.",
+  },
+  {
+    id: "video-studio",
+    label: "Video Studio",
+    description: "Convert, trim, compress, and extract audio from video.",
+    href: "/video-studio/",
+    primaryHref: "/convert-video/",
+    icon: LuVideo,
+    categories: ["video"],
+    searchPlaceholder: "Search video tools... e.g. trim, compress, convert",
+    primaryLabel: "Browse video utilities",
+    primaryDescription:
+      "Video work is organized by task so you can convert, trim, compress, extract audio, or make a GIF from the right tool.",
+  },
+  {
+    id: "document-tools",
+    label: "Document Tools",
+    description: "Merge, split, and convert PDFs — plus OCR and image-to-text.",
+    href: "/document-tools/",
+    primaryHref: "/merge-pdf/",
     icon: LuFileText,
-    categories: ["document", "data"],
+    categories: ["document"],
+    searchPlaceholder: "Search document tools... e.g. merge, split, ocr",
+    primaryLabel: "Browse document utilities",
+    primaryDescription:
+      "PDF and OCR utilities stay grouped by document task: merge, split, reorder, convert, or extract text.",
   },
   {
-    id: "ai",
-    label: "AI",
-    description: "Cloud AI enhancement and private local LLM tools.",
-    href: "/browse/ai/",
-    icon: LuSparkles,
-    categories: ["ai", "local-ai"],
-  },
-  {
-    id: "utilities",
-    label: "Utilities",
-    description: "QR codes, workflows, passwords, and privacy tools.",
-    href: "/browse/utilities/",
-    icon: LuLayoutGrid,
-    categories: ["qr", "workflows", "security"],
+    id: "dev-tools",
+    label: "Dev Tools",
+    description:
+      "JSON, CSV, Base64, URL tools, QR codes, passwords, and local AI utilities.",
+    href: "/dev-tools/",
+    primaryHref: "/json-formatter/",
+    icon: LuBraces,
+    categories: ["data", "local-ai", "qr", "security", "workflows"],
+    searchPlaceholder: "Search dev tools... e.g. json, qr, password",
+    primaryLabel: "Browse dev utilities",
+    primaryDescription:
+      "Developer, QR, privacy, workflow, and local AI helpers stay grouped by the kind of input you are working with.",
   },
 ];
 
@@ -75,13 +128,41 @@ export function getNavGroupSections(groupId: NavGroupId) {
   return TOOL_CATEGORIES.filter((cat) => group.categories.includes(cat.id))
     .map((cat) => ({
       ...cat,
-      tools: TOOL_CATALOG.filter((e) => e.category === cat.id).sort((a, b) =>
+      tools: dedupeResolvedTools(getMenuToolsByCategory(cat.id)).sort((a, b) =>
         a.title.localeCompare(b.title),
       ),
     }))
     .filter((section) => section.tools.length > 0);
 }
 
-export function getNavGroupForToolCategory(category: ToolCategory): NavGroup | undefined {
+export function getNavGroupForToolCategory(
+  category: ToolCategory,
+): NavGroup | undefined {
   return NAV_GROUPS.find((g) => g.categories.includes(category));
+}
+
+function dedupeResolvedTools(entries: CatalogEntry[]): CatalogEntry[] {
+  const byHref = new Map<string, CatalogEntry>();
+
+  for (const entry of entries) {
+    const href = resolveToolHref(entry.slug);
+    const existing = byHref.get(href);
+    if (!existing || isBetterRepresentative(entry, existing, href)) {
+      byHref.set(href, entry);
+    }
+  }
+
+  return Array.from(byHref.values());
+}
+
+function isBetterRepresentative(
+  candidate: CatalogEntry,
+  existing: CatalogEntry,
+  href: string,
+): boolean {
+  const hrefSlug = href.replace(/^\/|\/$/g, "");
+  if (candidate.slug === hrefSlug && existing.slug !== hrefSlug) return true;
+  if (candidate.featured && !existing.featured) return true;
+  if (candidate.inNav !== false && existing.inNav === false) return true;
+  return false;
 }
