@@ -1,495 +1,574 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
+import type { PDFImage } from "pdf-lib";
 import {
   LuDownload,
-  LuFileText,
-  LuGripVertical,
-  LuInfo,
-  LuLayers,
-  LuPlus,
+  LuFilePlus2,
+  LuFiles,
   LuRedo2,
   LuScissors,
+  LuTrash2,
   LuUndo2,
   LuX,
 } from "react-icons/lu";
-import type { IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
 import { getPdfJs } from "@/lib/pdfjs";
 import { saveAs } from "@/lib/download";
-import { formatBytes } from "@/lib/format";
 
 /* ---------- types ---------- */
 
 type Snapshot = {
   bytes: Uint8Array;
   label: string;
-  name: string;
   pageCount: number;
 };
 
-type ToolId = "reorder" | "split" | "merge" | "info";
+type PageThumb = { dataUrl: string };
 
-type PageThumb = {
-  num: number;
-  dataUrl: string;
+type ImportItem = {
+  name: string;
+  kind: "pdf" | "image";
+  bytes: Uint8Array;
+  mime: string;
 };
 
-const TOOLS: { id: ToolId; label: string; icon: IconType }[] = [
-  { id: "reorder", label: "Reorder", icon: LuGripVertical },
-  { id: "split", label: "Split", icon: LuScissors },
-  { id: "merge", label: "Merge", icon: LuLayers },
-  { id: "info", label: "Info", icon: LuInfo },
-];
+/* ---------- constants ---------- */
 
-const THUMB_SCALE = 0.28;
-const THUMB_WIDTH = 140;
+const THUMB_SCALE = 0.4;
+const ACCEPT = ".pdf,application/pdf,image/*,.zip,application/zip";
+const IMAGE_EXT = /\.(png|jpe?g|webp|gif|bmp|avif|tiff?)$/i;
 
-/* ---------- helpers ---------- */
+/* ---------- file-type helpers ---------- */
 
+function isPdf(f: { name: string; type?: string }) {
+  return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+}
+function isZip(f: { name: string; type?: string }) {
+  return (
+    /\.zip$/i.test(f.name) ||
+    f.type === "application/zip" ||
+    f.type === "application/x-zip-compressed"
+  );
+}
+function isImage(f: { name: string; type?: string }) {
+  return (f.type?.startsWith("image/") ?? false) || IMAGE_EXT.test(f.name);
+}
+function kindOf(name: string, mime?: string): "pdf" | "image" | null {
+  if (mime === "application/pdf" || /\.pdf$/i.test(name)) return "pdf";
+  if ((mime?.startsWith("image/") ?? false) || IMAGE_EXT.test(name))
+    return "image";
+  return null;
+}
 function baseName(name: string) {
-  return name.replace(/\.[^.]+$/, "") || "document";
+  return name.replace(/\.[^./\\]+$/, "").replace(/.*[/\\]/, "") || "document";
 }
 
-async function renderThumbnails(
-  pdfJs: Awaited<ReturnType<typeof getPdfJs>>,
-  data: Uint8Array,
-  onThumb: (pageNum: number, url: string) => void,
-): Promise<number> {
-  const doc = await pdfJs.getDocument({ data: data.slice() }).promise;
-  const count = doc.numPages;
-  for (let i = 1; i <= count; i++) {
-    const page = await doc.getPage(i);
-    const viewport = page.getViewport({ scale: THUMB_SCALE });
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+/* ---------- import expansion (handles zip) ---------- */
+
+async function expandToItems(files: File[]): Promise<ImportItem[]> {
+  const items: ImportItem[] = [];
+  for (const f of files) {
+    if (isZip(f)) {
+      const JSZip = (await import("jszip")).default;
+      const zip = await JSZip.loadAsync(await f.arrayBuffer());
+      const entries = Object.values(zip.files)
+        .filter((e) => !e.dir && !/(^|\/)__MACOSX\//.test(e.name))
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true }),
+        );
+      for (const e of entries) {
+        const kind = kindOf(e.name);
+        if (!kind) continue;
+        items.push({
+          name: e.name,
+          kind,
+          bytes: await e.async("uint8array"),
+          mime: "",
+        });
+      }
+    } else {
+      const kind = kindOf(f.name, f.type);
+      if (!kind) continue;
+      items.push({
+        name: f.name,
+        kind,
+        bytes: new Uint8Array(await f.arrayBuffer()),
+        mime: f.type,
+      });
     }
-    onThumb(i, canvas.toDataURL("image/jpeg", 0.7));
-    page.cleanup();
   }
-  await doc.destroy();
-  return count;
+  return items;
 }
 
-async function bytesFromDoc(doc: PDFDocument): Promise<Uint8Array> {
-  return doc.save();
+/* ---------- image → PDF page ---------- */
+
+async function toPngBytes(bytes: Uint8Array, mime: string): Promise<Uint8Array> {
+  const blob = new Blob([bytes.slice().buffer as ArrayBuffer], {
+    type: mime || "application/octet-stream",
+  });
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const out = await new Promise<Blob | null>((res) =>
+    canvas.toBlob(res, "image/png"),
+  );
+  if (!out) throw new Error("Image conversion failed");
+  return new Uint8Array(await out.arrayBuffer());
+}
+
+async function embedImagePage(
+  outDoc: PDFDocument,
+  item: ImportItem,
+): Promise<void> {
+  let img: PDFImage;
+  const looksJpg = /\.jpe?g$/i.test(item.name) || item.mime === "image/jpeg";
+  const looksPng = /\.png$/i.test(item.name) || item.mime === "image/png";
+  if (looksJpg) {
+    img = await outDoc.embedJpg(item.bytes);
+  } else if (looksPng) {
+    img = await outDoc.embedPng(item.bytes);
+  } else {
+    img = await outDoc.embedPng(await toPngBytes(item.bytes, item.mime));
+  }
+  const page = outDoc.addPage([img.width, img.height]);
+  page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+}
+
+async function appendItems(outDoc: PDFDocument, items: ImportItem[]) {
+  for (const item of items) {
+    if (item.kind === "pdf") {
+      const src = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
+      const copied = await outDoc.copyPages(src, src.getPageIndices());
+      copied.forEach((p) => outDoc.addPage(p));
+    } else {
+      await embedImagePage(outDoc, item);
+    }
+  }
 }
 
 /* ---------- component ---------- */
 
 export default function DocumentStudio() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const mergeInputRef = useRef<HTMLInputElement>(null);
+  const addInputRef = useRef<HTMLInputElement>(null);
 
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState("document");
   const [history, setHistory] = useState<Snapshot[]>([]);
   const [index, setIndex] = useState(0);
-  const [tool, setTool] = useState<ToolId | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [working, setWorking] = useState(false);
-  const [loadProgress, setLoadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [working, setWorking] = useState<string | null>(null);
+  const [dragOverDrop, setDragOverDrop] = useState(false);
 
-  // Page thumbnails for the viewport
   const [thumbs, setThumbs] = useState<PageThumb[]>([]);
-  const [thumbsLoading, setThumbsLoading] = useState(false);
+  const [largeUrl, setLargeUrl] = useState<string | null>(null);
+  const [largeLoading, setLargeLoading] = useState(false);
 
-  // Reorder drag state
+  const [activePage, setActivePage] = useState(1);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const anchorRef = useRef<number | null>(null);
+
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [pendingOrder, setPendingOrder] = useState<number[] | null>(null);
-
-  // Split state
-  const [splitRange, setSplitRange] = useState("");
-  const [splitError, setSplitError] = useState<string | null>(null);
-  const [splitPages, setSplitPages] = useState<Set<number>>(new Set());
-
-  // Merge state
-  const [mergeFiles, setMergeFiles] = useState<File[]>([]);
-  const [mergeDragIdx, setMergeDragIdx] = useState<number | null>(null);
 
   const current = history[index] ?? null;
+  const pageCount = current?.pageCount ?? 0;
   const canUndo = index > 0;
   const canRedo = index < history.length - 1;
+
+  // pdf.js doc cache for the large viewer (re-opened only when bytes change)
+  const largeDocRef = useRef<{
+    bytes: Uint8Array;
+    doc: Awaited<
+      ReturnType<
+        Awaited<ReturnType<typeof getPdfJs>>["getDocument"]
+      >["promise"]
+    >;
+  } | null>(null);
+
+  /* ---- snapshot navigation ---- */
+
+  const goTo = useCallback((i: number) => {
+    setIndex(i);
+    setSelected(new Set());
+    anchorRef.current = null;
+  }, []);
+
+  const apply = useCallback(
+    (
+      bytes: Uint8Array,
+      label: string,
+      newCount: number,
+      nextActive: number,
+    ) => {
+      setHistory((h) => [
+        ...h.slice(0, index + 1),
+        { bytes, label, pageCount: newCount },
+      ]);
+      setIndex((i) => i + 1);
+      setSelected(new Set());
+      anchorRef.current = null;
+      setActivePage(Math.min(Math.max(1, nextActive), Math.max(1, newCount)));
+    },
+    [index],
+  );
 
   /* ---- thumbnail rendering ---- */
 
   const renderThumbs = useCallback(async (bytes: Uint8Array) => {
-    setThumbsLoading(true);
     setThumbs([]);
     try {
       const pdfJs = await getPdfJs();
-      const newThumbs: PageThumb[] = [];
-      await renderThumbnails(pdfJs, bytes, (pageNum, url) => {
-        newThumbs.push({ num: pageNum, dataUrl: url });
-        setThumbs([...newThumbs]);
-        setLoadProgress({ current: pageNum, total: 0 });
-      });
-      setThumbs(newThumbs);
+      const doc = await pdfJs.getDocument({ data: bytes.slice() }).promise;
+      const acc: PageThumb[] = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const viewport = page.getViewport({ scale: THUMB_SCALE });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx)
+          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+        acc.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.7) });
+        setThumbs([...acc]);
+        page.cleanup();
+      }
+      await doc.destroy();
     } catch {
-      // thumbnails are optional
-    } finally {
-      setThumbsLoading(false);
-      setLoadProgress(null);
+      /* thumbnails are best-effort */
     }
   }, []);
 
-  // Re-render thumbs when snapshot changes
-  useEffect(() => {
-    if (current) {
-      setPendingOrder(null);
-      void renderThumbs(current.bytes);
-    } else {
-      setThumbs([]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  /* ---- large page rendering ---- */
 
-  // Keyboard undo/redo
+  const renderLarge = useCallback(async (bytes: Uint8Array, num: number) => {
+    setLargeLoading(true);
+    try {
+      const pdfJs = await getPdfJs();
+      if (largeDocRef.current?.bytes !== bytes) {
+        if (largeDocRef.current) await largeDocRef.current.doc.destroy();
+        const doc = await pdfJs.getDocument({ data: bytes.slice() }).promise;
+        largeDocRef.current = { bytes, doc };
+      }
+      const doc = largeDocRef.current.doc;
+      const page = await doc.getPage(Math.min(num, doc.numPages));
+      const base = page.getViewport({ scale: 1 });
+      const scale = Math.min(2.5, 1600 / base.width);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx)
+        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+      setLargeUrl(canvas.toDataURL("image/jpeg", 0.85));
+      page.cleanup();
+    } catch {
+      setLargeUrl(null);
+    } finally {
+      setLargeLoading(false);
+    }
+  }, []);
+
+  // Re-render thumbs + reset viewer doc cache when the working document changes.
+  useEffect(() => {
+    if (!current) {
+      setThumbs([]);
+      setLargeUrl(null);
+      return;
+    }
+    void renderThumbs(current.bytes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.bytes]);
+
+  // Render the large viewer whenever the active page or document changes.
+  useEffect(() => {
+    if (!current) return;
+    const num = Math.min(Math.max(1, activePage), current.pageCount);
+    void renderLarge(current.bytes, num);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.bytes, activePage]);
+
+  // Clamp active page when the page count shrinks.
+  useEffect(() => {
+    if (pageCount > 0 && activePage > pageCount) setActivePage(pageCount);
+  }, [pageCount, activePage]);
+
+  // Keyboard: undo / redo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target;
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
+        t instanceof HTMLInputElement ||
+        t instanceof HTMLTextAreaElement ||
+        t instanceof HTMLSelectElement
       )
         return;
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) {
-          if (index < history.length - 1) {
-            setIndex((i) => i + 1);
-            setTool(null);
-          }
+          if (index < history.length - 1) goTo(index + 1);
         } else if (index > 0) {
-          setIndex((i) => i - 1);
-          setTool(null);
+          goTo(index - 1);
         }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [index, history.length]);
+  }, [index, history.length, goTo]);
 
-  const apply = useCallback(
-    (bytes: Uint8Array, label: string, pageCount: number) => {
-      const snap: Snapshot = {
-        bytes,
-        label,
-        name: current?.name ?? "document",
-        pageCount,
-      };
-      setHistory((h) => [...h.slice(0, index + 1), snap]);
-      setIndex((i) => i + 1);
-      setTool(null);
-      setPendingOrder(null);
-      setSplitRange("");
-      setSplitPages(new Set());
-      setMergeFiles([]);
-    },
-    [index, current?.name],
-  );
+  /* ---- load / import ---- */
 
-  const loadFile = useCallback(async (file: File) => {
+  const loadFiles = useCallback(async (fileList: File[]) => {
     setError(null);
-    setWorking(true);
-    setTool(null);
-    setThumbs([]);
-    setPendingOrder(null);
+    setWorking("Importing…");
     try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const pdfJs = await getPdfJs();
-      const doc = await pdfJs.getDocument({ data: bytes.slice() }).promise;
-      const count = doc.numPages;
-      await doc.destroy();
-      const snap: Snapshot = {
-        bytes,
-        label: "Original",
-        name: baseName(file.name),
-        pageCount: count,
-      };
-      setOriginalFile(file);
-      setHistory([snap]);
+      const pdfs = fileList.filter(isPdf);
+      const others = fileList.filter((f) => isZip(f) || isImage(f));
+      // Fast path: a single plain PDF — keep its bytes verbatim.
+      if (pdfs.length === 1 && others.length === 0 && fileList.length === 1) {
+        const bytes = new Uint8Array(await pdfs[0].arrayBuffer());
+        const probe = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        setFileName(baseName(pdfs[0].name));
+        setHistory([
+          { bytes, label: "Original", pageCount: probe.getPageCount() },
+        ]);
+        setIndex(0);
+        setActivePage(1);
+        setSelected(new Set());
+        return;
+      }
+      const items = await expandToItems(fileList);
+      if (items.length === 0)
+        throw new Error("No PDFs or images found in the dropped files.");
+      const out = await PDFDocument.create();
+      await appendItems(out, items);
+      const bytes = await out.save();
+      setFileName(baseName(fileList[0]?.name ?? "document"));
+      setHistory([{ bytes, label: "Imported", pageCount: out.getPageCount() }]);
       setIndex(0);
+      setActivePage(1);
+      setSelected(new Set());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load PDF.");
+      setError(e instanceof Error ? e.message : "Failed to import files.");
     } finally {
-      setWorking(false);
+      setWorking(null);
     }
   }, []);
 
-  /* ---- split helper ---- */
-
-  const parseSplitRange = useCallback(
-    (val: string): Set<number> | null => {
-      if (!val.trim()) return new Set();
-      const count = current?.pageCount ?? 0;
+  const addFiles = useCallback(
+    async (fileList: File[]) => {
+      if (!current) return void loadFiles(fileList);
+      setError(null);
+      setWorking("Adding pages…");
       try {
-        const parts = val.split(",").flatMap((part) => {
-          const t = part.trim();
-          if (/^\d+$/.test(t)) {
-            const n = parseInt(t, 10);
-            return [n];
-          }
-          const m = t.match(/^(\d+)-(\d+)$/);
-          if (m) {
-            const a = parseInt(m[1], 10);
-            const b = parseInt(m[2], 10);
-            if (a > b) throw new Error(`Range ${a}-${b} is invalid.`);
-            return Array.from({ length: b - a + 1 }, (_, k) => a + k);
-          }
-          throw new Error(`Invalid range segment: "${t}".`);
+        const items = await expandToItems(fileList);
+        if (items.length === 0)
+          throw new Error("No PDFs or images found in the added files.");
+        const out = await PDFDocument.load(current.bytes, {
+          ignoreEncryption: true,
         });
-        const invalid = parts.find((n) => n < 1 || n > count);
-        if (invalid !== undefined)
-          throw new Error(`Page ${invalid} is out of range (1–${count}).`);
-        return new Set(parts);
+        const before = out.getPageCount();
+        await appendItems(out, items);
+        const bytes = await out.save();
+        const added = out.getPageCount() - before;
+        apply(
+          bytes,
+          `Add ${added} page${added !== 1 ? "s" : ""}`,
+          out.getPageCount(),
+          before + 1,
+        );
       } catch (e) {
-        setSplitError(e instanceof Error ? e.message : "Invalid range.");
-        return null;
+        setError(e instanceof Error ? e.message : "Failed to add pages.");
+      } finally {
+        setWorking(null);
       }
     },
-    [current?.pageCount],
+    [current, apply, loadFiles],
   );
 
-  const onSplitRangeChange = (val: string) => {
-    setSplitRange(val);
-    setSplitError(null);
-    const pages = parseSplitRange(val);
-    setSplitPages(pages ?? new Set());
-  };
+  /* ---- page operations (rebuild from an order) ---- */
 
-  /* ---- operations ---- */
-
-  const applyReorder = async () => {
-    if (!current || !pendingOrder) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const srcDoc = await PDFDocument.load(current.bytes);
-      const outDoc = await PDFDocument.create();
-      const indices = pendingOrder.map((n) => n - 1);
-      const copied = await outDoc.copyPages(srcDoc, indices);
-      copied.forEach((p) => outDoc.addPage(p));
-      const bytes = await bytesFromDoc(outDoc);
-      apply(bytes, "Reorder pages", bytes.length > 0 ? pendingOrder.length : current.pageCount);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Reorder failed.");
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const applyRemovePage = async (pageNum: number) => {
-    if (!current) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const srcDoc = await PDFDocument.load(current.bytes);
-      const outDoc = await PDFDocument.create();
-      const indices = Array.from(
-        { length: current.pageCount },
-        (_, i) => i,
-      ).filter((i) => i !== pageNum - 1);
-      const copied = await outDoc.copyPages(srcDoc, indices);
-      copied.forEach((p) => outDoc.addPage(p));
-      const bytes = await bytesFromDoc(outDoc);
-      apply(bytes, `Delete page ${pageNum}`, indices.length);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Page deletion failed.");
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const applySplit = async () => {
-    if (!current || splitPages.size === 0) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const srcDoc = await PDFDocument.load(current.bytes);
-      const outDoc = await PDFDocument.create();
-      const sortedPages = [...splitPages].sort((a, b) => a - b);
-      const indices = sortedPages.map((n) => n - 1);
-      const copied = await outDoc.copyPages(srcDoc, indices);
-      copied.forEach((p) => outDoc.addPage(p));
-      const bytes = await bytesFromDoc(outDoc);
-      apply(bytes, `Split (${buildRangeLabel(sortedPages)})`, sortedPages.length);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Split failed.");
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const applyMerge = async () => {
-    if (!current || mergeFiles.length === 0) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const outDoc = await PDFDocument.create();
-      // Add current document first
-      const srcDoc = await PDFDocument.load(current.bytes);
-      const srcCopied = await outDoc.copyPages(srcDoc, srcDoc.getPageIndices());
-      srcCopied.forEach((p) => outDoc.addPage(p));
-      // Add merge files
-      for (const file of mergeFiles) {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const doc = await PDFDocument.load(bytes);
-        const copied = await outDoc.copyPages(doc, doc.getPageIndices());
-        copied.forEach((p) => outDoc.addPage(p));
+  const rebuild = useCallback(
+    async (order1: number[], label: string, nextActive: number) => {
+      if (!current || order1.length === 0) return;
+      setError(null);
+      setWorking("Working…");
+      try {
+        const src = await PDFDocument.load(current.bytes, {
+          ignoreEncryption: true,
+        });
+        const out = await PDFDocument.create();
+        const copied = await out.copyPages(
+          src,
+          order1.map((n) => n - 1),
+        );
+        copied.forEach((p) => out.addPage(p));
+        const bytes = await out.save();
+        apply(bytes, label, order1.length, nextActive);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Operation failed.");
+      } finally {
+        setWorking(null);
       }
-      const bytes = await bytesFromDoc(outDoc);
-      const totalPages = outDoc.getPageCount();
-      apply(bytes, `Merge +${mergeFiles.length} file${mergeFiles.length > 1 ? "s" : ""}`, totalPages);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Merge failed.");
-    } finally {
-      setWorking(false);
+    },
+    [current, apply],
+  );
+
+  const allPages = useMemo(
+    () => Array.from({ length: pageCount }, (_, i) => i + 1),
+    [pageCount],
+  );
+
+  const deletePages = (pages: Set<number>) => {
+    if (pages.size === 0 || pages.size >= pageCount) return;
+    const order = allPages.filter((n) => !pages.has(n));
+    const firstGone = Math.min(...pages);
+    void rebuild(
+      order,
+      `Delete ${pages.size} page${pages.size > 1 ? "s" : ""}`,
+      firstGone,
+    );
+  };
+
+  const extractPages = (pages: Set<number>) => {
+    if (pages.size === 0) return;
+    const order = [...pages].sort((a, b) => a - b);
+    void rebuild(
+      order,
+      `Keep ${order.length} page${order.length > 1 ? "s" : ""}`,
+      1,
+    );
+  };
+
+  const reorder = (from: number, to: number) => {
+    if (from === to) return;
+    const order = [...allPages];
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    void rebuild(order, "Reorder pages", to + 1);
+  };
+
+  /* ---- selection ---- */
+
+  const onThumbClick = (e: React.MouseEvent, page: number) => {
+    setActivePage(page);
+    if (e.shiftKey && anchorRef.current !== null) {
+      const lo = Math.min(anchorRef.current, page);
+      const hi = Math.max(anchorRef.current, page);
+      const next = new Set<number>();
+      for (let n = lo; n <= hi; n++) next.add(n);
+      setSelected(next);
+    } else if (e.metaKey || e.ctrlKey) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(page)) next.delete(page);
+        else next.add(page);
+        return next;
+      });
+      anchorRef.current = page;
+    } else {
+      setSelected(new Set([page]));
+      anchorRef.current = page;
     }
   };
+
+  /* ---- download ---- */
 
   const download = () => {
     if (!current) return;
     const bytes = current.bytes;
     void saveAs({
-      suggestedName: `${current.name}.pdf`,
+      suggestedName: `${fileName}.pdf`,
       description: "PDF",
       mime: "application/pdf",
       ext: ".pdf",
-      getBlob: () => new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }),
+      toolName: "document-studio",
+      getBlob: () =>
+        new Blob([bytes.slice().buffer as ArrayBuffer], {
+          type: "application/pdf",
+        }),
     });
   };
 
-  /* ---- reorder drag handlers (in viewport) ---- */
+  /* ---- drag-drop file import ---- */
 
-  const handleDragStart = (idx: number) => setDragIndex(idx);
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
+  const onDropFiles = (e: React.DragEvent, add: boolean) => {
     e.preventDefault();
-    setDragOverIndex(idx);
-  };
-  const handleDrop = (e: React.DragEvent, toIdx: number) => {
-    e.preventDefault();
-    if (dragIndex === null || dragIndex === toIdx) {
-      setDragIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
-    const currentThumbs = pendingOrder
-      ? thumbs.map((_, i) => pendingOrder[i] ?? thumbs[i].num)
-      : thumbs.map((t) => t.num);
-    const next = [...currentThumbs];
-    const [moved] = next.splice(dragIndex, 1);
-    next.splice(toIdx, 0, moved);
-    setPendingOrder(next);
-    // Re-sort thumbs display
-    setThumbs((prev) => {
-      const byNum = new Map(prev.map((t) => [t.num, t]));
-      return next.map((n) => byNum.get(n)!).filter(Boolean);
-    });
-    setDragIndex(null);
-    setDragOverIndex(null);
-  };
-  const handleDragEnd = () => {
-    setDragIndex(null);
-    setDragOverIndex(null);
+    setDragOverDrop(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) void (add ? addFiles(files) : loadFiles(files));
   };
 
-  /* ---- helpers ---- */
-
-  function buildRangeLabel(pages: number[]): string {
-    if (pages.length === 0) return "";
-    const parts: string[] = [];
-    let start = pages[0];
-    let end = pages[0];
-    for (let i = 1; i < pages.length; i++) {
-      if (pages[i] === end + 1) {
-        end = pages[i];
-      } else {
-        parts.push(start === end ? `${start}` : `${start}–${end}`);
-        start = pages[i];
-        end = pages[i];
-      }
-    }
-    parts.push(start === end ? `${start}` : `${start}–${end}`);
-    return parts.join(", ");
-  }
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (f) void loadFile(f);
-  };
-
-  /* ---- dropzone ---- */
+  /* ---- empty state ---- */
 
   if (!current) {
     return (
-      <div className="studio">
+      <div className="docstudio">
         {error && <div className="error">{error}</div>}
         <div
-          className="dropzone"
+          className={`dropzone${dragOverDrop ? " dragging" : ""}`}
           onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOverDrop(true);
+          }}
+          onDragLeave={() => setDragOverDrop(false)}
+          onDrop={(e) => onDropFiles(e, false)}
         >
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept={ACCEPT}
+            multiple
             hidden
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void loadFile(f);
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) void loadFiles(files);
               e.target.value = "";
             }}
           />
           <div className="dropzone-inner">
-            <LuFileText className="dropzone-icon" />
-            <strong>Drop a PDF to start editing</strong>
-            <span>Reorder pages, split, merge, and download — all in your browser</span>
+            <LuFiles className="dropzone-icon" />
+            <strong>Drop PDFs, images, or a ZIP</strong>
+            <span>
+              Combine and edit them into a single PDF — reorder, delete, extract,
+              and download, all in your browser
+            </span>
           </div>
         </div>
-        {working && <div className="studio-loading">Loading…</div>}
+        {working && <div className="studio-loading">{working}</div>}
       </div>
     );
   }
 
-  /* ---- studio shell ---- */
+  /* ---- editor ---- */
 
   return (
-    <div className="studio">
+    <div className="docstudio">
       {error && <div className="error">{error}</div>}
 
       <div className="studio-shell">
         {/* Topbar */}
-        <div className="studio-topbar">
-          <div className="studio-file">
-            <strong title={originalFile?.name ?? current.name}>
-              {originalFile?.name ?? current.name}
-            </strong>
+        <div className="doc-topbar">
+          <div className="doc-title">
+            <strong title={`${fileName}.pdf`}>{fileName}.pdf</strong>
             <span>
-              {current.pageCount} page{current.pageCount !== 1 ? "s" : ""}
-              {history.length > 1
-                ? ` · ${history.length - 1} edit${history.length > 2 ? "s" : ""}`
-                : ""}
-              {" · "}
-              {formatBytes(current.bytes.length)}
+              {pageCount} page{pageCount !== 1 ? "s" : ""}
             </span>
           </div>
-          <div className="studio-topbar-actions">
+          <div className="doc-topbar-actions">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (!canUndo) return;
-                setIndex((i) => i - 1);
-                setTool(null);
-              }}
+              onClick={() => canUndo && goTo(index - 1)}
               disabled={!canUndo}
               aria-label="Undo"
             >
@@ -498,11 +577,7 @@ export default function DocumentStudio() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (!canRedo) return;
-                setIndex((i) => i + 1);
-                setTool(null);
-              }}
+              onClick={() => canRedo && goTo(index + 1)}
               disabled={!canRedo}
               aria-label="Redo"
             >
@@ -511,551 +586,185 @@ export default function DocumentStudio() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => addInputRef.current?.click()}
+              disabled={!!working}
+            >
+              <LuFilePlus2 />
+              Add pages
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
               Change file
             </Button>
+            <Button size="sm" onClick={download} disabled={!!working}>
+              <LuDownload />
+              Download
+            </Button>
             <input
-              ref={fileInputRef}
+              ref={addInputRef}
               type="file"
-              accept="application/pdf,.pdf"
+              accept={ACCEPT}
+              multiple
               hidden
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void loadFile(f);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) void addFiles(files);
                 e.target.value = "";
               }}
             />
-            <Button size="sm" onClick={download} disabled={working}>
-              <LuDownload />
-              Download PDF
-            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPT}
+              multiple
+              hidden
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) void loadFiles(files);
+                e.target.value = "";
+              }}
+            />
           </div>
         </div>
 
         {/* Body */}
-        <div className="studio-body">
-          {/* Left rail */}
-          <nav className="studio-rail" aria-label="Document tools">
-            {TOOLS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={`studio-rail-btn${tool === id ? " is-active" : ""}`}
-                onClick={() => setTool((t) => (t === id ? null : id))}
-                aria-pressed={tool === id}
-              >
-                <Icon aria-hidden />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
+        <div className="doc-body">
+          {/* Page selector */}
+          <div className="doc-pagelist" aria-label="Pages">
+            {allPages.map((page, idx) => {
+              const thumb = thumbs[idx];
+              const cls = [
+                "doc-thumb",
+                page === activePage ? "is-active" : "",
+                selected.has(page) ? "is-selected" : "",
+                dragIndex === idx ? "is-dragging" : "",
+                dragOverIndex === idx && dragIndex !== null && dragIndex !== idx
+                  ? "is-dropbefore"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              return (
+                <div
+                  key={`${page}-${idx}`}
+                  className={cls}
+                  draggable
+                  onClick={(e) => onThumbClick(e, page)}
+                  onDragStart={() => setDragIndex(idx)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverIndex(idx);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragIndex !== null) reorder(dragIndex, idx);
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                >
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumb.dataUrl}
+                      alt={`Page ${page}`}
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="doc-thumb-skeleton" />
+                  )}
+                  <span className="doc-thumb-num">{page}</span>
+                  <button
+                    type="button"
+                    className="doc-thumb-del"
+                    aria-label={`Delete page ${page}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (pageCount > 1)
+                        void rebuild(
+                          allPages.filter((n) => n !== page),
+                          `Delete page ${page}`,
+                          page,
+                        );
+                    }}
+                  >
+                    <LuX size={12} />
+                  </button>
+                </div>
+              );
+            })}
 
-          {/* Viewport: page thumbnails */}
-          <div className="studio-viewport studio-pdf-viewport">
-            {thumbsLoading && thumbs.length === 0 && (
-              <div className="placeholder">
-                {loadProgress
-                  ? `Rendering page ${loadProgress.current}…`
-                  : "Rendering pages…"}
+            <div
+              className={`doc-add-tile${dragOverDrop ? " dragging" : ""}`}
+              onClick={() => addInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverDrop(true);
+              }}
+              onDragLeave={() => setDragOverDrop(false)}
+              onDrop={(e) => onDropFiles(e, true)}
+            >
+              <LuFilePlus2 size={16} />
+              Add pages
+            </div>
+          </div>
+
+          {/* Viewer */}
+          <div className="doc-viewer">
+            {largeUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={largeUrl} alt={`Page ${activePage}`} />
+            ) : (
+              <div className="doc-viewer-empty">
+                {largeLoading ? "Rendering page…" : "Select a page"}
               </div>
             )}
 
-            {thumbs.length > 0 && (
-              <>
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: "var(--muted-foreground)",
-                    marginBottom: 8,
-                  }}
+            {selected.size > 0 && (
+              <div className="doc-selbar">
+                <span className="doc-selbar-count">{selected.size} selected</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => extractPages(selected)}
+                  disabled={!!working}
                 >
-                  {tool === "reorder"
-                    ? "Drag to reorder · × to delete"
-                    : tool === "split"
-                      ? "Click pages to select for split"
-                      : `${current.pageCount} page${current.pageCount !== 1 ? "s" : ""}`}
-                </p>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${THUMB_WIDTH}px, 1fr))`,
-                    gap: "0.6rem",
-                  }}
+                  <LuScissors />
+                  Extract
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => deletePages(selected)}
+                  disabled={!!working || selected.size >= pageCount}
                 >
-                  {thumbs.map((thumb, idx) => {
-                    const isDragging = dragIndex === idx;
-                    const isOver =
-                      dragOverIndex === idx && dragIndex !== idx;
-                    const isSelected =
-                      tool === "split" && splitPages.has(thumb.num);
-                    return (
-                      <div
-                        key={`${thumb.num}-${idx}`}
-                        draggable={tool === "reorder"}
-                        onDragStart={
-                          tool === "reorder"
-                            ? () => handleDragStart(idx)
-                            : undefined
-                        }
-                        onDragOver={
-                          tool === "reorder"
-                            ? (e) => handleDragOver(e, idx)
-                            : undefined
-                        }
-                        onDrop={
-                          tool === "reorder"
-                            ? (e) => handleDrop(e, idx)
-                            : undefined
-                        }
-                        onDragEnd={
-                          tool === "reorder" ? handleDragEnd : undefined
-                        }
-                        onClick={() => {
-                          if (tool !== "split") return;
-                          setSplitPages((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(thumb.num)) next.delete(thumb.num);
-                            else next.add(thumb.num);
-                            return next;
-                          });
-                        }}
-                        style={{
-                          position: "relative",
-                          borderRadius: "var(--radius-sm)",
-                          border: isSelected
-                            ? "2px solid var(--primary)"
-                            : isOver
-                              ? "2px solid var(--ring)"
-                              : "1px solid var(--border)",
-                          background: "var(--card)",
-                          opacity: isDragging ? 0.4 : 1,
-                          cursor:
-                            tool === "reorder"
-                              ? "grab"
-                              : tool === "split"
-                                ? "pointer"
-                                : "default",
-                          overflow: "hidden",
-                          userSelect: "none",
-                          transition: "border-color 0.1s, opacity 0.15s",
-                        }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={thumb.dataUrl}
-                          alt={`Page ${idx + 1}`}
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            height: "auto",
-                          }}
-                          draggable={false}
-                        />
-
-                        {/* Page badge */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            background: isSelected
-                              ? "rgba(var(--primary-rgb, 0,0,0), 0.7)"
-                              : "rgba(0,0,0,0.5)",
-                            color: "#fff",
-                            fontSize: 11,
-                            textAlign: "center",
-                            padding: "2px 0",
-                            fontFamily: "ui-monospace, monospace",
-                          }}
-                        >
-                          {idx + 1}
-                          {pendingOrder &&
-                          pendingOrder[idx] !== undefined &&
-                          pendingOrder[idx] !== idx + 1
-                            ? ` (${pendingOrder[idx]})`
-                            : ""}
-                        </div>
-
-                        {/* Delete button — only in reorder mode */}
-                        {tool === "reorder" && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void applyRemovePage(thumb.num);
-                            }}
-                            aria-label={`Delete page ${idx + 1}`}
-                            style={{
-                              position: "absolute",
-                              top: 3,
-                              right: 3,
-                              width: 28,
-                              height: 28,
-                              borderRadius: "50%",
-                              background: "rgba(220,53,69,0.85)",
-                              border: "none",
-                              color: "#fff",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <LuX size={12} />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
+                  <LuTrash2 />
+                  Delete
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setSelected(new Set());
+                    anchorRef.current = null;
+                  }}
+                  aria-label="Clear selection"
+                >
+                  <LuX />
+                </Button>
+              </div>
             )}
           </div>
-
-          {/* Right sidebar */}
-          <aside className="studio-side">
-            {/* History */}
-            {history.length > 1 && (
-              <section className="studio-card">
-                <h3 className="studio-card-title">History</h3>
-                <ol
-                  style={{
-                    margin: 0,
-                    padding: "0 0 0 1.1em",
-                    fontSize: 12,
-                    lineHeight: 1.9,
-                  }}
-                >
-                  {history.map((s, i) => (
-                    <li
-                      key={i}
-                      style={{
-                        cursor: "pointer",
-                        fontWeight: i === index ? 600 : 400,
-                        color:
-                          i === index
-                            ? "var(--primary)"
-                            : "var(--foreground)",
-                        opacity: i > index ? 0.4 : 1,
-                      }}
-                      onClick={() => {
-                        setIndex(i);
-                        setTool(null);
-                      }}
-                    >
-                      {s.label}
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-
-            {!tool && (
-              <section className="studio-card">
-                <p style={{ fontSize: 13, color: "var(--muted-foreground)" }}>
-                  Select a tool from the left rail to get started.
-                </p>
-              </section>
-            )}
-
-            {/* Reorder */}
-            {tool === "reorder" && (
-              <section className="studio-card">
-                <h3 className="studio-card-title">Reorder Pages</h3>
-                <p className="studio-hint">
-                  Drag pages in the viewport to reorder. Click × to delete a
-                  page. Apply to save the new order.
-                </p>
-                <div className="studio-tool-actions">
-                  <Button
-                    size="sm"
-                    onClick={() => void applyReorder()}
-                    disabled={working || !pendingOrder}
-                  >
-                    {working ? "Applying…" : "Apply Order"}
-                  </Button>
-                  {pendingOrder && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setPendingOrder(null);
-                        void renderThumbs(current.bytes);
-                      }}
-                    >
-                      Reset
-                    </Button>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* Split */}
-            {tool === "split" && (
-              <section className="studio-card">
-                <h3 className="studio-card-title">Split / Extract</h3>
-                <p className="studio-hint">
-                  Click pages in the viewport to toggle selection, or type a
-                  range below.
-                </p>
-                <label className="field">
-                  <span className="field-label">
-                    Page range (e.g. 1-3, 5)
-                  </span>
-                  <input
-                    type="text"
-                    value={splitRange}
-                    placeholder={`1-${current.pageCount}`}
-                    disabled={working}
-                    onChange={(e) => onSplitRangeChange(e.target.value)}
-                    style={{
-                      padding: "0.35rem 0.5rem",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid var(--border)",
-                      background: "var(--card)",
-                      color: "var(--foreground)",
-                      fontSize: 13,
-                      width: "100%",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                </label>
-                {splitError && (
-                  <p style={{ color: "var(--destructive)", fontSize: 12, margin: 0 }}>
-                    {splitError}
-                  </p>
-                )}
-                {splitPages.size > 0 && (
-                  <p className="studio-hint">
-                    {splitPages.size} page{splitPages.size !== 1 ? "s" : ""}{" "}
-                    selected
-                  </p>
-                )}
-                <div className="studio-tool-actions">
-                  <Button
-                    size="sm"
-                    onClick={() => void applySplit()}
-                    disabled={working || splitPages.size === 0}
-                  >
-                    {working ? "Working…" : "Extract Selected Pages"}
-                  </Button>
-                </div>
-              </section>
-            )}
-
-            {/* Merge */}
-            {tool === "merge" && (
-              <section className="studio-card">
-                <h3 className="studio-card-title">Merge PDFs</h3>
-                <p className="studio-hint">
-                  Add more PDFs to append after the current document.
-                </p>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {mergeFiles.map((f, i) => (
-                    <div
-                      key={`${f.name}-${i}`}
-                      draggable
-                      onDragStart={() => setMergeDragIdx(i)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => {
-                        if (mergeDragIdx !== null && mergeDragIdx !== i) {
-                          setMergeFiles((prev) => {
-                            const next = [...prev];
-                            const [item] = next.splice(mergeDragIdx, 1);
-                            next.splice(i, 0, item);
-                            return next;
-                          });
-                        }
-                        setMergeDragIdx(null);
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "0.35rem 0.5rem",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--border)",
-                        background: "var(--muted)",
-                        fontSize: 12,
-                        cursor: "grab",
-                      }}
-                    >
-                      <LuGripVertical size={12} aria-hidden />
-                      <span
-                        style={{
-                          flex: 1,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {f.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setMergeFiles((prev) =>
-                            prev.filter((_, idx) => idx !== i),
-                          )
-                        }
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--muted-foreground)",
-                          padding: 0,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                        aria-label="Remove"
-                      >
-                        <LuX size={12} />
-                      </button>
-                    </div>
-                  ))}
-
-                  <div
-                    onClick={() => mergeInputRef.current?.click()}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const files = Array.from(e.dataTransfer.files).filter(
-                        (f) =>
-                          f.type === "application/pdf" ||
-                          f.name.toLowerCase().endsWith(".pdf"),
-                      );
-                      if (files.length)
-                        setMergeFiles((prev) => [...prev, ...files]);
-                    }}
-                    style={{
-                      border: "2px dashed var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      padding: "0.5rem",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      fontSize: 12,
-                      color: "var(--muted-foreground)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 4,
-                    }}
-                  >
-                    <LuPlus size={13} />
-                    Add PDFs to merge
-                  </div>
-                  <input
-                    ref={mergeInputRef}
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    multiple
-                    hidden
-                    onChange={(e) => {
-                      if (e.target.files) {
-                        setMergeFiles((prev) => [
-                          ...prev,
-                          ...Array.from(e.target.files!),
-                        ]);
-                      }
-                      e.target.value = "";
-                    }}
-                  />
-                </div>
-
-                <div className="studio-tool-actions">
-                  <Button
-                    size="sm"
-                    onClick={() => void applyMerge()}
-                    disabled={working || mergeFiles.length === 0}
-                  >
-                    {working
-                      ? "Merging…"
-                      : `Merge ${mergeFiles.length > 0 ? `(+${mergeFiles.length})` : ""}`}
-                  </Button>
-                </div>
-              </section>
-            )}
-
-            {/* Info */}
-            {tool === "info" && (
-              <section className="studio-card">
-                <h3 className="studio-card-title">Info</h3>
-                <dl
-                  style={{
-                    margin: 0,
-                    fontSize: 13,
-                    lineHeight: 1.8,
-                  }}
-                >
-                  <dt
-                    style={{
-                      color: "var(--muted-foreground)",
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    File
-                  </dt>
-                  <dd
-                    style={{
-                      margin: 0,
-                      fontFamily: "ui-monospace, monospace",
-                      wordBreak: "break-all",
-                      fontSize: 12,
-                    }}
-                  >
-                    {current.name}.pdf
-                  </dd>
-                  <dt
-                    style={{
-                      color: "var(--muted-foreground)",
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      marginTop: 8,
-                    }}
-                  >
-                    Pages
-                  </dt>
-                  <dd style={{ margin: 0 }}>{current.pageCount}</dd>
-                  <dt
-                    style={{
-                      color: "var(--muted-foreground)",
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      marginTop: 8,
-                    }}
-                  >
-                    Size
-                  </dt>
-                  <dd style={{ margin: 0 }}>
-                    {formatBytes(current.bytes.length)}
-                  </dd>
-                  <dt
-                    style={{
-                      color: "var(--muted-foreground)",
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      marginTop: 8,
-                    }}
-                  >
-                    Edits
-                  </dt>
-                  <dd style={{ margin: 0 }}>
-                    {index} / {history.length - 1}
-                  </dd>
-                </dl>
-              </section>
-            )}
-          </aside>
         </div>
       </div>
+
+      {working && <div className="studio-loading">{working}</div>}
     </div>
   );
 }

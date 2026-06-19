@@ -29,18 +29,27 @@ export function ToolPage(props: {
   showAds?: boolean;
   privacyNote?: string;
   wide?: boolean;
+  /**
+   * Drop the visible H1 + lede hero so the tool fills the screen. The H1 is
+   * still emitted (visually hidden) to preserve the document outline and SEO.
+   */
+  hideHero?: boolean;
 }) {
   const ads = props.showAds !== false;
   const url = canonical(props.slug);
   return (
     <main className={props.wide ? "page page--wide" : "page"}>
-      <div className="page-hero">
-        <div className="page-hero-title-row">
-          <h1>{props.h1}</h1>
-          <FavoriteToggle slug={props.slug} title={props.h1} />
+      {props.hideHero ? (
+        <h1 className="sr-only">{props.h1}</h1>
+      ) : (
+        <div className="page-hero">
+          <div className="page-hero-title-row">
+            <h1>{props.h1}</h1>
+            <FavoriteToggle slug={props.slug} title={props.h1} />
+          </div>
+          <p className="lede">{props.lede}</p>
         </div>
-        <p className="lede">{props.lede}</p>
-      </div>
+      )}
 
       {props.children}
 

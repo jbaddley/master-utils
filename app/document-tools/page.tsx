@@ -18,6 +18,7 @@ export default function DocumentToolsPage() {
   return (
     <ToolPage
       wide
+      hideHero
       slug="document-tools"
       h1="Document Studio"
       appName="Document Studio"
