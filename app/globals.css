@@ -3277,6 +3277,18 @@
   .studio-topbar {
     flex-wrap: wrap;
   }
+  .studio-file {
+    flex-basis: 100%;
+  }
+  .studio-file span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .studio-topbar-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
 }
 
 /* ============ Document Studio ============ */

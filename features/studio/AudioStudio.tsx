@@ -197,6 +197,7 @@ async function extractAudioFromVideo(
 
 export default function AudioStudio() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const lane2AudioRef = useRef<HTMLAudioElement>(null);
   const laneInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -213,6 +214,7 @@ export default function AudioStudio() {
   const [duration, setDuration] = useState(0);
   const [analysis, setAnalysis] = useState<AudioAnalysis | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [lane2PreviewUrl, setLane2PreviewUrl] = useState<string | null>(null);
 
   const [playing, setPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
@@ -346,6 +348,38 @@ export default function AudioStudio() {
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [current]);
+
+  // Preview URL for lane 2's clip
+  useEffect(() => {
+    if (!lane2) {
+      setLane2PreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(lane2.blob);
+    setLane2PreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [lane2]);
+
+  // While previewing the Lanes tool, keep lane 2's audio playing in sync with
+  // the main track so both tracks are audible together (lane 2 is otherwise
+  // only baked into one file via "Mix lanes").
+  useEffect(() => {
+    const el2 = lane2AudioRef.current;
+    if (!el2 || !lane2 || tool !== "lanes") {
+      el2?.pause();
+      return;
+    }
+    const offset = playhead - lane2.startTime;
+    const inRange = offset >= 0 && offset <= lane2.duration;
+    if (!playing || !inRange) {
+      if (!el2.paused) el2.pause();
+      return;
+    }
+    if (Math.abs(el2.currentTime - offset) > 0.3) {
+      el2.currentTime = offset;
+    }
+    if (el2.paused) void el2.play();
+  }, [playing, playhead, lane2, tool]);
 
   // Sync playhead with audio element
   useEffect(() => {
@@ -773,6 +807,8 @@ export default function AudioStudio() {
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio ref={audioRef} src={previewUrl ?? undefined} preload="auto" hidden />
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio ref={lane2AudioRef} src={lane2PreviewUrl ?? undefined} preload="auto" hidden />
 
       <div className="studio-shell">
         <div className="studio-topbar">
