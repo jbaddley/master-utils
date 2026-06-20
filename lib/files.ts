@@ -56,6 +56,36 @@ function decodeToImg(blob: Blob): Promise<{ img: HTMLImageElement; url: string }
   });
 }
 
+// Some mobile browsers fail to decode very large bitmaps (tens of megapixels)
+// directly into an <img> — createImageBitmap goes through a different decode
+// path and can succeed where that fails. Downscale the result so the
+// re-encoded blob is small enough for a normal <img> decode to handle.
+const MAX_FALLBACK_EDGE = 4096;
+
+async function decodeViaBitmapFallback(blob: Blob): Promise<{ img: HTMLImageElement; url: string }> {
+  if (typeof createImageBitmap !== "function") {
+    throw new Error("Could not read that image.");
+  }
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(blob);
+  } catch {
+    throw new Error(
+      "Could not read that image. It may be too large for this device — try a smaller photo or resave it at a lower resolution.",
+    );
+  }
+  const scale = Math.min(1, MAX_FALLBACK_EDGE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const resized = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not read that image."))), "image/png"),
+  );
+  return decodeToImg(resized);
+}
+
 /** Decode a File into an <img> (with object URL + metadata). HEIC/HEIF is transcoded to PNG first. */
 export async function loadImageFile(file: File): Promise<LoadedImage> {
   let source: Blob = file;
@@ -64,12 +94,17 @@ export async function loadImageFile(file: File): Promise<LoadedImage> {
     const result = await heic2any({ blob: file, toType: "image/png" });
     source = Array.isArray(result) ? result[0] : result;
   }
-  const { img, url } = await decodeToImg(source);
+  let decoded: { img: HTMLImageElement; url: string };
+  try {
+    decoded = await decodeToImg(source);
+  } catch {
+    decoded = await decodeViaBitmapFallback(source);
+  }
   return {
-    img,
-    url,
-    width: img.naturalWidth,
-    height: img.naturalHeight,
+    img: decoded.img,
+    url: decoded.url,
+    width: decoded.img.naturalWidth,
+    height: decoded.img.naturalHeight,
     bytes: file.size,
     name: file.name,
     type: file.type,
