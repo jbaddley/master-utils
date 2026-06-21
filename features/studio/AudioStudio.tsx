@@ -608,6 +608,25 @@ export default function AudioStudio() {
             <button className="studio-topbar-btn" onClick={() => setZoom(z => z * 1.5)} title="Zoom in">
               <LuZoomIn size={15} />
             </button>
+            <div className="studio-topbar-sep" />
+            <select
+              className="studio-topbar-select"
+              value={outputFmt}
+              onChange={e => setOutputFmt(e.target.value as AudioOutputFmt)}
+              disabled={isEmpty}
+              title="Export format"
+            >
+              {EXPORT_FORMATS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+            </select>
+            <button
+              className="studio-topbar-btn studio-topbar-btn--export"
+              onClick={handleExport}
+              disabled={isEmpty || processing}
+              title="Export mix"
+            >
+              <LuDownload size={15} />
+              <span style={{ marginLeft: 4, fontSize: 11, fontWeight: 600 }}>Export</span>
+            </button>
           </div>
         </div>
 
@@ -798,9 +817,21 @@ function ClipPane({
 
       <div className="studio-side-divider" />
 
-      <button className="studio-delete-btn" onClick={onDelete}>
-        <LuTrash2 size={13} /> Delete clip
-      </button>
+      <div className="studio-clip-actions">
+        <button className="studio-download-clip-btn" onClick={() => {
+          const url = URL.createObjectURL(clip.blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${clip.name}.${clip.ext}`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }}>
+          <LuDownload size={13} /> Download clip
+        </button>
+        <button className="studio-delete-btn" onClick={onDelete}>
+          <LuTrash2 size={13} /> Delete clip
+        </button>
+      </div>
     </div>
   );
 }
