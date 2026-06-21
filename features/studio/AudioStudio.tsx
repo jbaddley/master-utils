@@ -286,6 +286,14 @@ export default function AudioStudio() {
     bufferCache.current.delete(id);
   }
 
+  function handleClipFadeIn(id: string, fadeIn: number) {
+    hist.push({ lanes, clips: clips.map(c => c.id === id ? { ...c, fadeIn } : c) });
+  }
+
+  function handleClipFadeOut(id: string, fadeOut: number) {
+    hist.push({ lanes, clips: clips.map(c => c.id === id ? { ...c, fadeOut } : c) });
+  }
+
   function handleSpliceAtPlayhead() {
     if (!selectedClip) return;
     const posInClip = playhead - selectedClip.startTime;
@@ -474,9 +482,10 @@ export default function AudioStudio() {
   function handleFitZoom() {
     const el = viewportRef.current;
     if (!el || totalDuration <= 0) return;
-    const scrollW = el.clientWidth - 144; // subtract label column
-    const fitZoom = Math.max(10, Math.min(1000, (scrollW - 20) / totalDuration));
-    setZoom(fitZoom);
+    // 140px = at-labels column, 80px = canvasW buffer (totalDuration * zoom + 80)
+    const scrollW = el.clientWidth - 140;
+    const fitZoom = (scrollW - 80) / totalDuration;
+    if (fitZoom > 0) setZoom(fitZoom);
   }
 
   /* ── Export ─────────────────────────────────────────────── */
@@ -581,11 +590,10 @@ export default function AudioStudio() {
             <button className="studio-topbar-btn" onClick={handleFitZoom} disabled={isEmpty} title="Fit all clips in view">
               Fit
             </button>
-            <button className="studio-topbar-btn" onClick={() => setZoom(z => Math.max(10, z / 1.5))} title="Zoom out">
+            <button className="studio-topbar-btn" onClick={() => setZoom(z => z / 1.5)} title="Zoom out">
               <LuZoomOut size={15} />
             </button>
-            <span className="studio-zoom-label">{Math.round(zoom)}px/s</span>
-            <button className="studio-topbar-btn" onClick={() => setZoom(z => Math.min(1500, z * 1.5))} title="Zoom in">
+            <button className="studio-topbar-btn" onClick={() => setZoom(z => z * 1.5)} title="Zoom in">
               <LuZoomIn size={15} />
             </button>
           </div>
@@ -650,6 +658,8 @@ export default function AudioStudio() {
                 onClipMove={handleClipMove}
                 onClipTrimStart={handleClipTrimStart}
                 onClipTrimEnd={handleClipTrimEnd}
+                onClipFadeIn={handleClipFadeIn}
+                onClipFadeOut={handleClipFadeOut}
                 onLaneMute={handleLaneMute}
                 onAddLane={handleAddLane}
                 onAddFileToLane={handleAddFileToLane}

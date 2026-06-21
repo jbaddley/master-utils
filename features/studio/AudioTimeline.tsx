@@ -11,10 +11,10 @@ export type TimelineClip = {
   name: string;
   ext: string;
   blob: Blob;
-  audioDuration: number; // full audio length before trim
-  startTime: number;     // timeline position (s)
-  trimStart: number;     // offset into audio (s)
-  trimEnd: number;       // end of audio to play (s)
+  audioDuration: number;
+  startTime: number;
+  trimStart: number;
+  trimEnd: number;
   fadeIn: number;
   fadeOut: number;
   gain: number;
@@ -46,6 +46,7 @@ const RULER_H = 28;
 const LANE_H = 76;
 const CLIP_PAD_V = 13;
 const HANDLE_W = 10;
+const FADE_HANDLE_R = 5;
 const ADD_LANE_H = 36;
 
 /* ── Helpers ────────────────────────────────────────────────── */
@@ -68,7 +69,9 @@ type DragMode =
   | { kind: "seek" }
   | { kind: "move"; clipId: string; originX: number; originStart: number }
   | { kind: "trim-start"; clipId: string; originX: number; origTrimStart: number; origStart: number }
-  | { kind: "trim-end"; clipId: string; originX: number; origTrimEnd: number };
+  | { kind: "trim-end"; clipId: string; originX: number; origTrimEnd: number }
+  | { kind: "fade-in"; clipId: string; originX: number; origFadeIn: number; maxFade: number }
+  | { kind: "fade-out"; clipId: string; originX: number; origFadeOut: number; maxFade: number };
 
 /* ── Props ──────────────────────────────────────────────────── */
 
@@ -77,13 +80,15 @@ export interface AudioTimelineProps {
   clips: TimelineClip[];
   selectedClipId: string | null;
   playhead: number;
-  zoom: number; // px / second
+  zoom: number;
   totalDuration: number;
   onSeek: (t: number) => void;
   onClipSelect: (id: string | null) => void;
   onClipMove: (id: string, newStart: number) => void;
   onClipTrimStart: (id: string, trimStart: number, startTime: number) => void;
   onClipTrimEnd: (id: string, trimEnd: number) => void;
+  onClipFadeIn: (id: string, fadeIn: number) => void;
+  onClipFadeOut: (id: string, fadeOut: number) => void;
   onLaneMute: (laneId: string) => void;
   onAddLane: () => void;
   onAddFileToLane: (laneId: string) => void;
@@ -95,13 +100,15 @@ export interface AudioTimelineProps {
 export default function AudioTimeline({
   lanes, clips, selectedClipId, playhead, zoom, totalDuration,
   onSeek, onClipSelect, onClipMove, onClipTrimStart, onClipTrimEnd,
+  onClipFadeIn, onClipFadeOut,
   onLaneMute, onAddLane, onAddFileToLane, onDropFile,
 }: AudioTimelineProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<DragMode>({ kind: "none" });
   const [dropOverLane, setDropOverLane] = useState<string | null>(null);
 
-  const canvasW = Math.max(900, totalDuration * zoom + 300);
+  // No hard minimum width — let zoom control the size
+  const canvasW = Math.max(200, totalDuration * zoom + 80);
   const canvasH = RULER_H + lanes.length * LANE_H + ADD_LANE_H;
 
   const tToX = useCallback((t: number) => t * zoom, [zoom]);
@@ -172,6 +179,7 @@ export default function AudioTimeline({
         const clipH = LANE_H - CLIP_PAD_V * 2;
         const isSel = clip.id === selectedClipId;
 
+        /* Clip base */
         ctx.fillStyle = clip.muted ? "rgba(90,90,90,0.5)" : clip.color;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(clipX, clipY, clipW, clipH, 4);
@@ -203,6 +211,33 @@ export default function AudioTimeline({
           ctx.restore();
         }
 
+        /* Fade overlays (dark gradient triangles) */
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(clipX, clipY, clipW, clipH, 4);
+        else ctx.rect(clipX, clipY, clipW, clipH);
+        ctx.clip();
+
+        if (clip.fadeIn > 0) {
+          const fiW = Math.min(tToX(clip.fadeIn), clipW);
+          const grad = ctx.createLinearGradient(clipX, 0, clipX + fiW, 0);
+          grad.addColorStop(0, "rgba(0,0,0,0.7)");
+          grad.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(clipX, clipY, fiW, clipH);
+        }
+
+        if (clip.fadeOut > 0) {
+          const foW = Math.min(tToX(clip.fadeOut), clipW);
+          const grad = ctx.createLinearGradient(clipX + clipW - foW, 0, clipX + clipW, 0);
+          grad.addColorStop(0, "rgba(0,0,0,0)");
+          grad.addColorStop(1, "rgba(0,0,0,0.7)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(clipX + clipW - foW, clipY, foW, clipH);
+        }
+
+        ctx.restore();
+
         /* Label */
         ctx.fillStyle = "rgba(0,0,0,0.82)";
         ctx.font = "bold 10px system-ui, sans-serif";
@@ -221,6 +256,63 @@ export default function AudioTimeline({
             ctx.beginPath();
             ctx.moveTo(hx, mid - 5); ctx.lineTo(hx, mid + 5); ctx.stroke();
           });
+        }
+
+        /* Fade handles — shown for selected clip always, others only if fade > 0 */
+        const showFadeHandles = isSel || clip.fadeIn > 0 || clip.fadeOut > 0;
+        if (showFadeHandles && clipW > HANDLE_W * 2 + 4) {
+          const mid = clipY + clipH / 2;
+
+          // Fade-in handle: diamond at fade-in boundary
+          const fiX = isSel
+            ? clipX + HANDLE_W + Math.max(0, tToX(clip.fadeIn))
+            : clipX + tToX(clip.fadeIn);
+          const fiXClamped = clamp(fiX, clipX + HANDLE_W + 2, clipX + clipW - HANDLE_W - 2);
+
+          ctx.strokeStyle = "rgba(255,240,100,0.9)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(fiXClamped, clipY + 3);
+          ctx.lineTo(fiXClamped, clipY + clipH - 3);
+          ctx.stroke();
+
+          // Diamond
+          ctx.fillStyle = "rgba(255,240,100,0.95)";
+          ctx.beginPath();
+          ctx.moveTo(fiXClamped, mid - FADE_HANDLE_R);
+          ctx.lineTo(fiXClamped + FADE_HANDLE_R, mid);
+          ctx.lineTo(fiXClamped, mid + FADE_HANDLE_R);
+          ctx.lineTo(fiXClamped - FADE_HANDLE_R, mid);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,0.5)";
+          ctx.lineWidth = 0.75;
+          ctx.stroke();
+
+          // Fade-out handle
+          const foX = isSel
+            ? clipX + clipW - HANDLE_W - Math.max(0, tToX(clip.fadeOut))
+            : clipX + clipW - tToX(clip.fadeOut);
+          const foXClamped = clamp(foX, clipX + HANDLE_W + 2, clipX + clipW - HANDLE_W - 2);
+
+          ctx.strokeStyle = "rgba(255,240,100,0.9)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(foXClamped, clipY + 3);
+          ctx.lineTo(foXClamped, clipY + clipH - 3);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(255,240,100,0.95)";
+          ctx.beginPath();
+          ctx.moveTo(foXClamped, mid - FADE_HANDLE_R);
+          ctx.lineTo(foXClamped + FADE_HANDLE_R, mid);
+          ctx.lineTo(foXClamped, mid + FADE_HANDLE_R);
+          ctx.lineTo(foXClamped - FADE_HANDLE_R, mid);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,0.5)";
+          ctx.lineWidth = 0.75;
+          ctx.stroke();
         }
       });
     });
@@ -262,6 +354,46 @@ export default function AudioTimeline({
     return null;
   }, [clips, lanes, tToX]);
 
+  /** Returns fade handle info if the pointer is on one, or null. */
+  const findFadeHandle = useCallback((x: number, y: number) => {
+    for (const clip of [...clips].reverse()) {
+      const li = lanes.findIndex(l => l.id === clip.laneId);
+      if (li < 0) continue;
+      const laneY = RULER_H + li * LANE_H;
+      const clipY = laneY + CLIP_PAD_V;
+      const clipH = LANE_H - CLIP_PAD_V * 2;
+      if (y < clipY || y > clipY + clipH) continue;
+
+      const isSel = clip.id === selectedClipId;
+      const dur = clip.trimEnd - clip.trimStart;
+      if (dur <= 0) continue;
+      const clipX = tToX(clip.startTime);
+      const clipW = tToX(dur);
+      if (x < clipX || x > clipX + clipW) continue;
+
+      const maxFade = dur / 2;
+
+      // Fade-in handle x position
+      const fiX = isSel
+        ? clipX + HANDLE_W + tToX(clip.fadeIn)
+        : clipX + tToX(clip.fadeIn);
+      const fiXc = clamp(fiX, clipX + HANDLE_W + 2, clipX + clipW - HANDLE_W - 2);
+      if (Math.abs(x - fiXc) <= FADE_HANDLE_R + 4) {
+        return { kind: "fade-in" as const, clip, maxFade };
+      }
+
+      // Fade-out handle x position
+      const foX = isSel
+        ? clipX + clipW - HANDLE_W - tToX(clip.fadeOut)
+        : clipX + clipW - tToX(clip.fadeOut);
+      const foXc = clamp(foX, clipX + HANDLE_W + 2, clipX + clipW - HANDLE_W - 2);
+      if (Math.abs(x - foXc) <= FADE_HANDLE_R + 4) {
+        return { kind: "fade-out" as const, clip, maxFade };
+      }
+    }
+    return null;
+  }, [clips, lanes, tToX, selectedClipId]);
+
   const laneAtY = (y: number) => lanes[Math.floor((y - RULER_H) / LANE_H)] ?? null;
 
   /* ── Pointer events ─────────────────────────────────────────── */
@@ -280,6 +412,19 @@ export default function AudioTimeline({
 
     const addY = RULER_H + lanes.length * LANE_H;
     if (y >= addY) { onAddLane(); return; }
+
+    // Check fade handles first (highest priority after ruler)
+    const fadeHit = findFadeHandle(x, y);
+    if (fadeHit) {
+      onClipSelect(fadeHit.clip.id);
+      if (fadeHit.kind === "fade-in") {
+        dragRef.current = { kind: "fade-in", clipId: fadeHit.clip.id, originX: x, origFadeIn: fadeHit.clip.fadeIn, maxFade: fadeHit.maxFade };
+      } else {
+        dragRef.current = { kind: "fade-out", clipId: fadeHit.clip.id, originX: x, origFadeOut: fadeHit.clip.fadeOut, maxFade: fadeHit.maxFade };
+      }
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      return;
+    }
 
     const clip = findClip(x, y);
     if (!clip) { onClipSelect(null); return; }
@@ -322,6 +467,14 @@ export default function AudioTimeline({
       onClipTrimStart(clip.id, ts, Math.max(0, drag.origStart + delta));
     } else if (drag.kind === "trim-end") {
       onClipTrimEnd(clip.id, clamp(drag.origTrimEnd + dt, clip.trimStart + 0.05, clip.audioDuration));
+    } else if (drag.kind === "fade-in") {
+      // Dragging right increases fade-in
+      const newFadeIn = clamp(drag.origFadeIn + dt, 0, drag.maxFade);
+      onClipFadeIn(clip.id, newFadeIn);
+    } else if (drag.kind === "fade-out") {
+      // Dragging left increases fade-out (handle moves left = larger fade)
+      const newFadeOut = clamp(drag.origFadeOut - dt, 0, drag.maxFade);
+      onClipFadeOut(clip.id, newFadeOut);
     }
   };
 
@@ -333,7 +486,12 @@ export default function AudioTimeline({
     const pos = coords(e);
     if (!pos || !canvasRef.current) return;
     const { x, y } = pos;
+
     if (y < RULER_H) { canvasRef.current.style.cursor = "col-resize"; return; }
+
+    const fadeHit = findFadeHandle(x, y);
+    if (fadeHit) { canvasRef.current.style.cursor = "ew-resize"; return; }
+
     const clip = findClip(x, y);
     if (!clip) { canvasRef.current.style.cursor = "default"; return; }
     const cx = tToX(clip.startTime);
@@ -367,7 +525,6 @@ export default function AudioTimeline({
 
   return (
     <div className="at-root">
-      {/* Left: lane labels */}
       <div className="at-labels">
         <div className="at-ruler-spacer" />
         {lanes.map((lane) => (
@@ -399,7 +556,6 @@ export default function AudioTimeline({
         </div>
       </div>
 
-      {/* Right: scrollable timeline canvas */}
       <div className="at-scroll-wrapper">
         <canvas
           ref={canvasRef}
