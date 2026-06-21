@@ -103,6 +103,7 @@ export default function AudioStudio() {
   const [playing, setPlaying] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [outputFmt, setOutputFmt] = useState<AudioOutputFmt>("mp3");
+  const [mixName, setMixName] = useState("mix");
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -218,6 +219,7 @@ export default function AudioStudio() {
       const newClip = await loadFile(file, laneId, 0);
       hist.push({ lanes: [newLane], clips: [newClip] });
       setSelectedClipId(newClip.id);
+      setMixName(baseName(file.name));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -552,9 +554,9 @@ export default function AudioStudio() {
       const data = await ff.readFile(outName);
       const mime = AUDIO_FMT_MIME[outputFmt];
       const blob = new Blob([data as unknown as BlobPart], { type: mime });
-      const firstName = active[0]?.name ?? "mix";
+      const safeName = mixName.trim() || "mix";
       await saveAs({
-        suggestedName: `${firstName}_mix.${ext}`,
+        suggestedName: `${safeName}.${ext}`,
         description: "Audio Mix",
         mime,
         ext,
@@ -609,6 +611,16 @@ export default function AudioStudio() {
               <LuZoomIn size={15} />
             </button>
             <div className="studio-topbar-sep" />
+            <input
+              className="studio-topbar-name"
+              type="text"
+              value={mixName}
+              onChange={e => setMixName(e.target.value)}
+              disabled={isEmpty}
+              placeholder="mix name"
+              title="Mix name"
+              onKeyDown={e => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            />
             <select
               className="studio-topbar-select"
               value={outputFmt}
