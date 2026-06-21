@@ -477,6 +477,18 @@ export default function AudioStudio() {
 
   useEffect(() => () => stopPlayback(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedClipId) {
+        handleDeleteClip(selectedClipId);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedClipId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── Zoom fit ───────────────────────────────────────────── */
 
   function handleFitZoom() {
@@ -660,6 +672,7 @@ export default function AudioStudio() {
                 onClipTrimEnd={handleClipTrimEnd}
                 onClipFadeIn={handleClipFadeIn}
                 onClipFadeOut={handleClipFadeOut}
+                onClipDelete={handleDeleteClip}
                 onLaneMute={handleLaneMute}
                 onAddLane={handleAddLane}
                 onAddFileToLane={handleAddFileToLane}

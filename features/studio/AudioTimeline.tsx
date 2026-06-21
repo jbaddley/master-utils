@@ -47,6 +47,7 @@ const LANE_H = 76;
 const CLIP_PAD_V = 13;
 const HANDLE_W = 10;
 const FADE_HANDLE_R = 5;
+const DEL_BTN_R = 7;
 const ADD_LANE_H = 36;
 
 /* ── Helpers ────────────────────────────────────────────────── */
@@ -89,6 +90,7 @@ export interface AudioTimelineProps {
   onClipTrimEnd: (id: string, trimEnd: number) => void;
   onClipFadeIn: (id: string, fadeIn: number) => void;
   onClipFadeOut: (id: string, fadeOut: number) => void;
+  onClipDelete: (id: string) => void;
   onLaneMute: (laneId: string) => void;
   onAddLane: () => void;
   onAddFileToLane: (laneId: string) => void;
@@ -100,7 +102,7 @@ export interface AudioTimelineProps {
 export default function AudioTimeline({
   lanes, clips, selectedClipId, playhead, zoom, totalDuration,
   onSeek, onClipSelect, onClipMove, onClipTrimStart, onClipTrimEnd,
-  onClipFadeIn, onClipFadeOut,
+  onClipFadeIn, onClipFadeOut, onClipDelete,
   onLaneMute, onAddLane, onAddFileToLane, onDropFile,
 }: AudioTimelineProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -256,6 +258,22 @@ export default function AudioTimeline({
             ctx.beginPath();
             ctx.moveTo(hx, mid - 5); ctx.lineTo(hx, mid + 5); ctx.stroke();
           });
+
+          /* Delete (×) button — top-right corner of selected clip */
+          if (clipW > 35) {
+            const delX = clipX + clipW - DEL_BTN_R - 1;
+            const delY = clipY + DEL_BTN_R + 1;
+            ctx.fillStyle = "rgba(220, 55, 55, 0.88)";
+            ctx.beginPath();
+            ctx.arc(delX, delY, DEL_BTN_R, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.85)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(delX - 3, delY - 3); ctx.lineTo(delX + 3, delY + 3);
+            ctx.moveTo(delX + 3, delY - 3); ctx.lineTo(delX - 3, delY + 3);
+            ctx.stroke();
+          }
         }
 
         /* Fade handles — shown for selected clip always, others only if fade > 0 */
@@ -394,6 +412,28 @@ export default function AudioTimeline({
     return null;
   }, [clips, lanes, tToX, selectedClipId]);
 
+  const findDeleteButton = useCallback((x: number, y: number): string | null => {
+    if (!selectedClipId) return null;
+    const clip = clips.find(c => c.id === selectedClipId);
+    if (!clip) return null;
+    const li = lanes.findIndex(l => l.id === clip.laneId);
+    if (li < 0) return null;
+    const laneY = RULER_H + li * LANE_H;
+    const clipY = laneY + CLIP_PAD_V;
+    const clipH = LANE_H - CLIP_PAD_V * 2;
+    const dur = clip.trimEnd - clip.trimStart;
+    if (dur <= 0) return null;
+    const clipX = tToX(clip.startTime);
+    const clipW = tToX(dur);
+    if (clipW < 35) return null;
+    // Button only detectable in top portion to avoid fighting right trim handle
+    if (y > clipY + clipH * 0.45) return null;
+    const btnX = clipX + clipW - DEL_BTN_R - 1;
+    const btnY = clipY + DEL_BTN_R + 1;
+    if (Math.sqrt((x - btnX) ** 2 + (y - btnY) ** 2) <= DEL_BTN_R + 5) return clip.id;
+    return null;
+  }, [clips, lanes, tToX, selectedClipId]);
+
   const laneAtY = (y: number) => lanes[Math.floor((y - RULER_H) / LANE_H)] ?? null;
 
   /* ── Pointer events ─────────────────────────────────────────── */
@@ -413,7 +453,11 @@ export default function AudioTimeline({
     const addY = RULER_H + lanes.length * LANE_H;
     if (y >= addY) { onAddLane(); return; }
 
-    // Check fade handles first (highest priority after ruler)
+    // Check delete button on selected clip first
+    const delHit = findDeleteButton(x, y);
+    if (delHit) { onClipDelete(delHit); return; }
+
+    // Check fade handles
     const fadeHit = findFadeHandle(x, y);
     if (fadeHit) {
       onClipSelect(fadeHit.clip.id);
@@ -488,6 +532,8 @@ export default function AudioTimeline({
     const { x, y } = pos;
 
     if (y < RULER_H) { canvasRef.current.style.cursor = "col-resize"; return; }
+
+    if (findDeleteButton(x, y)) { canvasRef.current.style.cursor = "pointer"; return; }
 
     const fadeHit = findFadeHandle(x, y);
     if (fadeHit) { canvasRef.current.style.cursor = "ew-resize"; return; }
