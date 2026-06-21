@@ -3,15 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchFile } from "@ffmpeg/util";
 import {
-  LuDownload, LuPause, LuPlay, LuPlus, LuRedo2,
-  LuScissors, LuUndo2, LuZoomIn, LuZoomOut, LuTrash2,
+  LuActivity, LuDownload, LuGauge, LuInfo, LuMusic,
+  LuPause, LuPlay, LuPlus, LuRedo2, LuScissors,
+  LuUndo2, LuVolumeX, LuZoomIn, LuZoomOut, LuTrash2,
 } from "react-icons/lu";
+import type { IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { loadFFmpeg } from "@/lib/ffmpeg";
 import { computeWaveformPeaks } from "@/lib/audio-analysis";
 import {
   AUDIO_FMT_EXT, AUDIO_FMT_MIME, baseName, extOf,
+  buildAtempoFilter, buildPitchSpeedFilter,
   type AudioOutputFmt,
 } from "@/lib/audio-utils";
 import { saveAs } from "@/lib/download";
@@ -25,6 +28,16 @@ const ACCEPTED_INPUTS = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4", "webm
 const ACCEPT_ATTR = ACCEPTED_INPUTS.map((e) => `.${e}`).join(",");
 const VIDEO_EXTS = new Set(["mp4", "webm", "mov", "avi", "mkv", "m4v"]);
 
+type ToolId = "speed" | "pitch" | "normalize" | "silence" | "info";
+
+const TOOLS: { id: ToolId; label: string; icon: IconType }[] = [
+  { id: "speed",     label: "Speed",   icon: LuGauge    },
+  { id: "pitch",     label: "Pitch",   icon: LuMusic    },
+  { id: "normalize", label: "Level",   icon: LuActivity },
+  { id: "silence",   label: "Silence", icon: LuVolumeX  },
+  { id: "info",      label: "Info",    icon: LuInfo     },
+];
+
 const EXPORT_FORMATS: { key: AudioOutputFmt; label: string }[] = [
   { key: "mp3", label: "MP3" },
   { key: "wav", label: "WAV" },
@@ -32,6 +45,40 @@ const EXPORT_FORMATS: { key: AudioOutputFmt; label: string }[] = [
   { key: "m4a", label: "M4A" },
   { key: "flac", label: "FLAC" },
 ];
+
+/* ── History (atomic state to avoid stale-closure bugs) ──────── */
+
+type Snap = { lanes: TimelineLane[]; clips: TimelineClip[] };
+type HistState = { stack: Snap[]; idx: number };
+
+function useHistory(initial: Snap) {
+  const [hs, setHs] = useState<HistState>({ stack: [initial], idx: 0 });
+
+  const current = hs.stack[hs.idx]!;
+  const canUndo = hs.idx > 0;
+  const canRedo = hs.idx < hs.stack.length - 1;
+
+  const push = useCallback((snap: Snap) => {
+    setHs(({ stack, idx }) => ({ stack: [...stack.slice(0, idx + 1), snap], idx: idx + 1 }));
+  }, []);
+
+  const undo = useCallback(() => {
+    setHs(({ stack, idx }) => ({ stack, idx: Math.max(0, idx - 1) }));
+  }, []);
+
+  const redo = useCallback(() => {
+    setHs(({ stack, idx }) => ({ stack, idx: Math.min(stack.length - 1, idx + 1) }));
+  }, []);
+
+  return { current, push, undo, redo, canUndo, canRedo };
+}
+
+/* ── Slider value helper (base-ui type is number | readonly number[]) */
+
+function sliderVal(v: number | readonly number[], fallback: number): number {
+  if (Array.isArray(v)) return (v as number[])[0] ?? fallback;
+  return typeof v === "number" ? v : fallback;
+}
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -44,26 +91,6 @@ function fmtTime(s: number): string {
   return `${m}:${sec}.${ds}`;
 }
 
-/* ── History ─────────────────────────────────────────────────── */
-
-type Snap = { lanes: TimelineLane[]; clips: TimelineClip[] };
-
-function useHistory(initial: Snap) {
-  const [stack, setStack] = useState<Snap[]>([initial]);
-  const [idx, setIdx] = useState(0);
-  const current = stack[idx]!;
-
-  const push = useCallback((snap: Snap) => {
-    setStack(prev => [...prev.slice(0, idx + 1), snap]);
-    setIdx(i => i + 1);
-  }, [idx]);
-
-  const undo = useCallback(() => setIdx(i => Math.max(0, i - 1)), []);
-  const redo = useCallback(() => setStack(s => { setIdx(i => Math.min(s.length - 1, i + 1)); return s; }), []);
-
-  return { current, push, undo, redo, canUndo: idx > 0, canRedo: idx < stack.length - 1 };
-}
-
 /* ── Component ──────────────────────────────────────────────── */
 
 export default function AudioStudio() {
@@ -71,6 +98,7 @@ export default function AudioStudio() {
   const { lanes, clips } = hist.current;
 
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [tool, setTool] = useState<ToolId | null>(null);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [zoom, setZoom] = useState(100);
@@ -79,8 +107,13 @@ export default function AudioStudio() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Tool params
+  const [speed, setSpeed] = useState(1.0);
+  const [semitones, setSemitones] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingLaneIdRef = useRef<string | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const bufferCache = useRef<Map<string, AudioBuffer>>(new Map());
@@ -90,15 +123,12 @@ export default function AudioStudio() {
   const playStartPlayhead = useRef(0);
 
   const totalDuration = useMemo(() => {
-    return Math.max(
-      30,
-      ...clips.map(c => c.startTime + (c.trimEnd - c.trimStart))
-    );
+    return Math.max(30, ...clips.map(c => c.startTime + (c.trimEnd - c.trimStart)));
   }, [clips]);
 
   const selectedClip = clips.find(c => c.id === selectedClipId) ?? null;
 
-  /* ── Audio decoding ──────────────────────────────────────── */
+  /* ── Audio context ─────────────────────────────────────────── */
 
   function getAudioCtx(): AudioContext {
     if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
@@ -119,7 +149,7 @@ export default function AudioStudio() {
 
   /* ── File loading ─────────────────────────────────────────── */
 
-  async function loadFile(file: File, laneId: string, atTime = 0) {
+  async function loadFile(file: File, laneId: string, atTime = 0): Promise<TimelineClip> {
     const ext = extOf(file.name);
     let blob: Blob;
     let audioExt: string;
@@ -146,7 +176,6 @@ export default function AudioStudio() {
       audioExt = ext;
     }
 
-    // Decode to get duration + peaks
     const ab = await blob.arrayBuffer();
     const tempCtx = new AudioContext();
     let audioBuf: AudioBuffer;
@@ -158,6 +187,7 @@ export default function AudioStudio() {
     const duration = audioBuf.duration;
     const peaks = computeWaveformPeaks(audioBuf, 600);
 
+    const laneIdx = lanes.findIndex(l => l.id === laneId);
     const newClip: TimelineClip = {
       id: uid(),
       laneId,
@@ -172,13 +202,11 @@ export default function AudioStudio() {
       fadeOut: 0,
       gain: 1,
       muted: false,
-      color: LANE_COLORS[lanes.findIndex(l => l.id === laneId) % LANE_COLORS.length] ?? LANE_COLORS[0]!,
+      color: LANE_COLORS[laneIdx % LANE_COLORS.length] ?? LANE_COLORS[0]!,
       peaks,
     };
 
-    // Store in buffer cache so first play is instant
     bufferCache.current.set(newClip.id, audioBuf);
-
     return newClip;
   }
 
@@ -221,19 +249,12 @@ export default function AudioStudio() {
   /* ── Lane operations ─────────────────────────────────────── */
 
   function handleAddLane() {
-    const newLane: TimelineLane = {
-      id: uid(),
-      name: `Lane ${lanes.length + 1}`,
-      muted: false,
-    };
+    const newLane: TimelineLane = { id: uid(), name: `Lane ${lanes.length + 1}`, muted: false };
     hist.push({ lanes: [...lanes, newLane], clips });
   }
 
   function handleLaneMute(laneId: string) {
-    hist.push({
-      lanes: lanes.map(l => l.id === laneId ? { ...l, muted: !l.muted } : l),
-      clips,
-    });
+    hist.push({ lanes: lanes.map(l => l.id === laneId ? { ...l, muted: !l.muted } : l), clips });
   }
 
   function handleAddFileToLane(laneId: string) {
@@ -260,44 +281,106 @@ export default function AudioStudio() {
   }
 
   function handleDeleteClip(id: string) {
-    const remaining = clips.filter(c => c.id !== id);
-    hist.push({ lanes, clips: remaining });
+    hist.push({ lanes, clips: clips.filter(c => c.id !== id) });
     if (selectedClipId === id) setSelectedClipId(null);
     bufferCache.current.delete(id);
   }
 
   function handleSpliceAtPlayhead() {
     if (!selectedClip) return;
-    const clip = selectedClip;
-    const posInClip = playhead - clip.startTime; // seconds into the clip's playback region
-    if (posInClip <= 0 || posInClip >= clip.trimEnd - clip.trimStart) return;
-    const splitAudioOffset = clip.trimStart + posInClip;
-
-    const clipA: TimelineClip = { ...clip, id: uid(), trimEnd: splitAudioOffset };
+    const posInClip = playhead - selectedClip.startTime;
+    if (posInClip <= 0.01 || posInClip >= (selectedClip.trimEnd - selectedClip.trimStart) - 0.01) return;
+    const splitAudioOffset = selectedClip.trimStart + posInClip;
+    const clipA: TimelineClip = { ...selectedClip, id: uid(), trimEnd: splitAudioOffset };
     const clipB: TimelineClip = {
-      ...clip,
-      id: uid(),
+      ...selectedClip, id: uid(),
       trimStart: splitAudioOffset,
-      startTime: clip.startTime + posInClip,
+      startTime: selectedClip.startTime + posInClip,
     };
-    const newClips = clips.filter(c => c.id !== clip.id).concat([clipA, clipB]);
-    hist.push({ lanes, clips: newClips });
+    hist.push({ lanes, clips: clips.filter(c => c.id !== selectedClip.id).concat([clipA, clipB]) });
     setSelectedClipId(clipA.id);
   }
 
-  /* ── Seek ─────────────────────────────────────────────────── */
+  /* ── ffmpeg processing on a clip ─────────────────────────── */
+
+  async function applyClipTool(
+    label: string,
+    buildArgs: (inName: string, outName: string) => string[]
+  ) {
+    if (!selectedClip) return;
+    const clip = selectedClip;
+    setProcessing(true);
+    setError(null);
+    setProgress(0);
+    try {
+      const ff = await loadFFmpeg();
+      ff.on("progress", ({ progress: p }) => setProgress(Math.round(p * 100)));
+      const inName = `in_proc.${clip.ext}`;
+      const outName = `out_proc.${clip.ext}`;
+      await ff.writeFile(inName, await fetchFile(clip.blob));
+      await ff.exec(buildArgs(inName, outName));
+      const data = await ff.readFile(outName);
+      await ff.deleteFile(inName).catch(() => {});
+      await ff.deleteFile(outName).catch(() => {});
+      const newBlob = new Blob([data as unknown as BlobPart], { type: `audio/${clip.ext}` });
+
+      const ab = await newBlob.arrayBuffer();
+      const tempCtx = new AudioContext();
+      let buf: AudioBuffer;
+      try {
+        buf = await tempCtx.decodeAudioData(ab.slice(0));
+      } finally {
+        await tempCtx.close();
+      }
+      const audioDuration = buf.duration;
+      const peaks = computeWaveformPeaks(buf, 600);
+      bufferCache.current.delete(clip.id);
+      bufferCache.current.set(clip.id, buf);
+
+      const updated: TimelineClip = {
+        ...clip, blob: newBlob, audioDuration, peaks,
+        trimStart: 0, trimEnd: audioDuration,
+        name: clip.name + ` [${label}]`,
+      };
+      hist.push({ lanes, clips: clips.map(c => c.id === clip.id ? updated : c) });
+    } catch (e) {
+      setError("Processing failed: " + (e as Error).message);
+    } finally {
+      setProcessing(false);
+      setProgress(0);
+    }
+  }
+
+  function handleApplySpeed() {
+    const filter = buildAtempoFilter(speed);
+    void applyClipTool(`${speed.toFixed(2)}×`, (i, o) => ["-i", i, "-af", filter, o]);
+  }
+
+  function handleApplyPitch() {
+    const filter = buildPitchSpeedFilter(semitones, 1);
+    if (!filter) return;
+    void applyClipTool(`${semitones >= 0 ? "+" : ""}${semitones}st`, (i, o) => ["-i", i, "-af", filter, o]);
+  }
+
+  function handleApplyNormalize() {
+    void applyClipTool("normalized", (i, o) => ["-i", i, "-af", "loudnorm=I=-14:TP=-1:LRA=11", o]);
+  }
+
+  function handleApplySilence() {
+    const filter = "silenceremove=start_periods=1:start_silence=0.5:start_threshold=-50dB:stop_periods=-1:stop_silence=0.5:stop_threshold=-50dB";
+    void applyClipTool("trimmed", (i, o) => ["-i", i, "-af", filter, o]);
+  }
+
+  /* ── Seek ───────────────────────────────────────────────── */
 
   function handleSeek(t: number) {
     const wasPlaying = playing;
     if (wasPlaying) stopPlayback();
     setPlayhead(t);
-    if (wasPlaying) {
-      // Restart from new position after state update
-      setTimeout(() => startPlayback(t), 10);
-    }
+    if (wasPlaying) setTimeout(() => startPlayback(t), 10);
   }
 
-  /* ── Playback ─────────────────────────────────────────────── */
+  /* ── Playback ──────────────────────────────────────────── */
 
   function stopPlayback() {
     activeSources.current.forEach(s => { try { s.stop(); } catch {} });
@@ -316,20 +399,14 @@ export default function AudioStudio() {
 
     const activeLaneIds = new Set(lanes.filter(l => !l.muted).map(l => l.id));
     const toPlay = clips.filter(c => {
-      if (c.muted) return false;
-      if (!activeLaneIds.has(c.laneId)) return false;
-      // Skip clips that have fully passed
-      const clipEnd = c.startTime + (c.trimEnd - c.trimStart);
-      return clipEnd > startFrom;
+      if (c.muted || !activeLaneIds.has(c.laneId)) return false;
+      return c.startTime + (c.trimEnd - c.trimStart) > startFrom;
     });
 
-    // Decode all clips
     setProcessing(true);
     let decoded: { clip: TimelineClip; buf: AudioBuffer }[] = [];
     try {
-      decoded = await Promise.all(
-        toPlay.map(async clip => ({ clip, buf: await decodeClip(clip) }))
-      );
+      decoded = await Promise.all(toPlay.map(async clip => ({ clip, buf: await decodeClip(clip) })));
     } catch (e) {
       setError("Failed to decode audio: " + (e as Error).message);
       setProcessing(false);
@@ -349,11 +426,9 @@ export default function AudioStudio() {
 
       const source = ctx.createBufferSource();
       source.buffer = buf;
-
       const gainNode = ctx.createGain();
       gainNode.gain.value = clip.gain;
 
-      // Apply fade in/out
       const when = ctx.currentTime + Math.max(0, clip.startTime - startFrom);
       if (clip.fadeIn > 0 && elapsed < clip.fadeIn) {
         gainNode.gain.setValueAtTime(0, when);
@@ -372,15 +447,11 @@ export default function AudioStudio() {
 
     setPlaying(true);
 
-    // RAF loop for playhead
     function tick() {
       const ctx2 = audioCtxRef.current;
       if (!ctx2) return;
-      const elapsed = ctx2.currentTime - startedAt;
-      const pos = playStartPlayhead.current + elapsed;
+      const pos = playStartPlayhead.current + (ctx2.currentTime - playStartCtxTime.current);
       setPlayhead(pos);
-
-      // Auto-stop at end
       if (pos >= totalDuration + 0.1) {
         stopPlayback();
         setPlayhead(0);
@@ -392,17 +463,23 @@ export default function AudioStudio() {
   }
 
   function handlePlayPause() {
-    if (playing) {
-      stopPlayback();
-    } else {
-      startPlayback();
-    }
+    if (playing) stopPlayback();
+    else void startPlayback();
   }
 
-  // Stop playback when unmounted
   useEffect(() => () => stopPlayback(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Export ──────────────────────────────────────────────── */
+  /* ── Zoom fit ───────────────────────────────────────────── */
+
+  function handleFitZoom() {
+    const el = viewportRef.current;
+    if (!el || totalDuration <= 0) return;
+    const scrollW = el.clientWidth - 144; // subtract label column
+    const fitZoom = Math.max(10, Math.min(1000, (scrollW - 20) / totalDuration));
+    setZoom(fitZoom);
+  }
+
+  /* ── Export ─────────────────────────────────────────────── */
 
   async function handleExport() {
     const activeLaneIds = new Set(lanes.filter(l => !l.muted).map(l => l.id));
@@ -443,21 +520,13 @@ export default function AudioStudio() {
 
       const ext = AUDIO_FMT_EXT[outputFmt];
       const outName = `mixed.${ext}`;
-
       const filterComplex =
-        filterParts.join(";") +
-        ";" +
+        filterParts.join(";") + ";" +
         mixLabels.join("") +
         `amix=inputs=${active.length}:duration=longest:normalize=0[out]`;
 
       const inputArgs = active.flatMap((_, i) => ["-i", `in_${i}.${active[i]!.ext}`]);
-      await ff.exec([
-        ...inputArgs,
-        "-filter_complex", filterComplex,
-        "-map", "[out]",
-        "-ar", "44100",
-        outName,
-      ]);
+      await ff.exec([...inputArgs, "-filter_complex", filterComplex, "-map", "[out]", "-ar", "44100", outName]);
 
       const data = await ff.readFile(outName);
       const mime = AUDIO_FMT_MIME[outputFmt];
@@ -471,7 +540,6 @@ export default function AudioStudio() {
         getBlob: () => blob,
       });
 
-      // Cleanup
       for (const n of inputNames) await ff.deleteFile(n).catch(() => {});
       await ff.deleteFile(outName).catch(() => {});
     } catch (e) {
@@ -482,41 +550,26 @@ export default function AudioStudio() {
     }
   }
 
-  /* ── Render ──────────────────────────────────────────────── */
+  /* ── Render ─────────────────────────────────────────────── */
 
   const isEmpty = lanes.length === 0;
 
   return (
     <div className="studio">
       <div className="studio-shell">
-        {/* ── Topbar ── */}
+        {/* Topbar */}
         <div className="studio-topbar">
           <div className="studio-topbar-left">
-            <button
-              className="studio-topbar-btn"
-              onClick={hist.undo}
-              disabled={!hist.canUndo}
-              title="Undo"
-            >
+            <button className="studio-topbar-btn" onClick={hist.undo} disabled={!hist.canUndo} title="Undo">
               <LuUndo2 size={15} />
             </button>
-            <button
-              className="studio-topbar-btn"
-              onClick={hist.redo}
-              disabled={!hist.canRedo}
-              title="Redo"
-            >
+            <button className="studio-topbar-btn" onClick={hist.redo} disabled={!hist.canRedo} title="Redo">
               <LuRedo2 size={15} />
             </button>
           </div>
 
           <div className="studio-topbar-center">
-            <button
-              className="studio-play-btn"
-              onClick={handlePlayPause}
-              disabled={isEmpty || processing}
-              title={playing ? "Pause" : "Play"}
-            >
+            <button className="studio-play-btn" onClick={handlePlayPause} disabled={isEmpty || processing} title={playing ? "Pause" : "Play"}>
               {playing ? <LuPause size={18} /> : <LuPlay size={18} />}
             </button>
             <span className="studio-timecode">{fmtTime(playhead)}</span>
@@ -525,25 +578,20 @@ export default function AudioStudio() {
           </div>
 
           <div className="studio-topbar-right">
-            <button
-              className="studio-topbar-btn"
-              onClick={() => setZoom(z => Math.max(20, z / 1.5))}
-              title="Zoom out"
-            >
+            <button className="studio-topbar-btn" onClick={handleFitZoom} disabled={isEmpty} title="Fit all clips in view">
+              Fit
+            </button>
+            <button className="studio-topbar-btn" onClick={() => setZoom(z => Math.max(10, z / 1.5))} title="Zoom out">
               <LuZoomOut size={15} />
             </button>
             <span className="studio-zoom-label">{Math.round(zoom)}px/s</span>
-            <button
-              className="studio-topbar-btn"
-              onClick={() => setZoom(z => Math.min(1000, z * 1.5))}
-              title="Zoom in"
-            >
+            <button className="studio-topbar-btn" onClick={() => setZoom(z => Math.min(1500, z * 1.5))} title="Zoom in">
               <LuZoomIn size={15} />
             </button>
           </div>
         </div>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div className="studio-body studio-body-audio">
           {/* Left rail */}
           <nav className="studio-rail">
@@ -565,10 +613,25 @@ export default function AudioStudio() {
               <LuScissors size={20} />
               <span>Splice</span>
             </button>
+
+            <div className="studio-rail-divider" />
+
+            {TOOLS.map(t => (
+              <button
+                key={t.id}
+                className={`studio-rail-btn${tool === t.id ? " is-active" : ""}`}
+                onClick={() => setTool(tool === t.id ? null : t.id)}
+                disabled={!selectedClip && t.id !== "info"}
+                title={t.label}
+              >
+                <t.icon size={20} />
+                <span>{t.label}</span>
+              </button>
+            ))}
           </nav>
 
           {/* Timeline viewport */}
-          <div className="studio-viewport at-viewport">
+          <div ref={viewportRef} className="studio-viewport at-viewport">
             {isEmpty ? (
               <DropZone
                 onFile={handleFirstFile}
@@ -583,7 +646,7 @@ export default function AudioStudio() {
                 zoom={zoom}
                 totalDuration={totalDuration}
                 onSeek={handleSeek}
-                onClipSelect={setSelectedClipId}
+                onClipSelect={(id) => { setSelectedClipId(id); if (!id) setTool(null); }}
                 onClipMove={handleClipMove}
                 onClipTrimStart={handleClipTrimStart}
                 onClipTrimEnd={handleClipTrimEnd}
@@ -599,6 +662,19 @@ export default function AudioStudio() {
           <aside className="studio-side">
             {processing ? (
               <ProcessingPane progress={progress} />
+            ) : tool && selectedClip ? (
+              <ToolPane
+                tool={tool}
+                clip={selectedClip}
+                speed={speed}
+                semitones={semitones}
+                onSpeedChange={setSpeed}
+                onSemitonesChange={setSemitones}
+                onApplySpeed={handleApplySpeed}
+                onApplyPitch={handleApplyPitch}
+                onApplyNormalize={handleApplyNormalize}
+                onApplySilence={handleApplySilence}
+              />
             ) : selectedClip ? (
               <ClipPane
                 clip={selectedClip}
@@ -619,39 +695,25 @@ export default function AudioStudio() {
         </div>
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={ACCEPT_ATTR}
-        style={{ display: "none" }}
-        onChange={handleFileInput}
-      />
+      <input ref={fileInputRef} type="file" accept={ACCEPT_ATTR} style={{ display: "none" }} onChange={handleFileInput} />
     </div>
   );
 }
 
-/* ── Sub-components ──────────────────────────────────────────── */
+/* ── Sub-components ─────────────────────────────────────────── */
 
 function DropZone({ onFile, onPickFile }: { onFile: (f: File) => void; onPickFile: () => void }) {
   const [over, setOver] = useState(false);
-
   return (
     <div
       className={`studio-dropzone${over ? " is-over" : ""}`}
       onDragOver={e => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
-      onDrop={e => {
-        e.preventDefault();
-        setOver(false);
-        const f = e.dataTransfer.files[0];
-        if (f) onFile(f);
-      }}
+      onDrop={e => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
     >
       <p className="studio-dropzone-text">Drop an audio or video file here</p>
       <p className="studio-dropzone-sub">MP3, WAV, OGG, M4A, FLAC, AAC, MP4, MOV, WebM&hellip;</p>
-      <Button onClick={onPickFile} variant="outline" size="sm">
-        Choose file
-      </Button>
+      <Button onClick={onPickFile} variant="outline" size="sm">Choose file</Button>
     </div>
   );
 }
@@ -669,69 +731,160 @@ function ProcessingPane({ progress }: { progress: number }) {
 }
 
 function ClipPane({
-  clip,
-  onUpdate,
-  onDelete,
+  clip, onUpdate, onDelete,
 }: {
   clip: TimelineClip;
   onUpdate: (patch: Partial<TimelineClip>) => void;
   onDelete: () => void;
 }) {
   const dur = clip.trimEnd - clip.trimStart;
-
   return (
     <div className="studio-side-pane">
       <p className="studio-side-section-label">Clip</p>
       <p className="studio-clip-name">{clip.name}</p>
-      <p className="studio-side-hint">
-        {dur.toFixed(2)}s — starts at {clip.startTime.toFixed(2)}s
-      </p>
+      <p className="studio-side-hint">{dur.toFixed(2)}s — starts at {clip.startTime.toFixed(2)}s</p>
 
       <div className="studio-side-divider" />
 
       <label className="studio-side-label">Volume</label>
       <div className="studio-side-slider-row">
-        <Slider
-          min={0} max={2} step={0.01} value={[clip.gain]}
-          onValueChange={(v) => onUpdate({ gain: (v as number[])[0] ?? clip.gain })}
-        />
+        <Slider min={0} max={2} step={0.01} value={[clip.gain]}
+          onValueChange={v => onUpdate({ gain: sliderVal(v, clip.gain) })} />
         <span className="studio-side-value">{Math.round(clip.gain * 100)}%</span>
       </div>
 
       <label className="studio-side-label">Fade In</label>
       <div className="studio-side-slider-row">
-        <Slider
-          min={0} max={Math.min(dur / 2, 10)} step={0.01} value={[clip.fadeIn]}
-          onValueChange={(v) => onUpdate({ fadeIn: (v as number[])[0] ?? clip.fadeIn })}
-        />
+        <Slider min={0} max={Math.min(dur / 2, 10)} step={0.01} value={[clip.fadeIn]}
+          onValueChange={v => onUpdate({ fadeIn: sliderVal(v, clip.fadeIn) })} />
         <span className="studio-side-value">{clip.fadeIn.toFixed(2)}s</span>
       </div>
 
       <label className="studio-side-label">Fade Out</label>
       <div className="studio-side-slider-row">
-        <Slider
-          min={0} max={Math.min(dur / 2, 10)} step={0.01} value={[clip.fadeOut]}
-          onValueChange={(v) => onUpdate({ fadeOut: (v as number[])[0] ?? clip.fadeOut })}
-        />
+        <Slider min={0} max={Math.min(dur / 2, 10)} step={0.01} value={[clip.fadeOut]}
+          onValueChange={v => onUpdate({ fadeOut: sliderVal(v, clip.fadeOut) })} />
         <span className="studio-side-value">{clip.fadeOut.toFixed(2)}s</span>
       </div>
 
       <div className="studio-side-divider" />
 
       <label className="studio-side-label">Trim range</label>
-      <p className="studio-side-hint">
-        {clip.trimStart.toFixed(2)}s → {clip.trimEnd.toFixed(2)}s
-        (of {clip.audioDuration.toFixed(2)}s)
-      </p>
+      <p className="studio-side-hint">{clip.trimStart.toFixed(2)}s → {clip.trimEnd.toFixed(2)}s (of {clip.audioDuration.toFixed(2)}s)</p>
+      <p className="studio-side-hint" style={{ marginTop: "-0.25rem" }}>Drag clip edges on the timeline to trim.</p>
 
       <div className="studio-side-divider" />
 
-      <button
-        className="studio-delete-btn"
-        onClick={onDelete}
-      >
+      <button className="studio-delete-btn" onClick={onDelete}>
         <LuTrash2 size={13} /> Delete clip
       </button>
+    </div>
+  );
+}
+
+function ToolPane({
+  tool, clip, speed, semitones,
+  onSpeedChange, onSemitonesChange,
+  onApplySpeed, onApplyPitch, onApplyNormalize, onApplySilence,
+}: {
+  tool: ToolId;
+  clip: TimelineClip;
+  speed: number;
+  semitones: number;
+  onSpeedChange: (v: number) => void;
+  onSemitonesChange: (v: number) => void;
+  onApplySpeed: () => void;
+  onApplyPitch: () => void;
+  onApplyNormalize: () => void;
+  onApplySilence: () => void;
+}) {
+  const dur = clip.trimEnd - clip.trimStart;
+
+  if (tool === "speed") return (
+    <div className="studio-side-pane">
+      <p className="studio-side-section-label">Speed</p>
+      <p className="studio-clip-name">{clip.name}</p>
+      <div className="studio-side-divider" />
+      <label className="studio-side-label">Playback Speed</label>
+      <div className="studio-side-slider-row">
+        <Slider min={0.25} max={4} step={0.05} value={[speed]}
+          onValueChange={v => onSpeedChange(sliderVal(v, speed))} />
+        <span className="studio-side-value">{speed.toFixed(2)}×</span>
+      </div>
+      <p className="studio-side-hint">New duration: ~{(dur / speed).toFixed(2)}s</p>
+      <Button size="sm" className="studio-apply-btn" onClick={onApplySpeed} disabled={Math.abs(speed - 1) < 0.01}>
+        Apply Speed
+      </Button>
+      <p className="studio-side-hint">Permanently re-encodes the clip.</p>
+    </div>
+  );
+
+  if (tool === "pitch") return (
+    <div className="studio-side-pane">
+      <p className="studio-side-section-label">Pitch</p>
+      <p className="studio-clip-name">{clip.name}</p>
+      <div className="studio-side-divider" />
+      <label className="studio-side-label">Semitones</label>
+      <div className="studio-side-slider-row">
+        <Slider min={-12} max={12} step={1} value={[semitones]}
+          onValueChange={v => onSemitonesChange(sliderVal(v, semitones))} />
+        <span className="studio-side-value">{semitones >= 0 ? "+" : ""}{semitones}st</span>
+      </div>
+      <Button size="sm" className="studio-apply-btn" onClick={onApplyPitch} disabled={semitones === 0}>
+        Apply Pitch
+      </Button>
+      <p className="studio-side-hint">Permanently re-encodes the clip.</p>
+    </div>
+  );
+
+  if (tool === "normalize") return (
+    <div className="studio-side-pane">
+      <p className="studio-side-section-label">Level (Normalize)</p>
+      <p className="studio-clip-name">{clip.name}</p>
+      <div className="studio-side-divider" />
+      <p className="studio-side-hint">Applies loudnorm to target −14 LUFS integrated loudness (broadcast standard).</p>
+      <Button size="sm" className="studio-apply-btn" onClick={onApplyNormalize}>
+        Normalize
+      </Button>
+    </div>
+  );
+
+  if (tool === "silence") return (
+    <div className="studio-side-pane">
+      <p className="studio-side-section-label">Remove Silence</p>
+      <p className="studio-clip-name">{clip.name}</p>
+      <div className="studio-side-divider" />
+      <p className="studio-side-hint">Strips leading, trailing, and internal silent sections (below −50 dB for &gt;0.5s).</p>
+      <Button size="sm" className="studio-apply-btn" onClick={onApplySilence}>
+        Remove Silence
+      </Button>
+    </div>
+  );
+
+  if (tool === "info") return (
+    <div className="studio-side-pane">
+      <p className="studio-side-section-label">Info</p>
+      <p className="studio-clip-name">{clip.name}</p>
+      <div className="studio-side-divider" />
+      <InfoRow label="Format" value={clip.ext.toUpperCase()} />
+      <InfoRow label="Full duration" value={`${clip.audioDuration.toFixed(3)}s`} />
+      <InfoRow label="Trim range" value={`${clip.trimStart.toFixed(3)}s → ${clip.trimEnd.toFixed(3)}s`} />
+      <InfoRow label="Playing" value={`${(clip.trimEnd - clip.trimStart).toFixed(3)}s`} />
+      <InfoRow label="Timeline start" value={`${clip.startTime.toFixed(3)}s`} />
+      <InfoRow label="Volume" value={`${Math.round(clip.gain * 100)}%`} />
+      <InfoRow label="Fade in" value={`${clip.fadeIn.toFixed(2)}s`} />
+      <InfoRow label="Fade out" value={`${clip.fadeOut.toFixed(2)}s`} />
+    </div>
+  );
+
+  return null;
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="studio-info-row">
+      <span className="studio-info-label">{label}</span>
+      <span className="studio-info-value">{value}</span>
     </div>
   );
 }
@@ -752,28 +905,19 @@ function ExportPane({
       <label className="studio-side-label">Format</label>
       <div className="studio-format-btns">
         {EXPORT_FORMATS.map(f => (
-          <button
-            key={f.key}
-            className={`studio-fmt-btn${fmt === f.key ? " is-active" : ""}`}
-            onClick={() => onFmtChange(f.key)}
-          >
+          <button key={f.key} className={`studio-fmt-btn${fmt === f.key ? " is-active" : ""}`} onClick={() => onFmtChange(f.key)}>
             {f.label}
           </button>
         ))}
       </div>
 
-      <Button
-        className="studio-export-btn"
-        onClick={onExport}
-        disabled={disabled}
-      >
+      <Button className="studio-export-btn" onClick={onExport} disabled={disabled}>
         <LuDownload size={14} /> Export mix ({clipsCount} clip{clipsCount !== 1 ? "s" : ""})
       </Button>
 
       <div className="studio-side-divider" />
       <p className="studio-side-hint">
-        Select a clip to adjust its volume and fade in/out. Drag clip edges to trim.
-        Mute a lane with the speaker icon. Drop audio/video files onto any lane.
+        Select a clip to adjust its volume and fade in/out. Use the rail tools to change speed, pitch, or normalize a clip. Drag clip edges on the timeline to trim.
       </p>
     </div>
   );
