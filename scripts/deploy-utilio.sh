@@ -172,6 +172,7 @@ export DONATION_PRODUCT_ID="${DONATION_PRODUCT_ID:-${STRIPE_DONATION_PRODUCT_ID:
 export STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
 export STRIPE_HAMLET_PRODUCT_ID="${STRIPE_HAMLET_PRODUCT_ID:-}"
 export STRIPE_HAMLET_PRICE_ID="${STRIPE_HAMLET_PRICE_ID:-}"
+export YOUTUBE_COOKIES="${YOUTUBE_COOKIES:-}"
 python3 - "$STAGING_DIR" <<'PY' | "${SSH[@]}" "ubuntu@$HOST" "python3 -c \"import sys; open(sys.argv[1], 'w').write(sys.stdin.read())\" $STAGING_DIR/.env.local"
 import os, shlex, sys
 
@@ -215,6 +216,7 @@ for key in (
     "STRIPE_WEBHOOK_SECRET",
     "STRIPE_HAMLET_PRODUCT_ID",
     "STRIPE_HAMLET_PRICE_ID",
+    "YOUTUBE_COOKIES",
 ):
     add_if_set(key, lines)
 os.environ.setdefault("NEXT_PUBLIC_SITE_URL", f"https://{os.environ.get('DOMAIN', 'utilio.solutions')}")

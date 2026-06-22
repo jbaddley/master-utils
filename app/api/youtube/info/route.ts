@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import ytdl from "@distube/ytdl-core";
+import { getYtdlAgent } from "@/lib/ytdl-agent";
 
 export const maxDuration = 30;
 
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
   if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
 
   try {
-    const info = await ytdl.getInfo(url);
+    const info = await ytdl.getInfo(url, { agent: getYtdlAgent() });
     const { videoDetails: vd } = info;
 
     // Combined (video + audio) streams — typically up to 720p

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import ytdl from "@distube/ytdl-core";
+import { getYtdlAgent } from "@/lib/ytdl-agent";
 
 export const maxDuration = 300;
 
@@ -12,13 +13,15 @@ export async function GET(request: NextRequest) {
   if (!url) return Response.json({ error: "url required" }, { status: 400 });
 
   try {
-    const info = await ytdl.getInfo(url);
+    const agent = getYtdlAgent();
+    const info = await ytdl.getInfo(url, { agent });
 
     const options: ytdl.downloadOptions = itag
-      ? { quality: parseInt(itag) as unknown as ytdl.downloadOptions["quality"] }
+      ? { quality: parseInt(itag) as unknown as ytdl.downloadOptions["quality"], agent }
       : {
           filter: type === "audio" ? "audioonly" : "videoandaudio",
           quality: type === "audio" ? "highestaudio" : "highest",
+          agent,
         };
 
     const format = ytdl.chooseFormat(info.formats, options);
