@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ytdl from "@distube/ytdl-core";
-import { getYtdlAgent } from "@/lib/ytdl-agent";
+import { ytdlpJson } from "@/lib/ytdlp";
 
 export const maxDuration = 30;
 
@@ -9,39 +8,48 @@ export async function GET(request: NextRequest) {
   if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
 
   try {
-    const info = await ytdl.getInfo(url, { agent: getYtdlAgent() });
-    const { videoDetails: vd } = info;
+    const data = await ytdlpJson(url);
 
-    // Combined (video + audio) streams — typically up to 720p
-    const videoFormats = ytdl
-      .filterFormats(info.formats, "videoandaudio")
-      .filter(f => f.qualityLabel)
-      .map(f => ({
-        itag: f.itag,
-        quality: f.qualityLabel!,
-        container: f.container ?? "mp4",
-        size: f.contentLength ? Number(f.contentLength) : null,
+    const formats = (data.formats as Record<string, unknown>[]) ?? [];
+
+    // Combined video+audio streams ≤ 720p (no server-side ffmpeg merge needed)
+    const videoFormats = formats
+      .filter(
+        (f) =>
+          f.vcodec !== "none" &&
+          f.acodec !== "none" &&
+          typeof f.height === "number" &&
+          (f.height as number) <= 720 &&
+          f.ext === "mp4"
+      )
+      .map((f) => ({
+        itag: parseInt(f.format_id as string, 10) || (f.format_id as string),
+        quality: `${f.height}p`,
+        container: f.ext as string,
+        size: (f.filesize as number | null) ?? null,
       }))
-      .filter((f, i, a) => a.findIndex(x => x.quality === f.quality) === i)
+      .filter((f, i, a) => a.findIndex((x) => x.quality === f.quality) === i)
       .sort((a, b) => parseInt(b.quality) - parseInt(a.quality));
 
     // Best audio-only streams
-    const audioFormats = ytdl
-      .filterFormats(info.formats, "audioonly")
-      .sort((a, b) => (b.audioBitrate ?? 0) - (a.audioBitrate ?? 0))
+    const audioFormats = formats
+      .filter((f) => f.vcodec === "none" && f.acodec !== "none")
+      .sort((a, b) => ((b.abr as number) ?? 0) - ((a.abr as number) ?? 0))
       .slice(0, 4)
-      .map(f => ({
-        itag: f.itag,
-        bitrate: f.audioBitrate ?? 0,
-        container: f.container ?? "m4a",
-        size: f.contentLength ? Number(f.contentLength) : null,
+      .map((f) => ({
+        itag: parseInt(f.format_id as string, 10) || (f.format_id as string),
+        bitrate: (f.abr as number) ?? 0,
+        container: (f.ext as string) ?? "m4a",
+        size: (f.filesize as number | null) ?? null,
       }));
 
+    const thumbnails = data.thumbnails as { url: string }[] | undefined;
+
     return NextResponse.json({
-      title: vd.title,
-      duration: Number(vd.lengthSeconds),
-      thumbnail: vd.thumbnails.at(-1)?.url ?? null,
-      author: vd.author.name,
+      title: data.title,
+      duration: data.duration,
+      thumbnail: (data.thumbnail as string) ?? thumbnails?.at(-1)?.url ?? null,
+      author: (data.uploader as string) ?? (data.channel as string) ?? "",
       videoFormats,
       audioFormats,
     });

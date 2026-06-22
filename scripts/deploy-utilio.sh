@@ -153,6 +153,15 @@ else
 fi
 REMOTE_SYNC
 
+echo "▸ Install/update yt-dlp"
+"${SSH[@]}" "ubuntu@$HOST" bash <<'REMOTE_YTDLP'
+set -e
+sudo curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+  -o /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp
+yt-dlp --version
+REMOTE_YTDLP
+
 echo "▸ Write .env.local (staging)"
 export AUTH_URL AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET UTILIO_AWS_KEY UTILIO_AWS_SECRET
 export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://${DOMAIN}}"
