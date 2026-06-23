@@ -58,7 +58,12 @@ export async function ytdlpJson(url: string): Promise<Record<string, unknown>> {
   const cookieArgs = await ytdlpCookiesArgs();
   const { stdout } = await execAsync(
     findBin(),
-    ["--dump-single-json", "--no-warnings", "--no-playlist", ...cookieArgs, url],
+    [
+      "--dump-single-json", "--no-warnings", "--no-playlist",
+      "--no-check-formats", // don't validate format availability, just return all metadata
+      ...cookieArgs,
+      url,
+    ],
     { maxBuffer: 20 * 1024 * 1024, timeout: 25_000 }
   );
   return JSON.parse(stdout) as Record<string, unknown>;
