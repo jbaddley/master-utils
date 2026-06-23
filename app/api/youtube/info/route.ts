@@ -54,6 +54,12 @@ export async function GET(request: NextRequest) {
       audioFormats,
     });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    const msg = (e as Error).message ?? "";
+    let friendly = msg;
+    if (msg.includes("Video unavailable")) friendly = "This video is unavailable (deleted, private, or not accessible in this region).";
+    else if (msg.includes("Sign in to confirm")) friendly = "YouTube requires sign-in for this video. Try a different video.";
+    else if (msg.includes("Private video")) friendly = "This video is private.";
+    else if (msg.includes("not available")) friendly = "This video is not available.";
+    return NextResponse.json({ error: friendly }, { status: 500 });
   }
 }
