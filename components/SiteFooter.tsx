@@ -11,6 +11,11 @@ const FOOTER_LINKS = [
   { label: "Audio Studio", path: "audio-studio" },
   { label: "PDF Tools", path: "pdf-tools" },
   { label: "QR Code Generator", path: "qr-code-generator" },
+  { label: "Terms of Service", path: "terms" },
+  { label: "Refund Policy", path: "refund-policy" },
+  { label: "Shipping Policy", path: "shipping-policy" },
+  { label: "Privacy Policy", path: "privacy-policy" },
+  { label: "Contact Us", path: "contact" },
 ] as const;
 
 export function SiteFooter({ isSwimSubdomain = false }: { isSwimSubdomain?: boolean }) {

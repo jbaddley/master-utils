@@ -38,6 +38,12 @@ const EXTRA_PATHS = [
   "strip-metadata",
   "blackout-tool",
   "audio-pitch-and-speed",
+  // Legal / compliance pages
+  "terms",
+  "refund-policy",
+  "shipping-policy",
+  "privacy-policy",
+  "contact",
 ] as const;
 
 export type SitemapPath = {
@@ -45,8 +51,17 @@ export type SitemapPath = {
   priority: number;
 };
 
+const LEGAL_SLUGS = new Set([
+  "terms",
+  "refund-policy",
+  "shipping-policy",
+  "privacy-policy",
+  "contact",
+]);
+
 function priorityFor(path: string): number {
   if (path === "") return 1;
+  if (LEGAL_SLUGS.has(path)) return 0.3;
   if (HUB_SLUGS.has(path)) return 0.95;
   if (TOOLS.some((t) => t.slug === path)) return 0.9;
   if ((CONVERSION_SLUGS as readonly string[]).includes(path)) return 0.85;
